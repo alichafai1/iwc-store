@@ -1,0 +1,312 @@
+---
+import { Image } from 'astro:assets';
+import { getPlaceholderProduct } from '../../data/products';
+import { renderRichText } from '../../lib/rich-text';
+import type { ArticleBlock } from '../../types/article';
+import ProductCard from '../ui/ProductCard.astro';
+
+interface Props {
+  blocks: ArticleBlock[];
+}
+
+const { blocks } = Astro.props;
+---
+
+<div class="article-body">
+  {
+    blocks.map((block) => {
+      if (block.type === 'heading' && block.level === 2) {
+        return <h2 id={block.id}>{block.text}</h2>;
+      }
+
+      if (block.type === 'heading') {
+        return <h3 id={block.id}>{block.text}</h3>;
+      }
+
+      if (block.type === 'paragraph') {
+        return <p set:html={renderRichText(block.text)} />;
+      }
+
+      if (block.type === 'list') {
+        const Tag = block.ordered ? 'ol' : 'ul';
+        return (
+          <Tag>
+            {block.items.map((item) => (
+              <li set:html={renderRichText(item)} />
+            ))}
+          </Tag>
+        );
+      }
+
+      if (block.type === 'table') {
+        return (
+          <div class="article-body__table">
+            <table>
+              {block.caption ? <caption>{block.caption}</caption> : null}
+              <thead>
+                <tr>
+                  {block.headers.map((header) => (
+                    <th scope="col">{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {block.rows.map((row) => (
+                  <tr>
+                    {row.map((cell) => (
+                      <td set:html={renderRichText(cell)} />
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
+      if (block.type === 'image') {
+        return (
+          <figure>
+            <div class="media article-body__media">
+              <Image src={block.src} alt={block.alt} width={1400} height={900} sizes="(min-width: 64em) 40rem, 100vw" loading="lazy" />
+            </div>
+            {block.caption ? <figcaption set:html={renderRichText(block.caption)} /> : null}
+          </figure>
+        );
+      }
+
+      if (block.type === 'quote') {
+        return (
+          <blockquote>
+            <p set:html={renderRichText(block.text)} />
+            {block.cite ? <cite>{block.cite}</cite> : null}
+          </blockquote>
+        );
+      }
+
+      if (block.type === 'comparison') {
+        return (
+          <section class="article-body__compare" aria-label={block.heading ?? 'Comparison'}>
+            {block.heading ? <p class="article-body__compare-heading">{block.heading}</p> : null}
+            <div class="article-body__compare-grid">
+              {block.columns.map((column) => (
+                <div>
+                  <h3>{column.title}</h3>
+                  <ul>
+                    {column.items.map((item) => (
+                      <li set:html={renderRichText(item)} />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      if (block.type === 'products') {
+        const products = block.productSlugs
+          .map((slug) => getPlaceholderProduct(slug))
+          .filter((product) => Boolean(product));
+
+        return (
+          <div class="article-body__products">
+            {block.heading ? <h2>{block.heading}</h2> : null}
+            <ul>
+              {products.map((product) =>
+                product ? (
+                  <li>
+                    <ProductCard product={product} />
+                    {block.descriptions?.[product.slug] ? <p>{block.descriptions[product.slug]}</p> : null}
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          </div>
+        );
+      }
+
+      if (block.type === 'cta') {
+        return (
+          <p class="article-body__cta">
+            <span set:html={renderRichText(block.text)} />
+            <a class="article-body__cta-link" href={block.href}>
+              {block.label}
+            </a>
+          </p>
+        );
+      }
+
+      return null;
+    })
+  }
+</div>
+
+<style>
+  .article-body {
+    color: #333333;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-body);
+  }
+
+  .article-body :global(h2) {
+    margin: var(--space-8) 0 var(--space-4);
+    scroll-margin-top: 6rem;
+    color: var(--color-text);
+    font-size: var(--font-size-xl);
+  }
+
+  .article-body :global(h3) {
+    margin: var(--space-6) 0 var(--space-3);
+    scroll-margin-top: 6rem;
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
+  .article-body :global(p),
+  .article-body :global(ul),
+  .article-body :global(ol) {
+    margin: 0 0 var(--space-4);
+  }
+
+  .article-body :global(ul),
+  .article-body :global(ol) {
+    padding-left: 1.2rem;
+  }
+
+  .article-body :global(li + li) {
+    margin-top: var(--space-2);
+  }
+
+  .article-body :global(a) {
+    color: var(--color-text);
+    text-decoration-color: var(--color-accent);
+  }
+
+  .article-body__table {
+    overflow-x: auto;
+    margin: 0 0 var(--space-6);
+  }
+
+  .article-body table {
+    width: 100%;
+    min-width: 28rem;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+  }
+
+  .article-body caption {
+    caption-side: bottom;
+    padding-top: var(--space-3);
+    color: var(--color-text-muted);
+    text-align: left;
+  }
+
+  .article-body th,
+  .article-body td {
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .article-body th {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .article-body figure {
+    margin: 0 0 var(--space-6);
+  }
+
+  .article-body__media {
+    aspect-ratio: 3 / 2;
+    border: 1px solid var(--color-border);
+  }
+
+  .article-body figcaption {
+    margin-top: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .article-body blockquote {
+    margin: 0 0 var(--space-6);
+    padding: 0 0 0 var(--space-5);
+    border-left: 2px solid var(--color-accent);
+  }
+
+  .article-body blockquote p {
+    margin: 0;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+  }
+
+  .article-body cite {
+    display: block;
+    margin-top: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-style: normal;
+  }
+
+  .article-body__compare {
+    margin: 0 0 var(--space-6);
+  }
+
+  .article-body__compare-heading {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .article-body__compare-grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .article-body__compare-grid h3 {
+    margin-top: 0;
+  }
+
+  .article-body__products {
+    margin: 0 0 var(--space-6);
+  }
+
+  .article-body__products ul {
+    display: grid;
+    gap: var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+
+  .article-body__products li p {
+    margin: var(--space-3) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .article-body__cta {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-6) 0;
+  }
+
+  .article-body__cta-link {
+    width: fit-content;
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  @media (min-width: 48em) {
+    .article-body__compare-grid,
+    .article-body__products ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

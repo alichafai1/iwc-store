@@ -1,0 +1,50 @@
+---
+import { ADMIN_HOME_PATH, ADMIN_LOGOUT_PATH } from '../../lib/admin-auth';
+import { ADMIN_COLLECTIONS_PATH, ADMIN_PRODUCTS_PATH, ADMIN_WORKFLOW_PATH } from '../../lib/admin/constants';
+import { siteConfig } from '../../lib/site';
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
+
+const links = [
+  { href: ADMIN_HOME_PATH, label: 'Dashboard', match: (path: string) => path === '/admin' || path === '/admin/' },
+  {
+    href: ADMIN_PRODUCTS_PATH,
+    label: 'Products',
+    match: (path: string) => path.startsWith('/admin/products'),
+  },
+  {
+    href: ADMIN_COLLECTIONS_PATH,
+    label: 'Collections',
+    match: (path: string) => path.startsWith('/admin/collections'),
+  },
+  {
+    href: ADMIN_WORKFLOW_PATH,
+    label: 'Product Workflow',
+    match: (path: string) => path.startsWith('/admin/product-workflow'),
+  },
+];
+---
+
+<aside class="admin-sidebar">
+  <p class="admin-sidebar__brand">{siteConfig.name} Admin</p>
+  <nav class="admin-sidebar__nav" aria-label="Admin">
+    {
+      links.map((link) => (
+        <a
+          class:list={['admin-sidebar__link', { 'is-active': link.match(pathname) }]}
+          href={link.href}
+          aria-current={link.match(pathname) ? 'page' : undefined}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+  <form method="post" action={ADMIN_LOGOUT_PATH}>
+    <button class="admin-sidebar__logout" type="submit">Logout</button>
+  </form>
+</aside>

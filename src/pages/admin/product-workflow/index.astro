@@ -1,0 +1,1112 @@
+---
+export const prerender = false;
+
+import AdminAppLayout from '../../../layouts/AdminAppLayout.astro';
+import KeywordLibrary from '../../../components/admin/KeywordLibrary.astro';
+import RawProductReview from '../../../components/admin/RawProductReview.astro';
+import WorkflowStepper from '../../../components/admin/WorkflowStepper.astro';
+import {
+  ADMIN_PRODUCTS_PATH,
+  ADMIN_WORKFLOW_PATH,
+  KEYWORD_LIBRARY_ANCHOR,
+  KEYWORD_UPLOAD_ANCHOR,
+} from '../../../lib/admin/constants';
+import { isUuid } from '../../../lib/admin/query';
+import {
+  AI_RUN_STATUS_LABELS,
+  draftStatusLabel,
+  getAiJobByScrapeJob,
+  listAiRunsByJob,
+  type AiProcessingJob,
+  type AiProductRun,
+} from '../../../lib/admin/ai-jobs';
+import {
+  consumeKeywordBatchPreview,
+  getKeywordBatchPreview,
+  getKeywordBatchResult,
+  saveKeywordBatchPreview,
+  saveKeywordBatchResult,
+} from '../../../lib/admin/keyword-preview-store';
+import { collectKeywordUploadFiles, detectFileType, parseKeywordFile } from '../../../lib/admin/keyword-parse';
+import {
+  countKeywords,
+  estimateFileDuplicates,
+  existingNormalizedKeywords,
+  importKeywordBatch,
+  listKeywordImports,
+  rememberNormalizedKeywords,
+  resetKeywordLibrary,
+} from '../../../lib/admin/keywords';
+import {
+  getRawProduct,
+  listRawProductsByJob,
+  SCRAPE_STATUS_LABELS,
+  type RawProduct,
+} from '../../../lib/admin/raw-products';
+import {
+  getLatestScrapeJob,
+  getScrapeJob,
+  listScrapeJobs,
+  SCRAPE_JOB_STATUS_LABELS,
+  type ScrapeJob,
+} from '../../../lib/admin/scrape-jobs';
+import {
+  getProcessorConfig,
+  getProcessorHealth,
+  requestCollectionProcessing,
+  requestRetryFailedAi,
+} from '../../../lib/admin/processor';
+import {
+  getScraperConfig,
+  isHttpUrl,
+  requestCollectionScrape,
+  requestProductScrape,
+  requestRetryFailed,
+} from '../../../lib/admin/scraper';
+import { isSameOriginRequest } from '../../../lib/admin-auth';
+import { formatAdminDate } from '../../../lib/admin/dates';
+import { createSupabaseServerClient } from '../../../lib/supabase.server';
+
+const supabase = createSupabaseServerClient(Astro);
+let flash = '';
+let error = Astro.url.searchParams.get('error') ?? '';
+let urlValue = '';
+let selected: RawProduct | null = null;
+let job: ScrapeJob | null = null;
+
+if (Astro.url.searchParams.has('started')) {
+  flash = 'Product workflow started. The collection is scraped first, then every product is processed automatically.';
+} else if (Astro.url.searchParams.has('ai_started')) {
+  flash = 'AI processing started for every successfully scraped product.';
+} else if (Astro.url.searchParams.has('keywords_reset')) {
+  flash = 'Global Keyword Library: 0 keywords';
+} else if (Astro.url.searchParams.has('imported')) {
+  const importedCount = Number.parseInt(Astro.url.searchParams.get('imported') ?? '0', 10);
+  const failedCountParam = Number.parseInt(Astro.url.searchParams.get('failed') ?? '0', 10);
+  const libraryCount = Number.parseInt(Astro.url.searchParams.get('keywords') ?? '0', 10);
+  const libraryNote = libraryCount > 0 ? ` Global Keyword Library: ${libraryCount} keywords ready.` : '';
+  if (failedCountParam > 0 && importedCount > 0) {
+    flash = `Imported ${importedCount} file${importedCount === 1 ? '' : 's'} into the global library. ${failedCountParam} file${failedCountParam === 1 ? '' : 's'} failed.${libraryNote}`;
+  } else if (importedCount > 0) {
+    flash = `Imported ${importedCount} file${importedCount === 1 ? '' : 's'} into the global library.${libraryNote}`;
+  }
+} else if (Astro.url.searchParams.has('new')) {
+  flash = 'Ready for a new collection. Previous collections, drafts, and the Global Keyword Library are unchanged.';
+}
+
+function workflowHref(extra: Record<string, string> = {}, hash = ''): string {
+  const params = new URLSearchParams();
+  const jobParam = extra.job ?? Astro.url.searchParams.get('job');
+  const idParam = extra.id ?? Astro.url.searchParams.get('id');
+  const startNew = extra.new === '1' || (!jobParam && Astro.url.searchParams.has('new'));
+  if (jobParam && extra.new !== '1') {
+    params.set('job', jobParam);
+  }
+  if (idParam && extra.new !== '1' && params.has('job')) {
+    params.set('id', idParam);
+  }
+  if (startNew && !params.has('job')) {
+    params.set('new', '1');
+  }
+  for (const [key, value] of Object.entries(extra)) {
+    if (key === 'job' || key === 'id' || key === 'new') {
+      continue;
+    }
+    params.set(key, value);
+  }
+  const query = params.toString();
+  return `${ADMIN_WORKFLOW_PATH}${query ? `?${query}` : ''}${hash}`;
+}
+
+if (Astro.request.method === 'POST') {
+  if (!isSameOriginRequest(Astro.request)) {
+    error = 'This request could not be verified.';
+  } else {
+    const form = await Astro.request.formData();
+    const intent = String(form.get('intent') ?? '');
+    urlValue = String(form.get('url') ?? '').trim();
+    const jobIdValue = String(form.get('job') ?? '').trim();
+    const adminId = Astro.locals.adminUser?.id ?? '';
+
+    if (intent === 'preview-keywords') {
+      const collected = collectKeywordUploadFiles(form);
+      if ('error' in collected) {
+        error = collected.error;
+      } else if (!adminId) {
+        error = 'Sign in as an admin to import keywords.';
+      } else {
+        try {
+          const parsedFiles = await Promise.all(
+            collected.map(async (file) => {
+              const parsed = await parseKeywordFile(file);
+              if (!parsed.ok) {
+                return {
+                  fileName: file.name.trim() || 'untitled',
+                  fileType: detectFileType(file.name, file.type),
+                  error: parsed.error,
+                  totalRows: 0,
+                  invalidRows: 0,
+                  estimatedDuplicates: 0,
+                  validRows: [],
+                };
+              }
+
+              return {
+                fileName: parsed.fileName,
+                fileType: parsed.fileType,
+                error: null,
+                totalRows: parsed.totalRows,
+                invalidRows: parsed.invalidRows,
+                estimatedDuplicates: 0,
+                validRows: parsed.validRows,
+              };
+            }),
+          );
+
+          const known = await existingNormalizedKeywords(
+            supabase,
+            parsedFiles.flatMap((file) => file.validRows.map((row) => row.normalizedKeyword)),
+          );
+
+          for (const file of parsedFiles) {
+            if (!file.error) {
+              file.estimatedDuplicates = estimateFileDuplicates(file, known);
+              rememberNormalizedKeywords(known, file.validRows);
+            }
+          }
+
+          const previewId = saveKeywordBatchPreview({
+            userId: adminId,
+            files: parsedFiles,
+          });
+          return Astro.redirect(workflowHref({ preview: previewId }, `#${KEYWORD_LIBRARY_ANCHOR}`));
+        } catch (previewError) {
+          error = previewError instanceof Error ? previewError.message : 'Could not prepare the keyword preview.';
+        }
+      }
+    } else if (intent === 'confirm-keywords') {
+      const previewId = String(form.get('preview_id') ?? '');
+      const preview = adminId ? consumeKeywordBatchPreview(previewId, adminId) : null;
+      if (!preview) {
+        const existingCount = await countKeywords(supabase);
+        error = `That preview expired, so nothing from those files was imported. Global Keyword Library still has ${existingCount} keyword${existingCount === 1 ? '' : 's'} already saved. Upload the files again only if you still need to add more.`;
+      } else {
+        const { results } = await importKeywordBatch(supabase, preview);
+        const completed = results.filter((item) => item.status === 'completed').length;
+        const failed = results.filter((item) => item.status === 'failed').length;
+        const resultId = saveKeywordBatchResult({ userId: adminId, files: results });
+        const libraryCount = await countKeywords(supabase);
+        return Astro.redirect(
+          workflowHref(
+            {
+              imported: String(completed),
+              failed: String(failed),
+              keywords: String(libraryCount),
+              kw_result: resultId,
+            },
+            `#${KEYWORD_LIBRARY_ANCHOR}`,
+          ),
+        );
+      }
+    } else if (intent === 'scrape-collection') {
+      if (!isHttpUrl(urlValue)) {
+        error = 'Enter a valid http(s) collection URL.';
+      } else {
+        const result = await requestCollectionScrape(urlValue);
+        if (result.ok && result.jobId) {
+          return Astro.redirect(`${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(result.jobId)}&started=1`);
+        }
+
+        if (result.jobId) {
+          return Astro.redirect(
+            `${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(result.jobId)}&error=${encodeURIComponent(result.error || 'The collection scrape failed.')}`,
+          );
+        }
+
+        error = result.error || 'The collection scrape failed.';
+      }
+    } else if (intent === 'retry-failed') {
+      if (!isUuid(jobIdValue)) {
+        error = 'Invalid scrape job.';
+      } else {
+        const scrapeJob = await getScrapeJob(supabase, jobIdValue);
+        const aiJob = await getAiJobByScrapeJob(supabase, jobIdValue);
+        if ((scrapeJob.data?.products_failed ?? 0) > 0) {
+          const result = await requestRetryFailed(jobIdValue);
+          if (result.ok && result.jobId) {
+            return Astro.redirect(`${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(result.jobId)}&started=1`);
+          }
+          error = result.error || 'Could not retry failed scrape products.';
+        } else if (aiJob.data && (aiJob.data.failed_products > 0 || aiJob.data.status === 'failed')) {
+          const rawProductId = String(form.get('raw_product_id') ?? '').trim();
+          const result = await requestRetryFailedAi(
+            aiJob.data.id,
+            isUuid(rawProductId) ? rawProductId : undefined,
+          );
+          if (result.ok && result.processingJobId) {
+            return Astro.redirect(`${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(jobIdValue)}&ai_started=1`);
+          }
+          error = result.error || 'Could not retry failed AI products.';
+        } else {
+          error = 'There are no failed products to retry.';
+        }
+      }
+    } else if (intent === 'start-ai') {
+      if (!isUuid(jobIdValue)) {
+        error = 'Invalid scrape job.';
+      } else {
+        const libraryCount = await countKeywords(supabase);
+        if (libraryCount === 0) {
+          error = 'Keyword Library is empty. Upload keyword files before AI processing.';
+        } else {
+          const result = await requestCollectionProcessing(jobIdValue);
+          if (result.ok) {
+            return Astro.redirect(`${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(jobIdValue)}&ai_started=1`);
+          }
+          error = result.error || 'Could not start AI processing.';
+        }
+      }
+    } else if (intent === 'reset-keywords') {
+      if (!adminId) {
+        error = 'Sign in as an admin to reset the keyword library.';
+      } else {
+        const resetError = await resetKeywordLibrary(supabase);
+        if (resetError) {
+          error = resetError;
+        } else {
+          return Astro.redirect(workflowHref({ keywords_reset: '1' }, `#${KEYWORD_LIBRARY_ANCHOR}`));
+        }
+      }
+    } else if (intent === 'scrape-product') {
+      if (!isHttpUrl(urlValue)) {
+        error = 'Enter a valid http(s) product URL.';
+      } else {
+        const result = await requestProductScrape(urlValue);
+        const jobQuery = isUuid(jobIdValue) ? `&job=${encodeURIComponent(jobIdValue)}` : '';
+        if (result.ok && result.id) {
+          return Astro.redirect(`${ADMIN_WORKFLOW_PATH}?id=${encodeURIComponent(result.id)}${jobQuery}`);
+        }
+
+        if (result.id) {
+          return Astro.redirect(`${ADMIN_WORKFLOW_PATH}?id=${encodeURIComponent(result.id)}${jobQuery}`);
+        }
+
+        error = result.error || 'The product scrape failed.';
+      }
+    }
+  }
+}
+
+const startNewCollection = Astro.url.searchParams.has('new') && !Astro.url.searchParams.get('job');
+const jobIdParam = Astro.url.searchParams.get('job') ?? '';
+if (jobIdParam) {
+  if (!isUuid(jobIdParam)) {
+    error = error || 'Invalid scrape job.';
+  } else {
+    const loaded = await getScrapeJob(supabase, jobIdParam);
+    if (loaded.error) {
+      error = error || loaded.error;
+    } else if (!loaded.data) {
+      error = error || 'That scrape job was not found.';
+    } else {
+      job = loaded.data;
+      if (!urlValue) {
+        urlValue = job.source_collection_url;
+      }
+    }
+  }
+} else if (!startNewCollection) {
+  const latest = await getLatestScrapeJob(supabase);
+  if (latest.error) {
+    error = error || latest.error;
+  } else if (latest.data) {
+    job = latest.data;
+    if (!urlValue) {
+      urlValue = job.source_collection_url;
+    }
+  }
+}
+
+const selectedId = startNewCollection ? '' : (Astro.url.searchParams.get('id') ?? '');
+if (selectedId) {
+  if (!isUuid(selectedId)) {
+    error = error || 'Invalid raw product.';
+  } else {
+    const loaded = await getRawProduct(supabase, selectedId);
+    if (loaded.error) {
+      error = error || loaded.error;
+    } else if (!loaded.data) {
+      error = error || 'That scraped product was not found.';
+    } else {
+      selected = loaded.data;
+    }
+  }
+}
+
+const productsResult = job ? await listRawProductsByJob(supabase, job.id) : { data: [], error: null };
+if (productsResult.error) {
+  error = error || productsResult.error;
+}
+
+const products = productsResult.data;
+const failedCount = job?.products_failed ?? 0;
+const scraperConfig = getScraperConfig();
+const scraperReady = !('error' in scraperConfig);
+const processorConfig = getProcessorConfig();
+const processorConfigured = !('error' in processorConfig);
+const processorHealth = await getProcessorHealth();
+const processorOnline = processorHealth.online === true;
+const processorStatusLabel = !processorConfigured
+  ? null
+  : processorOnline
+    ? 'Cursor GPT Processor Ready'
+    : 'Product Processor Offline';
+const processorProviderLabel =
+  processorOnline && processorHealth.provider === 'cursor'
+    ? 'Cursor GPT'
+    : processorOnline && processorHealth.provider === 'openai'
+      ? 'OpenAI'
+      : null;
+const processorModelLabel = processorHealth.model && processorHealth.model !== 'auto'
+  ? /sol/i.test(processorHealth.model)
+    ? `GPT-5.6 Sol (${processorHealth.model})`
+    : processorHealth.model
+  : processorHealth.model === 'auto'
+    ? 'selected from Cursor CLI'
+    : null;
+const jobIsActive = job?.job_status === 'running' || job?.job_status === 'pending';
+
+const aiJobResult = job ? await getAiJobByScrapeJob(supabase, job.id) : { data: null, error: null };
+if (aiJobResult.error) {
+  error = error || aiJobResult.error;
+}
+const aiJob: AiProcessingJob | null = aiJobResult.data;
+const aiRunsResult = aiJob ? await listAiRunsByJob(supabase, aiJob.id) : { data: [], error: null };
+if (aiRunsResult.error) {
+  error = error || aiRunsResult.error;
+}
+const aiRunsByRawId = new Map(aiRunsResult.data.map((run: AiProductRun) => [run.raw_product_id, run]));
+const aiClaimedActive = aiJob?.status === 'processing' || aiJob?.status === 'pending';
+const aiIsActive = Boolean(aiJob && aiClaimedActive && processorHealth.runningJobIds.includes(aiJob.id));
+const aiIsInterrupted = Boolean(aiJob && aiClaimedActive && !aiIsActive);
+const draftsCreated = aiJob?.processed_products ?? products.filter((row) => row.processed_product_id).length;
+const aiFailedCount = aiJob?.failed_products ?? 0;
+const scrapeComplete = Boolean(job && !jobIsActive && job.job_status === 'completed');
+const scrapedSuccessfully = (job?.products_completed ?? 0) > 0;
+
+const previewId = Astro.url.searchParams.get('preview') ?? '';
+const resultId = Astro.url.searchParams.get('kw_result') ?? '';
+const adminId = Astro.locals.adminUser?.id;
+const keywordPreview = previewId && adminId ? getKeywordBatchPreview(previewId, adminId) : null;
+const keywordImportResult = resultId && adminId ? getKeywordBatchResult(resultId, adminId) : null;
+
+if (!flash && Number.parseInt(Astro.url.searchParams.get('failed') ?? '0', 10) > 0 && Number.parseInt(Astro.url.searchParams.get('imported') ?? '0', 10) === 0) {
+  error = error || 'None of the selected files could be imported.';
+}
+
+const [keywordCount, importList, scrapeHistory] = await Promise.all([
+  countKeywords(supabase),
+  listKeywordImports(supabase),
+  listScrapeJobs(supabase, 20),
+]);
+
+if (importList.error) {
+  error = error || importList.error;
+}
+if (scrapeHistory.error) {
+  error = error || scrapeHistory.error;
+}
+
+const previewExpired =
+  Boolean(previewId) &&
+  !keywordPreview &&
+  !keywordImportResult &&
+  !Astro.url.searchParams.has('imported');
+
+type AiUiState =
+  | 'idle'
+  | 'waiting_keywords'
+  | 'ready'
+  | 'processing'
+  | 'completed'
+  | 'completed_with_errors'
+  | 'failed'
+  | 'interrupted'
+  | 'no_products';
+let aiUiState: AiUiState = 'idle';
+if (aiIsActive) {
+  aiUiState = 'processing';
+} else if (aiIsInterrupted) {
+  aiUiState = 'interrupted';
+} else if (aiJob?.status === 'completed') {
+  aiUiState = 'completed';
+} else if (aiJob?.status === 'completed_with_errors') {
+  aiUiState = 'completed_with_errors';
+} else if (aiJob?.status === 'failed') {
+  aiUiState = 'failed';
+} else if (scrapeComplete && !scrapedSuccessfully) {
+  aiUiState = 'no_products';
+} else if (scrapeComplete && keywordCount === 0) {
+  aiUiState = 'waiting_keywords';
+} else if (scrapeComplete) {
+  aiUiState = 'ready';
+}
+
+const aiStateLabel: Record<AiUiState, string> = {
+  idle: 'AI Content — Waiting for scrape',
+  no_products: 'AI Content — Waiting for scrape',
+  waiting_keywords: 'AI Content — Waiting for Keywords',
+  ready: 'AI Content — Ready',
+  interrupted: 'AI Content — Interrupted',
+  processing: 'AI Content — Processing',
+  completed: 'AI Content — Completed',
+  completed_with_errors: 'AI Content — Completed with Errors',
+  failed: 'AI Content — Failed',
+};
+
+const canAutostartAi = false;
+
+let currentStep: 'source' | 'scrape' | 'ai' | 'review' | 'images' | 'publish' = 'source';
+if (aiUiState === 'completed' || aiUiState === 'completed_with_errors') {
+  currentStep = 'review';
+} else if (
+  aiUiState === 'processing' ||
+  aiUiState === 'ready' ||
+  aiUiState === 'interrupted' ||
+  aiUiState === 'waiting_keywords' ||
+  aiUiState === 'failed' ||
+  aiUiState === 'no_products'
+) {
+  currentStep = 'ai';
+} else if (job || selected) {
+  currentStep = 'scrape';
+}
+---
+
+<AdminAppLayout title="Product Workflow" description="Internal product publishing workflow.">
+  <WorkflowStepper currentStep={currentStep} />
+
+  {
+    flash && (
+      <p class="admin-flash admin-flash--success" role="status">
+        {flash}
+      </p>
+    )
+  }
+  {
+    error && (
+      <p class="admin-flash admin-flash--error" role="alert">
+        {error}
+      </p>
+    )
+  }
+
+  <KeywordLibrary
+    keywordCount={keywordCount}
+    imports={importList.data}
+    preview={keywordPreview}
+    importResult={keywordImportResult}
+    previewExpired={previewExpired}
+  />
+
+  <section class="admin-section" aria-labelledby="scrape-collection-heading">
+    <h2 class="admin-section__title" id="scrape-collection-heading">Start Product Workflow</h2>
+    <p class="admin-help">
+      {startNewCollection
+        ? 'Paste a new collection URL, then click Start product workflow. Scraping and AI Content run automatically. Previous collections stay in history.'
+        : 'Paste a source collection URL, then click Start product workflow. Scraping and AI Content run automatically. You only add images and publish.'}
+    </p>
+    {
+      !scraperReady && 'error' in scraperConfig && (
+        <p class="admin-flash admin-flash--error" role="status">
+          {scraperConfig.error}
+        </p>
+      )
+    }
+    {
+      !processorConfigured && 'error' in processorConfig && (
+        <p class="admin-flash admin-flash--error" role="status">
+          {processorConfig.error}
+        </p>
+      )
+    }
+    {
+      processorConfigured && processorStatusLabel && (
+        <p class:list={['admin-flash', processorOnline ? 'admin-flash--success' : 'admin-flash--error']} role="status">
+          {processorStatusLabel}
+          {processorOnline && processorModelLabel ? ` · ${processorModelLabel}` : ''}
+        </p>
+      )
+    }
+    <form class="admin-scrape-form" method="post" data-scrape-form>
+      <input type="hidden" name="intent" value="scrape-collection" />
+      <label class="admin-field">
+        <span>Collection URL</span>
+        <input
+          type="url"
+          name="url"
+          value={urlValue}
+          placeholder="https://allreplicawatches.to/replica-iwc/portuguese/"
+          required
+          autocomplete="off"
+        />
+      </label>
+      <div class="admin-scrape-form__actions">
+        <button class="btn" type="submit" data-scrape-submit>
+          Start product workflow
+        </button>
+        {
+          job && (
+            <a class="btn btn--ghost" href={`${ADMIN_WORKFLOW_PATH}?new=1`}>
+              START NEW COLLECTION
+            </a>
+          )
+        }
+        <p class="admin-help admin-scrape-form__status" data-scrape-status hidden>
+          Starting workflow… scraping the collection first.
+        </p>
+      </div>
+    </form>
+    {
+      processorOnline && processorProviderLabel && (
+        <p class="admin-help">
+          AI Provider: {processorProviderLabel}
+          {processorModelLabel ? ` · Model: ${processorModelLabel}` : ''}
+        </p>
+      )
+    }
+  </section>
+
+  {
+    scrapeHistory.data.length > 0 && (
+      <section class="admin-section" aria-labelledby="collection-history-heading">
+        <h2 class="admin-section__title" id="collection-history-heading">Collection History</h2>
+        <p class="admin-help">
+          Previous scrape and AI jobs stay here. Opening one does not delete drafts, reviews, or keywords.
+        </p>
+        <div class="admin-table-wrap">
+          <table class="admin-table admin-table--wrap">
+            <thead>
+              <tr>
+                <th>Collection</th>
+                <th>Scrape</th>
+                <th>Products</th>
+                <th>Started</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scrapeHistory.data.map((row) => (
+                <tr class:list={[{ 'is-selected': job?.id === row.id }]}>
+                  <td>{row.source_collection_name || row.source_collection_url}</td>
+                  <td>
+                    <span class={`admin-badge admin-badge--${row.job_status}`}>
+                      {SCRAPE_JOB_STATUS_LABELS[row.job_status]}
+                    </span>
+                  </td>
+                  <td>
+                    {row.products_completed} / {row.products_discovered}
+                  </td>
+                  <td>{formatAdminDate(row.started_at || row.created_at)}</td>
+                  <td>
+                    <a class="btn btn--ghost" href={`${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(row.id)}`}>
+                      Open
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    job && (
+      <section
+        class="admin-section"
+        aria-labelledby="collection-progress-heading"
+        data-job-progress
+        data-job-id={job.id}
+        data-job-active={jobIsActive || aiIsActive ? 'true' : 'false'}
+        data-scrape-status={job.job_status}
+        data-ai-status={aiJob?.status ?? ''}
+        data-scrape-was-active={jobIsActive ? 'true' : 'false'}
+        data-ai-autostart={canAutostartAi ? 'true' : 'false'}
+        data-process-url={`${ADMIN_WORKFLOW_PATH}process/`}
+        data-status-url={`${ADMIN_WORKFLOW_PATH}status/?job=${encodeURIComponent(job.id)}`}
+      >
+        <div class="admin-section__header">
+          <h2 class="admin-section__title" id="collection-progress-heading">
+            {job.source_collection_name || 'Collection'}
+          </h2>
+          <a class="btn btn--ghost" href={`${ADMIN_WORKFLOW_PATH}?new=1`}>
+            START NEW COLLECTION
+          </a>
+        </div>
+        {
+          processorStatusLabel && (
+            <p class:list={['admin-flash', processorOnline ? 'admin-flash--success' : 'admin-flash--error']} role="status">
+              {processorStatusLabel}
+              {processorOnline && processorModelLabel ? ` · ${processorModelLabel}` : ''}
+            </p>
+          )
+        }
+        <ul class="admin-progress">
+          <li data-progress-discovered>{job.products_discovered} products discovered</li>
+          <li data-progress-completed>
+            {job.products_completed} / {job.products_discovered} scraped
+          </li>
+          <li data-progress-keywords>{keywordCount.toLocaleString()} keywords available</li>
+          <li data-progress-ai>
+            {aiJob ? `${aiJob.processed_products} / ${aiJob.total_products || job.products_completed} AI processed` : '0 AI processed'}
+          </li>
+          <li data-progress-drafts>{draftsCreated} drafts created</li>
+          <li data-progress-failed>
+            {(failedCount + aiFailedCount)} failed
+          </li>
+        </ul>
+
+        <div class="admin-ai-state" data-ai-state={aiUiState}>
+          <h3 class="admin-ai-state__title">{aiStateLabel[aiUiState]}</h3>
+          {
+            aiUiState === 'no_products' && (
+              <p class="admin-flash admin-flash--error" role="status">
+                No products were scraped successfully, so AI processing cannot start.
+              </p>
+            )
+          }
+          {
+            aiUiState === 'waiting_keywords' && (
+              <>
+                <p class="admin-flash admin-flash--error" role="status">
+                  Keyword Library is empty. Upload keyword files before AI processing.
+                </p>
+                <a class="btn" href={`#${KEYWORD_UPLOAD_ANCHOR}`}>UPLOAD KEYWORDS</a>
+              </>
+            )
+          }
+          {
+            (aiUiState === 'ready' || aiUiState === 'interrupted') && !processorOnline && (
+              <p class="admin-flash admin-flash--error" role="status">
+                Product Processor Offline
+              </p>
+            )
+          }
+          {
+            (aiUiState === 'ready' || aiUiState === 'interrupted') && processorOnline && (
+              <>
+                <p class="admin-help">
+                  {aiUiState === 'interrupted'
+                    ? `AI started earlier but wrote ${draftsCreated} draft${draftsCreated === 1 ? '' : 's'} and then stopped. Click the button below to start it again for this collection only.`
+                    : `Scrape finished and ${keywordCount.toLocaleString()} keywords are ready. Click START AI PROCESSING to write SEO drafts for this collection.`}
+                </p>
+                <form method="post" data-scrape-form>
+                  <input type="hidden" name="intent" value="start-ai" />
+                  <input type="hidden" name="job" value={job.id} />
+                  <button class="btn" type="submit" data-scrape-submit>
+                    START AI PROCESSING
+                  </button>
+                </form>
+              </>
+            )
+          }
+          {
+            aiUiState === 'processing' && (
+              <p class="admin-help">
+                Writing SEO drafts
+                {aiJob ? ` · ${aiJob.processed_products} / ${aiJob.total_products || job.products_completed} processed` : ''}.
+                {aiJob && aiJob.keywords_evaluated > 0 ? ` ${aiJob.keywords_evaluated} keywords evaluated.` : ''}
+              </p>
+            )
+          }
+          {
+            (aiUiState === 'completed' || aiUiState === 'completed_with_errors') && (
+              <p class="admin-flash admin-flash--success" role="status">
+                {draftsCreated} Draft Product{draftsCreated === 1 ? '' : 's'} Ready · Images Missing
+                {aiUiState === 'completed_with_errors' ? ' · some products failed' : ''}
+              </p>
+            )
+          }
+          {
+            aiUiState === 'failed' && (
+              <p class="admin-flash admin-flash--error" role="status">
+                {aiJob?.error_message || 'AI processing failed.'}
+              </p>
+            )
+          }
+          {
+            job.error_message && (
+              <p class="admin-flash admin-flash--error" role="status">
+                {job.error_message}
+              </p>
+            )
+          }
+          {
+            (aiUiState === 'completed_with_errors' || aiUiState === 'failed' || failedCount > 0) &&
+              !jobIsActive &&
+              !aiIsActive && (
+              <form method="post" data-scrape-form>
+                <input type="hidden" name="intent" value="retry-failed" />
+                <input type="hidden" name="job" value={job.id} />
+                <button class="btn btn--ghost" type="submit" data-scrape-submit>
+                  Retry failed products
+                </button>
+              </form>
+            )
+          }
+        </div>
+      </section>
+    )
+  }
+
+  {selected && <RawProductReview product={selected} jobId={job?.id ?? selected.scrape_job_id} />}
+
+  {
+    job && (
+      <section class="admin-section" aria-labelledby="collection-products-heading">
+        <h2 class="admin-section__title" id="collection-products-heading">Products</h2>
+        {products.length === 0 ? (
+          <p class="admin-empty">No products discovered yet.</p>
+        ) : (
+          <div class="admin-table-wrap">
+            <table class="admin-table admin-table--wrap" data-job-products>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Source Model</th>
+                  <th>Scrape Status</th>
+                  <th>AI Status</th>
+                  <th>SEO Coverage</th>
+                  <th>Draft Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((row) => {
+                  const run = aiRunsByRawId.get(row.id);
+                  const coverage = run?.coverage_percent;
+                  const draftLabel = draftStatusLabel({
+                    scrapeStatus: row.scrape_status,
+                    processedProductId: row.processed_product_id,
+                    aiStatus: run?.status,
+                    errorMessage: run?.error_message,
+                  });
+                  return (
+                  <tr class:list={[{ 'is-selected': selected?.id === row.id }]} data-product-id={row.id}>
+                    <td>{row.source_title || row.source_url}</td>
+                    <td>{row.source_model || '—'}</td>
+                    <td>
+                      <span class={`admin-badge admin-badge--${row.scrape_status}`}>
+                        {SCRAPE_STATUS_LABELS[row.scrape_status]}
+                      </span>
+                    </td>
+                    <td>
+                      {run ? (
+                        <span class={`admin-badge admin-badge--${run.status}`}>
+                          {AI_RUN_STATUS_LABELS[run.status]}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>{typeof coverage === 'number' ? `${coverage}%` : '—'}</td>
+                    <td>{draftLabel}</td>
+                    <td>
+                      <div class="admin-actions">
+                        {
+                          run?.status === 'failed' && (
+                            <form method="post" data-scrape-form>
+                              <input type="hidden" name="intent" value="retry-failed" />
+                              <input type="hidden" name="job" value={job.id} />
+                              <input type="hidden" name="raw_product_id" value={row.id} />
+                              <button class="btn btn--ghost" type="submit" data-scrape-submit>
+                                Retry
+                              </button>
+                            </form>
+                          )
+                        }
+                        {
+                          row.processed_product_id ? (
+                            <a class="btn btn--ghost" href={`${ADMIN_PRODUCTS_PATH}${row.processed_product_id}/edit/`}>
+                              View Draft
+                            </a>
+                          ) : (
+                            <a
+                              class="btn btn--ghost"
+                              href={`${ADMIN_WORKFLOW_PATH}?job=${job.id}&id=${row.id}`}
+                            >
+                              View
+                            </a>
+                          )
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    )
+  }
+</AdminAppLayout>
+
+<script>
+  const STATUS_LABELS: Record<string, string> = {
+    pending: 'Pending',
+    scraped: 'Scraped',
+    failed: 'Failed',
+    processed: 'Processed',
+  };
+  const AI_LABELS: Record<string, string> = {
+    pending: 'Pending',
+    processing: 'Processing',
+    completed: 'Completed',
+    failed: 'Failed',
+  };
+
+  function bindScrapeForms() {
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !form.matches('[data-scrape-form]')) {
+        return;
+      }
+      const button = form.querySelector<HTMLButtonElement>('[data-scrape-submit]');
+      const status = form.querySelector<HTMLElement>('[data-scrape-status]');
+      if (button) {
+        const text = button.textContent?.toLowerCase() ?? '';
+        button.disabled = true;
+        button.textContent = text.includes('retry')
+          ? 'Retrying…'
+          : text.includes('start')
+            ? 'Starting…'
+            : 'Working…';
+      }
+      if (status) {
+        status.hidden = false;
+      }
+    });
+  }
+
+  function failureReasonLabel(errorMessage?: string | null): string {
+    const text = (errorMessage ?? '').trim();
+    if (!text) {
+      return 'AI failed';
+    }
+    const code = text.match(/^\[([a-z0-9_]+)\]/i)?.[1]?.toLowerCase() ?? '';
+    const lower = text.toLowerCase();
+    if (code === 'invalid_json' || lower.includes('malformed json') || lower.includes('invalid json') || lower.includes('empty response')) {
+      return 'AI failed — Invalid JSON';
+    }
+    if (code === 'zod_validation' || code === 'malformed_model_output' || lower.includes('failed validation')) {
+      return 'AI failed — Zod validation';
+    }
+    if (code === 'cursor_timeout' || lower.includes('timed out') || /\btimeout\b/.test(lower)) {
+      return 'AI failed — Cursor timeout';
+    }
+    if (lower.includes('factual')) {
+      return 'AI failed — factual validation';
+    }
+    if (
+      code === 'cursor_network' ||
+      lower.includes('[aborted]') ||
+      lower.includes('tls') ||
+      lower.includes('socket disconnected') ||
+      lower.includes('client network socket')
+    ) {
+      return 'AI failed — Cursor network';
+    }
+    return 'AI failed';
+  }
+
+  function draftLabel(
+    scrapeStatus: string,
+    processedProductId: string | null,
+    aiStatus?: string | null,
+    errorMessage?: string | null,
+  ): string {
+    if (processedProductId && aiStatus === 'completed') {
+      return 'Draft ready';
+    }
+    if (aiStatus === 'failed') {
+      return failureReasonLabel(errorMessage);
+    }
+    if (aiStatus === 'processing' || aiStatus === 'pending') {
+      return 'Creating draft';
+    }
+    if (scrapeStatus === 'scraped') {
+      return 'Waiting for AI';
+    }
+    return '—';
+  }
+
+  async function pollJobProgress() {
+    const root = document.querySelector<HTMLElement>('[data-job-progress]');
+    if (!root) {
+      return;
+    }
+
+    const shouldPoll = root.dataset.jobActive === 'true';
+    if (!shouldPoll) {
+      return;
+    }
+
+    const statusUrl = root.dataset.statusUrl;
+    const table = document.querySelector<HTMLTableElement>('[data-job-products]');
+    if (!statusUrl) {
+      return;
+    }
+
+    const discoveredEl = root.querySelector('[data-progress-discovered]');
+    const completedEl = root.querySelector('[data-progress-completed]');
+    const aiEl = root.querySelector('[data-progress-ai]');
+    const draftsEl = root.querySelector('[data-progress-drafts]');
+    const failedEl = root.querySelector('[data-progress-failed]');
+
+    async function tick() {
+      try {
+        const response = await fetch(statusUrl, { headers: { accept: 'application/json' } });
+        const payload = (await response.json()) as {
+          ok?: boolean;
+          job?: {
+            job_status: string;
+            products_discovered: number;
+            products_completed: number;
+            products_failed: number;
+          };
+          ai?: {
+            id: string;
+            status: string;
+            total_products: number;
+            processed_products: number;
+            failed_products: number;
+          } | null;
+          products?: Array<{
+            id: string;
+            source_title: string | null;
+            source_url: string;
+            source_model: string | null;
+            scrape_status: string;
+            processed_product_id: string | null;
+          }>;
+          runs?: Record<
+            string,
+            {
+              status: string;
+              coverage_percent: number | null;
+              product_id: string | null;
+              error_message?: string | null;
+            }
+          >;
+        };
+
+        if (!payload.ok || !payload.job) {
+          window.setTimeout(tick, 2000);
+          return;
+        }
+
+        root.dataset.scrapeStatus = payload.job.job_status;
+        root.dataset.aiStatus = payload.ai?.status ?? '';
+
+        if (discoveredEl) {
+          discoveredEl.textContent = `${payload.job.products_discovered} products discovered`;
+        }
+        if (completedEl) {
+          completedEl.textContent = `${payload.job.products_completed} / ${payload.job.products_discovered} scraped`;
+        }
+        if (aiEl) {
+          const total = payload.ai?.total_products || payload.job.products_completed;
+          const processed = payload.ai?.processed_products ?? 0;
+          aiEl.textContent = `${processed} / ${total} AI processed`;
+        }
+        if (draftsEl) {
+          draftsEl.textContent = `${payload.ai?.processed_products ?? 0} Drafts created`;
+        }
+        if (failedEl) {
+          failedEl.textContent = `${(payload.job.products_failed ?? 0) + (payload.ai?.failed_products ?? 0)} failed`;
+        }
+
+        if (!table && (payload.products?.length ?? 0) > 0) {
+          window.location.reload();
+          return;
+        }
+
+        const body = table?.querySelector('tbody');
+        if (body && payload.products) {
+          const selectedId = body.querySelector('tr.is-selected')?.getAttribute('data-product-id');
+          const jobId = root.dataset.jobId ?? '';
+          body.replaceChildren();
+          for (const row of payload.products) {
+            const run = payload.runs?.[row.id];
+            const tr = document.createElement('tr');
+            if (selectedId && row.id === selectedId) {
+              tr.classList.add('is-selected');
+            }
+            tr.setAttribute('data-product-id', row.id);
+            const retry =
+              run?.status === 'failed'
+                ? `<form method="post" data-scrape-form><input type="hidden" name="intent" value="retry-failed" /><input type="hidden" name="job" value="${escapeAttr(jobId)}" /><input type="hidden" name="raw_product_id" value="${escapeAttr(row.id)}" /><button class="btn btn--ghost" type="submit" data-scrape-submit>Retry</button></form>`
+                : '';
+            const view = row.processed_product_id
+              ? `<a class="btn btn--ghost" href="/admin/products/${encodeURIComponent(row.processed_product_id)}/edit/">View Draft</a>`
+              : `<a class="btn btn--ghost" href="/admin/product-workflow/?job=${encodeURIComponent(jobId)}&id=${encodeURIComponent(row.id)}">View</a>`;
+            tr.innerHTML = `
+              <td>${escapeHtml(row.source_title || row.source_url)}</td>
+              <td>${escapeHtml(row.source_model || '—')}</td>
+              <td><span class="admin-badge admin-badge--${escapeAttr(row.scrape_status)}">${escapeHtml(STATUS_LABELS[row.scrape_status] || row.scrape_status)}</span></td>
+              <td>${run ? `<span class="admin-badge admin-badge--${escapeAttr(run.status)}">${escapeHtml(AI_LABELS[run.status] || run.status)}</span>` : '—'}</td>
+              <td>${typeof run?.coverage_percent === 'number' ? `${run.coverage_percent}%` : '—'}</td>
+              <td>${escapeHtml(draftLabel(row.scrape_status, row.processed_product_id, run?.status, run?.error_message))}</td>
+              <td><div class="admin-actions">${retry}${view}</div></td>
+            `;
+            body.append(tr);
+          }
+        }
+
+        const scrapeDone = payload.job.job_status === 'completed' || payload.job.job_status === 'failed';
+        if (scrapeDone && !payload.ai) {
+          window.location.reload();
+          return;
+        }
+
+        if (
+          scrapeDone &&
+          payload.ai &&
+          (payload.ai.status === 'completed' ||
+            payload.ai.status === 'completed_with_errors' ||
+            payload.ai.status === 'failed')
+        ) {
+          if (root.dataset.jobActive === 'true') {
+            window.location.reload();
+          }
+          return;
+        }
+      } catch {
+        // Keep the last rendered snapshot until the next poll.
+      }
+
+      window.setTimeout(tick, 2000);
+    }
+
+    void tick();
+  }
+
+  function escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+  function escapeAttr(value: string): string {
+    return value.replace(/[^a-z0-9_-]/gi, '');
+  }
+
+  bindScrapeForms();
+  void pollJobProgress();
+</script>

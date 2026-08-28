@@ -1,0 +1,314 @@
+---
+import type { Product, ProductPageData } from '../../types/product';
+import FAQSection from '../home/FAQSection.astro';
+import TrustSection from '../layout/TrustSection.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Container from '../ui/Container.astro';
+import ProductCard from '../ui/ProductCard.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { breadcrumbJsonLd, defaultJsonLd, faqPageJsonLd, productJsonLd } from '../../lib/seo';
+import { DEFAULT_QUALITY } from '../../lib/qualities';
+import { mediaUrl } from '../../lib/media';
+import ProductGallery from './ProductGallery.astro';
+import ProductPurchase from './ProductPurchase.astro';
+import ProductReviews from './ProductReviews.astro';
+
+interface Props {
+  page: ProductPageData;
+  relatedProducts: Product[];
+}
+
+const { page, relatedProducts } = Astro.props;
+const { product, path, metaTitle, metaDescription, images, qualities, specs, about, features, reviews, faqs } = page;
+const defaultQuality = qualities.find((item) => item.label === DEFAULT_QUALITY) ?? qualities[0];
+const currentPrice = defaultQuality?.price ?? product.price;
+const compareAtPrice = defaultQuality?.compareAtPrice ?? product.compareAtPrice;
+const stars = Math.round(product.rating);
+const isCatalog = page.source === 'catalog';
+const reviewCountLabel = isCatalog ? `${reviews.length} reviews` : `${reviews.length} placeholder reviews`;
+const ratingLabel = isCatalog
+  ? `Rating ${product.rating} out of 5`
+  : `Placeholder rating ${product.rating} out of 5`;
+---
+
+<BaseLayout
+  title={metaTitle}
+  description={metaDescription}
+  canonicalPath={path}
+  ogType="product"
+  ogImage={mediaUrl(images[0]?.src)}
+  jsonLd={[
+    defaultJsonLd(),
+    productJsonLd({
+      name: product.title,
+      description: metaDescription,
+      path,
+      images: images.map((image) => mediaUrl(image.src)).filter((src): src is string => Boolean(src)),
+      price: product.price,
+      currency: page.currency,
+      sku: page.sku,
+      availability: page.availability,
+      brand: page.brand,
+    }),
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: product.collection, path: `/collections/${product.collectionSlug}/` },
+      { name: product.title, path },
+    ]),
+    faqPageJsonLd(faqs),
+  ]}
+>
+  <section class="product-hero">
+    <Container>
+      <Breadcrumb
+        items={[
+          { label: 'Home', href: '/' },
+          { label: product.collection, href: `/collections/${product.collectionSlug}/` },
+          { label: product.title },
+        ]}
+      />
+
+      <div class="product-hero__grid">
+        <ProductGallery images={images} productTitle={product.title} />
+
+        <div class="product-hero__info">
+          <p class="eyebrow">{product.collection}</p>
+          <h1>{product.title}</h1>
+
+          <p class="product-hero__rating" aria-label={ratingLabel}>
+            <span class="product-hero__stars" aria-hidden="true">
+              <span>{'★'.repeat(stars)}</span>
+              {stars < 5 ? <span class="product-hero__stars-empty">{'☆'.repeat(5 - stars)}</span> : null}
+            </span>
+            <span>{product.rating.toFixed(1)}</span>
+            <span>{reviewCountLabel}</span>
+          </p>
+
+          <ProductPurchase
+            price={currentPrice}
+            compareAtPrice={compareAtPrice}
+            qualities={qualities}
+            title={product.title}
+            slug={product.slug}
+            imageSrc={mediaUrl(images[0]?.src)}
+            imageAlt={images[0]?.alt || product.title}
+          />
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <section class="section product-details" aria-labelledby="product-details-heading">
+    <Container>
+      <h2 id="product-details-heading" class="visually-hidden">Product information</h2>
+      <div class="product-details__grid">
+        <div>
+          <h2>Specifications</h2>
+          <table>
+            <tbody>
+              {
+                specs.map((spec) => (
+                  <tr>
+                    <th scope="row">{spec.label}</th>
+                    <td>{spec.value}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="product-details__about">
+          <h2>{about.heading}</h2>
+          {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+          {
+            about.sections?.map((block) => (
+              <section>
+                <h3>{block.heading}</h3>
+                {block.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+              </section>
+            ))
+          }
+        </div>
+
+        <div>
+          <h2>Key Features</h2>
+          <ul class="product-details__features">
+            {features.map((feature) => <li>{feature}</li>)}
+          </ul>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <ProductReviews rating={product.rating} reviews={reviews} isPlaceholder={!isCatalog} />
+
+  <FAQSection items={faqs} headingId="product-faq-heading" />
+
+  <section class="section product-related" aria-labelledby="related-heading">
+    <Container>
+      <SectionHeader headingId="related-heading" title="Related Products" />
+      <div class="product-related__grid">
+        {
+          relatedProducts.map((item) => (
+            <ProductCard product={item} />
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .product-hero {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-8);
+  }
+
+  .product-hero :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .product-hero__grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .product-hero h1 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+  }
+
+  .product-hero__rating {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .product-hero__stars {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-accent);
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .product-hero__stars-empty {
+    color: #d8c9a3;
+  }
+
+  .product-details {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .product-details__grid {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .product-details h2 {
+    margin-bottom: var(--space-5);
+    font-size: var(--font-size-xl);
+  }
+
+  .product-details table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .product-details th,
+  .product-details td {
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .product-details th {
+    width: 42%;
+    padding-right: var(--space-4);
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .product-details__about p {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .product-details h3 {
+    margin: var(--space-5) 0 var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+  }
+
+  .product-details__features {
+    display: grid;
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  .product-details__features li {
+    position: relative;
+    padding-left: 1.25rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .product-details__features li::before {
+    position: absolute;
+    left: 0;
+    color: var(--color-accent-dark);
+    content: "–";
+  }
+
+  .product-related {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .product-related__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 48em) {
+    .product-hero {
+      padding-top: var(--space-8);
+    }
+
+    .product-hero h1 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+
+  @media (min-width: 64em) {
+    .product-hero__grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: var(--space-10);
+      align-items: start;
+    }
+
+    .product-details__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-8);
+    }
+
+    .product-details h2 {
+      font-size: var(--font-size-xl);
+    }
+
+    .product-related__grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>

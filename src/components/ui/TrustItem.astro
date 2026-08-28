@@ -1,0 +1,70 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  icon: ImageMetadata;
+  title: string;
+  text: string;
+}
+
+const { icon, title, text } = Astro.props;
+---
+
+<article class="trust-item">
+  <span class="trust-item__icon" aria-hidden="true">
+    <Image src={icon} alt="" width={80} height={80} densities={[1, 2]} loading="lazy" />
+  </span>
+  <div class="trust-item__copy">
+    <h3>{title}</h3>
+    <p>{text}</p>
+  </div>
+</article>
+
+<style>
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 100%;
+    padding: 0.55rem 1rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .trust-item__icon {
+    display: flex;
+    flex: 0 0 3.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .trust-item__icon :global(picture),
+  .trust-item__icon :global(img) {
+    width: 3.5rem;
+    height: 3.5rem;
+    object-fit: contain;
+  }
+
+  .trust-item__copy {
+    min-width: 0;
+  }
+
+  .trust-item h3 {
+    margin: 0 0 0.15rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .trust-item p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+</style>

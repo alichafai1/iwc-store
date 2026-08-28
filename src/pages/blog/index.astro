@@ -1,0 +1,15 @@
+---
+import EditorialIndex from '../../components/editorial/EditorialIndex.astro';
+import { getEditorialPageContent, paginateEditorial } from '../../lib/editorial';
+
+const content = getEditorialPageContent('blog');
+const listing = paginateEditorial('blog', 1);
+---
+
+<EditorialIndex
+  content={content}
+  featured={listing.featured}
+  items={listing.items}
+  page={listing.page}
+  totalPages={listing.totalPages}
+/>

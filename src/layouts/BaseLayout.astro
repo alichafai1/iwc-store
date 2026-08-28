@@ -1,0 +1,32 @@
+---
+import Footer from '../components/layout/Footer.astro';
+import Header from '../components/layout/Header.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import SeoHead from '../components/seo/SeoHead.astro';
+import { defaultJsonLd } from '../lib/seo';
+import { siteConfig } from '../lib/site';
+import '../styles/global.css';
+import type { JsonLdNode, SeoInput } from '../types/seo';
+
+interface Props extends SeoInput {
+  jsonLd?: JsonLdNode | JsonLdNode[];
+}
+
+const { jsonLd = defaultJsonLd(), ...seo } = Astro.props;
+---
+
+<!doctype html>
+<html lang={siteConfig.locale}>
+  <head>
+    <SeoHead {...seo} />
+    <JsonLd schema={jsonLd} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

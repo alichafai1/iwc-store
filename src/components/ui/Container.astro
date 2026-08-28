@@ -1,0 +1,13 @@
+---
+interface Props {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  class?: string;
+}
+
+const { size = 'lg', class: className } = Astro.props;
+const sizeClass = size === 'lg' ? 'container' : `container container--${size}`;
+---
+
+<div class:list={[sizeClass, className]}>
+  <slot />
+</div>

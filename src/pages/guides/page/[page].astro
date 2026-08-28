@@ -1,0 +1,30 @@
+---
+import type { GetStaticPaths } from 'astro';
+import EditorialIndex from '../../../components/editorial/EditorialIndex.astro';
+import { getEditorialPageContent, getEditorialPageNumbers, paginateEditorial } from '../../../lib/editorial';
+
+export const getStaticPaths = (() => {
+  return getEditorialPageNumbers('guide')
+    .filter((page) => page > 1)
+    .map((page) => ({
+      params: { page: String(page) },
+      props: { page },
+    }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: number;
+}
+
+const { page } = Astro.props;
+const content = getEditorialPageContent('guide');
+const listing = paginateEditorial('guide', page);
+---
+
+<EditorialIndex
+  content={content}
+  featured={listing.featured}
+  items={listing.items}
+  page={listing.page}
+  totalPages={listing.totalPages}
+/>

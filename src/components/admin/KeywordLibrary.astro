@@ -1,0 +1,234 @@
+---
+import { KEYWORD_UPLOAD_ANCHOR, MAX_KEYWORD_FILE_BYTES, MAX_KEYWORD_FILES } from '../../lib/admin/constants';
+import { formatAdminDate } from '../../lib/admin/dates';
+import type { KeywordBatchPreview, KeywordBatchResult } from '../../lib/admin/keyword-preview-store';
+import type { KeywordImportRecord } from '../../lib/admin/keywords';
+
+interface Props {
+  keywordCount: number;
+  imports: KeywordImportRecord[];
+  preview: KeywordBatchPreview | null;
+  importResult: KeywordBatchResult | null;
+  previewExpired?: boolean;
+}
+
+const { keywordCount, imports, preview, importResult, previewExpired = false } = Astro.props;
+
+const maxMb = Math.round(MAX_KEYWORD_FILE_BYTES / (1024 * 1024));
+const previewFiles = preview?.files ?? [];
+const validPreviewCount = previewFiles.filter((file) => !file.error && file.validRows.length > 0).length;
+const batchTotalRows = previewFiles.reduce((sum, file) => sum + file.totalRows, 0);
+const batchValidKeywords = previewFiles.reduce((sum, file) => sum + file.validRows.length, 0);
+const batchDuplicates = previewFiles.reduce((sum, file) => sum + file.estimatedDuplicates, 0);
+const failedImportFiles = importResult?.files.filter((file) => file.status === 'failed') ?? [];
+const importedThisBatch = importResult?.files.filter((file) => file.status === 'completed') ?? [];
+const uploadButtonLabel = keywordCount > 0 ? 'IMPORT MORE KEYWORDS' : 'UPLOAD KEYWORDS';
+---
+
+<section class="admin-section" id="keyword-library" aria-labelledby="keyword-library-heading">
+  <h2 class="admin-section__title" id="keyword-library-heading">Global Keyword Library</h2>
+  <p class="admin-help">
+    Shared by all future collections and products. Later GPT processing reads this library from Supabase automatically. Do not assign files to a collection or pick keywords by hand.
+  </p>
+  <p class="admin-keyword-total">
+    <strong>{keywordCount.toLocaleString()}</strong> unique keywords ready
+  </p>
+  {
+    keywordCount > 0 ? (
+      <p class="admin-flash admin-flash--success" role="status">
+        Keywords are imported and ready for AI processing.
+      </p>
+    ) : (
+      <p class="admin-flash admin-flash--error" role="status">
+        Keyword Library is empty. Upload keyword files before AI processing.
+      </p>
+    )
+  }
+  {
+    previewExpired && (
+      <p class="admin-flash admin-flash--error" role="alert">
+        That file preview expired, so nothing from those extra files was imported. Keywords already in Supabase are still ready. Use Import More Keywords only if you still need to add more files.
+      </p>
+    )
+  }
+
+  <h3 class="admin-subtitle">Import History</h3>
+  <p class="admin-help">
+    These rows are completed import records. They are not stored upload files.
+  </p>
+  {
+    imports.length === 0 ? (
+      <p class="admin-empty">No keyword import records yet.</p>
+    ) : (
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wrap">
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Status</th>
+              <th class="is-num">Total Rows</th>
+              <th class="is-num">Imported</th>
+              <th class="is-num">Duplicates</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {imports.map((row) => (
+              <tr>
+                <td>{row.file_name}</td>
+                <td>
+                  <span class={`admin-badge admin-badge--${row.status}`}>{row.status}</span>
+                </td>
+                <td class="is-num">{row.total_rows}</td>
+                <td class="is-num">{row.imported_rows}</td>
+                <td class="is-num">{row.duplicate_rows}</td>
+                <td>{formatAdminDate(row.completed_at || row.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  <h3 class="admin-subtitle" id={KEYWORD_UPLOAD_ANCHOR}>
+    {keywordCount > 0 ? 'Add more keyword files' : 'Upload Keywords'}
+  </h3>
+  <p class="admin-help">
+    {
+      keywordCount > 0
+        ? 'Optional. This only adds more CSV/XLSX files to the library that already exists in Supabase. You do not need to upload history files again before AI processing.'
+        : `Select CSV and XLSX files, up to ${MAX_KEYWORD_FILES} files and ${maxMb} MB each. This creates a preview until you confirm the import. Columns do not need to match. Metrics are optional.`
+    }
+  </p>
+  <form class="admin-scrape-form" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="intent" value="preview-keywords" />
+    <label class="admin-field">
+      <span>Choose CSV/XLSX files</span>
+      <input
+        type="file"
+        name="keyword_files"
+        accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        multiple
+        required
+      />
+    </label>
+    {
+      keywordCount > 0 && (
+        <p class="admin-help">
+          Select additional CSV and XLSX files together, up to {MAX_KEYWORD_FILES} files and {maxMb} MB each. Columns do not need to match. Metrics are optional.
+        </p>
+      )
+    }
+    <div class="admin-scrape-form__actions">
+      <button class="btn" type="submit">{uploadButtonLabel}</button>
+    </div>
+  </form>
+
+  {
+    importResult && importedThisBatch.length > 0 && (
+      <p class="admin-flash admin-flash--success" role="status">
+        Successfully imported {importedThisBatch.length} additional file{importedThisBatch.length === 1 ? '' : 's'}. The unique keyword count above comes from Supabase and stays after refresh.
+      </p>
+    )
+  }
+  {
+    importResult && failedImportFiles.length > 0 && (
+      <div class="admin-keyword-failures" role="alert">
+        <h3 class="admin-subtitle">Failed files</h3>
+        <ul class="admin-progress">
+          {failedImportFiles.map((file) => (
+            <li>
+              {file.fileName}: {file.error || 'Import failed.'}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    preview && (
+      <div class="admin-keyword-preview">
+        <h3 class="admin-subtitle">Previewed Files — not imported yet</h3>
+        <p class="admin-help">
+          These local files are only previewed in this session. They are not in the Global Keyword Library until you confirm. Existing Supabase keywords stay ready even if this preview expires.
+        </p>
+        <p class="admin-help">Files selected: {previewFiles.length}</p>
+        <dl class="admin-meta-grid">
+          <div>
+            <dt>Total files</dt>
+            <dd>{previewFiles.length.toLocaleString()}</dd>
+          </div>
+          <div>
+            <dt>Total rows</dt>
+            <dd>{batchTotalRows.toLocaleString()}</dd>
+          </div>
+          <div>
+            <dt>Total valid keywords</dt>
+            <dd>{batchValidKeywords.toLocaleString()}</dd>
+          </div>
+          <div>
+            <dt>Estimated duplicates</dt>
+            <dd>{batchDuplicates.toLocaleString()}</dd>
+          </div>
+        </dl>
+        <div class="admin-table-wrap">
+          <table class="admin-table admin-table--wrap">
+            <thead>
+              <tr>
+                <th>File name</th>
+                <th>Type</th>
+                <th class="is-num">Rows detected</th>
+                <th class="is-num">Valid keywords</th>
+                <th class="is-num">Estimated duplicates</th>
+                <th>Errors</th>
+              </tr>
+            </thead>
+            <tbody>
+              {previewFiles.map((file) => (
+                <tr>
+                  <td>{file.fileName}</td>
+                  <td>{file.fileType ? file.fileType.toUpperCase() : '—'}</td>
+                  <td class="is-num">{file.totalRows.toLocaleString()}</td>
+                  <td class="is-num">{file.validRows.length.toLocaleString()}</td>
+                  <td class="is-num">{file.estimatedDuplicates.toLocaleString()}</td>
+                  <td>{file.error || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <form class="admin-scrape-form" method="post">
+          <input type="hidden" name="intent" value="confirm-keywords" />
+          <input type="hidden" name="preview_id" value={preview.id} />
+          <div class="admin-scrape-form__actions">
+            <button class="btn" type="submit" disabled={previewFiles.length === 0}>
+              CONFIRM ADDITIONAL IMPORT
+            </button>
+            {
+              validPreviewCount === 0 && previewFiles.length > 0 && (
+                <p class="admin-help">No valid files in this batch. Confirming will record the failures and leave the library unchanged.</p>
+              )
+            }
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  <h3 class="admin-subtitle">Reset Keyword Library</h3>
+  <p class="admin-help">
+    Use this only when you want to start the keyword system from zero. Product, scrape, and AI job data will not be affected.
+  </p>
+  <form
+    class="admin-scrape-form"
+    method="post"
+    onsubmit="return confirm('This will permanently delete all keywords and keyword import history. Product data will not be affected.');"
+  >
+    <input type="hidden" name="intent" value="reset-keywords" />
+    <div class="admin-scrape-form__actions">
+      <button class="btn btn--ghost" type="submit">RESET KEYWORD LIBRARY</button>
+    </div>
+  </form>
+</section>

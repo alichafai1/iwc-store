@@ -1,0 +1,26 @@
+---
+export const prerender = false;
+
+import AdminAppLayout from '../../layouts/AdminAppLayout.astro';
+import { ADMIN_COLLECTIONS_PATH, ADMIN_PRODUCTS_PATH } from '../../lib/admin/constants';
+import { createSupabaseServerClient } from '../../lib/supabase.server';
+
+const supabase = createSupabaseServerClient(Astro);
+const [{ count: productCount }, { count: collectionCount }] = await Promise.all([
+  supabase.from('products').select('id', { count: 'exact', head: true }),
+  supabase.from('collections').select('id', { count: 'exact', head: true }),
+]);
+---
+
+<AdminAppLayout title="Dashboard" description="Admin dashboard.">
+  <section class="admin-grid admin-grid--2">
+    <a class="admin-card" href={ADMIN_PRODUCTS_PATH}>
+      <h2>Products</h2>
+      <p>{productCount ?? 0} products</p>
+    </a>
+    <a class="admin-card" href={ADMIN_COLLECTIONS_PATH}>
+      <h2>Collections</h2>
+      <p>{collectionCount ?? 0} collections</p>
+    </a>
+  </section>
+</AdminAppLayout>

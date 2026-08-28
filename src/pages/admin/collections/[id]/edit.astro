@@ -1,0 +1,116 @@
+---
+export const prerender = false;
+
+import CollectionForm from '../../../../components/admin/CollectionForm.astro';
+import AdminAppLayout from '../../../../layouts/AdminAppLayout.astro';
+import {
+  collectionOptions,
+  deleteCollectionImage,
+  getCollection,
+  getCollectionEditor,
+  parseCollectionForm,
+  saveCollection,
+} from '../../../../lib/admin/collections';
+import { COLLECTION_IMAGE_BUCKET } from '../../../../lib/admin/constants';
+import { isUuid } from '../../../../lib/admin/query';
+import { publicStorageUrl } from '../../../../lib/admin/storage';
+import { isSameOriginRequest } from '../../../../lib/admin-auth';
+import { createSupabaseServerClient } from '../../../../lib/supabase.server';
+
+const id = Astro.params.id ?? '';
+if (!isUuid(id)) {
+  return new Response('Not found', { status: 404 });
+}
+
+const supabase = createSupabaseServerClient(Astro);
+const loaded = await getCollection(supabase, id);
+if (!loaded.data) {
+  return new Response('Not found', { status: 404 });
+}
+
+let collection = loaded.data;
+const saved = Astro.url.searchParams.get('saved') === '1';
+const queryError = Astro.url.searchParams.get('error');
+let error: string | null = loaded.error ?? queryError;
+let values = undefined;
+const related = await collectionOptions(supabase);
+const editorResult = await getCollectionEditor(supabase, id);
+if (editorResult.error) {
+  error = error ?? editorResult.error;
+}
+let editor = editorResult.data;
+
+if (Astro.request.method === 'POST') {
+  if (!isSameOriginRequest(Astro.request)) {
+    error = 'This request could not be verified.';
+  } else {
+    const form = await Astro.request.formData();
+    const intent = String(form.get('intent') ?? '');
+
+    if (intent === 'delete_image') {
+      const deleteError = await deleteCollectionImage(supabase, collection);
+      if (deleteError) {
+        error = deleteError;
+      } else {
+        return Astro.redirect(`/admin/collections/${id}/edit/?saved=1`);
+      }
+    } else {
+      const parsed = parseCollectionForm(form);
+      if ('error' in parsed) {
+        error = parsed.error;
+      } else {
+        const image = form.get('image');
+        const result = await saveCollection(supabase, parsed, {
+          id,
+          current: collection,
+          imageFile: image instanceof File ? image : null,
+        });
+
+        if (result.error) {
+          error = result.error;
+          values = parsed;
+        } else {
+          return Astro.redirect(`/admin/collections/${id}/edit/?saved=1`);
+        }
+      }
+    }
+  }
+}
+
+const refreshed = await getCollection(supabase, id);
+if (refreshed.data) {
+  collection = refreshed.data;
+}
+const refreshedEditor = await getCollectionEditor(supabase, id);
+if (refreshedEditor.data) {
+  editor = refreshedEditor.data;
+}
+if (refreshedEditor.error) {
+  error = error ?? refreshedEditor.error;
+}
+---
+
+<AdminAppLayout title="Edit collection" description="Edit a collection.">
+  {
+    saved && !error && (
+      <p class="admin-flash admin-flash--success" role="status">
+        Collection saved.
+      </p>
+    )
+  }
+  <form
+    id="admin-delete-image"
+    method="post"
+    data-confirm="Delete this collection image from storage? This cannot be undone."
+  >
+    <input type="hidden" name="intent" value="delete_image" />
+  </form>
+  <CollectionForm
+    collection={collection}
+    imageUrl={publicStorageUrl(COLLECTION_IMAGE_BUCKET, collection.image_path)}
+    error={error}
+    values={values}
+    editor={editor}
+    relatedOptions={related.data}
+  />
+</AdminAppLayout>

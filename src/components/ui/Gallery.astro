@@ -1,0 +1,60 @@
+---
+import { Image } from 'astro:assets';
+import type { MediaItem } from '../../types/media';
+
+interface Props {
+  items: MediaItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="gallery">
+  {
+    items.map((item) => (
+      <li>
+        <div class="media gallery__media">
+          <Image
+            src={item.image}
+            alt={item.alt}
+            width={800}
+            height={1000}
+            sizes="(min-width: 64em) 25vw, 70vw"
+            loading="lazy"
+          />
+        </div>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .gallery {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(14rem, 70vw);
+    gap: var(--space-3);
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gallery li {
+    scroll-snap-align: start;
+  }
+
+  .gallery__media {
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--color-border);
+  }
+
+  @media (min-width: 64em) {
+    .gallery {
+      grid-auto-flow: row;
+      grid-auto-columns: unset;
+      grid-template-columns: repeat(4, 1fr);
+      overflow: visible;
+    }
+  }
+</style>

@@ -1,0 +1,29 @@
+---
+import type { ContentStatus } from '../../lib/admin/constants';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  status?: ContentStatus | null;
+}
+
+const { status } = Astro.props;
+---
+
+<div class="admin-publish">
+  {
+    status && (
+      <p class="admin-help">
+        Current status: <StatusBadge status={status} />
+      </p>
+    )
+  }
+  <input type="hidden" name="intent" value={status ?? 'draft'} data-save-intent-field />
+  <button class="btn btn--ghost" type="submit" data-save-intent="draft">Save Draft</button>
+  <button class="btn btn--ghost" type="submit" data-save-intent="review">Send to Review</button>
+  <button class="btn" type="submit" data-save-intent="published">Publish</button>
+  <button class="btn btn--ghost" type="submit" data-save-intent="archived">Archive</button>
+  <p class="admin-help">
+    Publishing saves the product in Supabase. The public catalog is statically generated, so the homepage updates
+    after the next production rebuild.
+  </p>
+</div>

@@ -1,0 +1,147 @@
+---
+import type { ImageMetadata } from 'astro';
+import CollectionCard from '../ui/CollectionCard.astro';
+
+interface CollectionSlide {
+  name: string;
+  href: string;
+  image: ImageMetadata | string;
+  imageAlt?: string;
+}
+
+interface Props {
+  collections: CollectionSlide[];
+}
+
+const { collections } = Astro.props;
+---
+
+<div class="collection-carousel">
+  <button
+    class="collection-carousel__control collection-carousel__control--prev"
+    type="button"
+    data-collection-scroll="-1"
+    aria-label="Previous collections"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+      <path d="M15 5 8 12l7 7"></path>
+    </svg>
+  </button>
+
+  <ul class="collection-carousel__track" data-collection-track>
+    {
+      collections.map((collection) => (
+        <li class="collection-carousel__item">
+          <CollectionCard name={collection.name} href={collection.href} image={collection.image} imageAlt={collection.imageAlt} />
+        </li>
+      ))
+    }
+  </ul>
+
+  <button
+    class="collection-carousel__control collection-carousel__control--next"
+    type="button"
+    data-collection-scroll="1"
+    aria-label="Next collections"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+      <path d="m9 5 7 7-7 7"></path>
+    </svg>
+  </button>
+</div>
+
+<script is:inline>
+  (() => {
+    document.querySelectorAll('.collection-carousel').forEach((carousel) => {
+      const track = carousel.querySelector('[data-collection-track]');
+      if (!track) return;
+
+      const scrollByCard = (direction) => {
+        const item = track.querySelector('.collection-carousel__item');
+        if (!item) return;
+        const gap = Number.parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
+        track.scrollBy({ left: direction * (item.getBoundingClientRect().width + gap), behavior: 'smooth' });
+      };
+
+      carousel.querySelectorAll('[data-collection-scroll]').forEach((button) => {
+        button.addEventListener('click', () => {
+          scrollByCard(Number(button.getAttribute('data-collection-scroll')));
+        });
+      });
+    });
+  })();
+</script>
+
+<style>
+  .collection-carousel {
+    --collection-gap: var(--space-5);
+    --collection-visible: 2;
+    position: relative;
+  }
+
+  .collection-carousel__track {
+    display: flex;
+    gap: var(--collection-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .collection-carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .collection-carousel__item {
+    flex: 0 0 calc((100% - (var(--collection-visible) - 1) * var(--collection-gap)) / var(--collection-visible));
+    min-width: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .collection-carousel__control {
+    display: none;
+    position: absolute;
+    top: calc((100% - 2.75rem) / 2 - 1.25rem);
+    z-index: 2;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .collection-carousel__control--prev {
+    left: -0.6rem;
+  }
+
+  .collection-carousel__control--next {
+    right: -0.6rem;
+  }
+
+  @media (min-width: 64em) {
+    .collection-carousel {
+      --collection-visible: 4;
+    }
+
+    .collection-carousel__control {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .collection-carousel__track {
+      scroll-behavior: auto;
+    }
+  }
+</style>

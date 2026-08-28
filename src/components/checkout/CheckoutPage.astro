@@ -1,0 +1,323 @@
+---
+import { Image } from 'astro:assets';
+import freeShippingIcon from '../../assets/icons/free-shipping.png';
+import returnsIcon from '../../assets/icons/returns.png';
+import secureCheckoutIcon from '../../assets/icons/secure-checkout.png';
+import { checkoutPaymentOptions, checkoutShippingOptions } from '../../data/checkout';
+import { formatMoney } from '../../lib/cart';
+import PaymentMarks from '../ui/PaymentMarks.astro';
+import CheckoutAddressFields from './CheckoutAddressFields.astro';
+
+const shipping = checkoutShippingOptions[0];
+const payment = checkoutPaymentOptions[0];
+---
+
+<div class="checkout" data-checkout>
+  <div class="checkout__container">
+    <div class="checkout__header">
+      <p class="checkout__eyebrow">Secure Checkout</p>
+      <h1>Checkout</h1>
+    </div>
+
+    <div class="checkout__skeleton" data-checkout-loading role="status">
+      <span class="visually-hidden">Loading your order</span>
+      <div class="checkout__pulse"></div>
+      <div class="checkout__pulse checkout__pulse--tall"></div>
+    </div>
+
+    <div class="checkout__empty" data-checkout-empty hidden>
+      <h2>Your cart is empty</h2>
+      <p>Add a watch to your cart and it will appear here, ready to check out.</p>
+      <a class="checkout__empty-cta" href="/collections/">Continue Shopping</a>
+    </div>
+
+    <div class="checkout__layout" data-checkout-main hidden>
+      <aside class="checkout__summary" data-checkout-summary>
+        <div class="checkout__summary-card">
+          <button
+            class="checkout__summary-toggle"
+            type="button"
+            data-summary-toggle
+            aria-controls="order-summary-panel"
+            aria-expanded="false"
+          >
+            <span class="checkout__summary-toggle-label">
+              <svg class="checkout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 7h12l-1 14H7L6 7Z"></path>
+                <path d="M9 7a3 3 0 0 1 6 0"></path>
+              </svg>
+              <span data-summary-toggle-label>Show order summary</span>
+              <svg class="checkout__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </span>
+            <span class="checkout__summary-toggle-total" data-checkout-total>{formatMoney(0)}</span>
+          </button>
+
+          <div class="checkout__summary-panel" id="order-summary-panel">
+            <h2 class="checkout__summary-heading">Order summary</h2>
+            <div class="checkout__order">
+              <ul class="checkout__items" data-checkout-items></ul>
+
+              <div class="checkout__discount">
+                <label class="visually-hidden" for="discount-code">Discount code</label>
+                <input class="checkout__discount-input" id="discount-code" data-discount-input placeholder="Discount code" />
+                <button class="checkout__discount-apply" type="button" data-discount-apply disabled>Apply</button>
+                <p class="checkout__discount-error" data-discount-error hidden></p>
+              </div>
+
+              <dl class="checkout__totals">
+                <div>
+                  <dt>Subtotal</dt>
+                  <dd data-checkout-subtotal>{formatMoney(0)}</dd>
+                </div>
+                <div>
+                  <dt>Shipping</dt>
+                  <dd data-checkout-shipping>Free</dd>
+                </div>
+                <div class="checkout__total">
+                  <dt>Total</dt>
+                  <dd>
+                    <span class="checkout__currency">USD</span>
+                    <span class="checkout__total-value" data-checkout-total>{formatMoney(0)}</span>
+                  </dd>
+                </div>
+              </dl>
+
+              <p class="checkout__savings" data-checkout-savings hidden></p>
+
+              <div class="checkout__assurances">
+                <ul class="checkout__assurance-list">
+                  <li>
+                    <span class="checkout__assurance-icon">
+                      <Image src={freeShippingIcon} alt="Free shipping" width={36} height={36} densities={[2]} loading="lazy" />
+                    </span>
+                    <span>
+                      <span class="checkout__assurance-title">Free Shipping</span>
+                      <span class="checkout__assurance-text">Free shipping worldwide. Delivery times vary by destination.</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span class="checkout__assurance-icon">
+                      <Image src={returnsIcon} alt="14-day returns" width={36} height={36} densities={[2]} loading="lazy" />
+                    </span>
+                    <span>
+                      <span class="checkout__assurance-title">14-Day Returns</span>
+                      <span class="checkout__assurance-text">Return requests accepted within 14 days of delivery.</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span class="checkout__assurance-icon">
+                      <Image src={secureCheckoutIcon} alt="Secure checkout" width={36} height={36} densities={[2]} loading="lazy" />
+                    </span>
+                    <span>
+                      <span class="checkout__assurance-title">Secure checkout powered by Stripe</span>
+                      <span class="checkout__assurance-text">Payments are processed securely</span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <form class="checkout__form" data-checkout-form novalidate>
+        <section class="checkout__card">
+          <div class="checkout__card-head">
+            <h2>Contact</h2>
+            <a class="checkout__card-action" href="/collections/">Continue shopping</a>
+          </div>
+          <p class="checkout__card-copy">We'll send your order confirmation and tracking details here.</p>
+          <div class="checkout__card-body">
+            <div class="checkout__fields">
+              <div class="checkout__field">
+                <label for="checkout-email">Email address</label>
+                <input
+                  class="checkout__control"
+                  id="checkout-email"
+                  name="email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  placeholder="you@example.com"
+                  data-checkout-input
+                />
+                <p class="checkout__error" id="checkout-email-error" hidden></p>
+              </div>
+              <label class="checkout__check">
+                <input type="checkbox" name="emailOffers" data-checkout-input />
+                <span>Email me with news and exclusive offers</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="checkout__card">
+          <div class="checkout__card-head">
+            <h2>Delivery</h2>
+          </div>
+          <p class="checkout__card-copy">Enter the address where the watch should arrive.</p>
+          <div class="checkout__card-body">
+            <div class="checkout__fields">
+              <CheckoutAddressFields prefix="shipping" />
+              <div class="checkout__field">
+                <label for="shipping-phone">Phone</label>
+                <input
+                  class="checkout__control"
+                  id="shipping-phone"
+                  name="phone"
+                  type="tel"
+                  inputmode="tel"
+                  autocomplete="tel"
+                  placeholder="For delivery updates"
+                  data-checkout-input
+                />
+                <p class="checkout__error" id="shipping-phone-error" hidden></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="checkout__card">
+          <div class="checkout__card-head">
+            <h2>Shipping method</h2>
+          </div>
+          <div class="checkout__card-body">
+            <div class="checkout__choices">
+              {
+                shipping ? (
+                  <label class="checkout__choice is-checked">
+                    <span class="checkout__choice-row">
+                      <input class="checkout__radio" type="radio" name="shippingOptionId" id={`shipping-option-${shipping.id}`} value={shipping.id} checked data-checkout-input />
+                      <span class="checkout__radio-ui" aria-hidden="true"><span class="checkout__radio-dot"></span></span>
+                      <span class="checkout__choice-copy">
+                        <span class="checkout__choice-label">{shipping.label}</span>
+                        <span class="checkout__choice-desc">{shipping.description}</span>
+                      </span>
+                      <span class="checkout__choice-trailing">
+                        {shipping.badge ? <span class="checkout__badge">{shipping.badge}</span> : <span class="checkout__price">{formatMoney(shipping.price)}</span>}
+                      </span>
+                    </span>
+                  </label>
+                ) : null
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="checkout__card">
+          <div class="checkout__card-head">
+            <h2>Payment method</h2>
+          </div>
+          <p class="checkout__card-copy">All transactions are secure and encrypted.</p>
+          <div class="checkout__card-body">
+            <div class="checkout__choices">
+              {
+                payment ? (
+                  <label class="checkout__choice is-checked">
+                    <span class="checkout__choice-row">
+                      <input class="checkout__radio" type="radio" name="paymentOptionId" id={`payment-option-${payment.id}`} value={payment.id} checked data-checkout-input />
+                      <span class="checkout__radio-ui" aria-hidden="true"><span class="checkout__radio-dot"></span></span>
+                      <span class="checkout__choice-copy">
+                        <span class="checkout__choice-label">{payment.label}</span>
+                      </span>
+                      <span class="checkout__choice-trailing checkout__pay-icons--desktop">
+                        <PaymentMarks compact />
+                      </span>
+                    </span>
+                    <span class="checkout__choice-footer">
+                      <PaymentMarks compact />
+                    </span>
+                  </label>
+                ) : null
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="checkout__card">
+          <div class="checkout__card-head">
+            <h2>Billing address</h2>
+          </div>
+          <div class="checkout__card-body">
+            <div class="checkout__choices">
+              <label class="checkout__choice is-checked" data-billing-choice="same">
+                <span class="checkout__choice-row">
+                  <input class="checkout__radio" type="radio" name="billingSameAsShipping" id="billing-same" value="same" checked data-checkout-input />
+                  <span class="checkout__radio-ui" aria-hidden="true"><span class="checkout__radio-dot"></span></span>
+                  <span class="checkout__choice-copy">
+                    <span class="checkout__choice-label">Same as shipping address</span>
+                  </span>
+                </span>
+              </label>
+              <label class="checkout__choice" data-billing-choice="different">
+                <span class="checkout__choice-row">
+                  <input class="checkout__radio" type="radio" name="billingSameAsShipping" id="billing-different" value="different" data-checkout-input />
+                  <span class="checkout__radio-ui" aria-hidden="true"><span class="checkout__radio-dot"></span></span>
+                  <span class="checkout__choice-copy">
+                    <span class="checkout__choice-label">Use a different billing address</span>
+                  </span>
+                </span>
+              </label>
+              <div class="checkout__billing-extra" data-billing-extra hidden>
+                <CheckoutAddressFields prefix="billing" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="checkout__submit-block">
+          <div class="checkout__notice" data-checkout-notice hidden role="status">
+            Your details look good. Online payment is not connected to this store yet, so the order can't be completed here.
+          </div>
+          <button class="checkout__pay" type="submit">
+            Pay Now &middot; <span data-checkout-total>{formatMoney(0)}</span>
+          </button>
+          <div class="checkout__secure">
+            <p class="checkout__secure-line">
+              <svg class="checkout__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="5" y="11" width="14" height="11" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+              </svg>
+              <span>Guaranteed safe &amp; secure checkout</span>
+            </p>
+            <PaymentMarks />
+          </div>
+          <p class="checkout__legal">
+            By placing your order you agree to our
+            <a href="/terms/">Terms of Service</a>,
+            <a href="/returns-refunds/">Refund &amp; Return Policy</a>
+            and
+            <a href="/privacy-policy/">Privacy Policy</a>.
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <template data-checkout-item-template>
+    <li class="checkout__item">
+      <span class="checkout__thumb">
+        <img alt="" width="64" height="64" />
+        <span class="checkout__qty-badge"></span>
+      </span>
+      <div class="checkout__item-body">
+        <a class="checkout__item-title" href=""></a>
+        <p class="checkout__item-quality"></p>
+        <div class="checkout__item-actions">
+          <div class="checkout__stepper">
+            <button type="button" data-qty-delta="-1">−</button>
+            <span data-item-qty></span>
+            <button type="button" data-qty-delta="1">+</button>
+          </div>
+          <button class="checkout__remove" type="button">Remove</button>
+        </div>
+      </div>
+      <div class="checkout__item-price">
+        <p data-item-line></p>
+        <p class="checkout__item-compare" data-item-compare hidden></p>
+      </div>
+    </li>
+  </template>
+</div>

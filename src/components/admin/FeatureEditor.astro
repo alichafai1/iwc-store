@@ -1,0 +1,89 @@
+---
+interface Props {
+  features?: { feature_text: string; position?: number }[];
+}
+
+const { features = [] } = Astro.props;
+const rows = features.length > 0 ? features : [{ feature_text: '', position: 0 }];
+---
+
+<div data-feature-editor>
+  <div class="admin-row-list" data-feature-list>
+    {
+      rows.map((feature, index) => (
+        <div class="admin-row" data-feature-row>
+          <label class="admin-field">
+            <span>Feature</span>
+            <input type="text" name="feature_texts" value={feature.feature_text} />
+          </label>
+          <input type="hidden" name="feature_positions" value={feature.position ?? index} />
+          <div class="admin-row__controls">
+            <button class="btn btn--ghost" type="button" data-row-up>
+              Up
+            </button>
+            <button class="btn btn--ghost" type="button" data-row-down>
+              Down
+            </button>
+            <button class="btn btn--ghost" type="button" data-row-remove>
+              Remove
+            </button>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <button class="btn btn--ghost" type="button" data-feature-add>Add feature</button>
+</div>
+
+<template id="feature-row-template">
+  <div class="admin-row" data-feature-row>
+    <label class="admin-field"><span>Feature</span><input type="text" name="feature_texts" /></label>
+    <input type="hidden" name="feature_positions" value="0" />
+    <div class="admin-row__controls">
+      <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+      <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+      <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+    </div>
+  </div>
+</template>
+
+<script>
+  const root = document.querySelector('[data-feature-editor]');
+  const list = root?.querySelector('[data-feature-list]');
+  const template = document.getElementById('feature-row-template');
+
+  root?.querySelector('[data-feature-add]')?.addEventListener('click', () => {
+    if (!(template instanceof HTMLTemplateElement)) {
+      return;
+    }
+
+    const row = template.content.firstElementChild?.cloneNode(true);
+    if (row) {
+      list?.append(row);
+    }
+  });
+
+  root?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const row = target.closest('[data-feature-row]');
+    if (!row) {
+      return;
+    }
+
+    if (target.closest('[data-row-up]')) {
+      row.previousElementSibling?.before(row);
+    }
+
+    if (target.closest('[data-row-down]')) {
+      row.nextElementSibling?.after(row);
+    }
+
+    if (target.closest('[data-row-remove]')) {
+      row.remove();
+    }
+  });
+</script>

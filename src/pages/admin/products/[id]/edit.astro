@@ -1,0 +1,113 @@
+---
+export const prerender = false;
+
+import ProductForm from '../../../../components/admin/ProductForm.astro';
+import AdminAppLayout from '../../../../layouts/AdminAppLayout.astro';
+import { collectionOptions } from '../../../../lib/admin/collections';
+import { logProductSaveDebug } from '../../../../lib/admin/debug-product-save';
+import {
+  deleteProductImage,
+  getProductEditorData,
+  parseProductForm,
+  saveProduct,
+} from '../../../../lib/admin/products';
+import { isUuid } from '../../../../lib/admin/query';
+import { isSameOriginRequest } from '../../../../lib/admin-auth';
+import { createSupabaseServerClient } from '../../../../lib/supabase.server';
+
+const id = Astro.params.id ?? '';
+if (!isUuid(id)) {
+  return new Response('Not found', { status: 404 });
+}
+
+const supabase = createSupabaseServerClient(Astro);
+const loaded = await getProductEditorData(supabase, id);
+if (!loaded.data) {
+  return new Response('Not found', { status: 404 });
+}
+
+let editor = loaded.data;
+const saved = Astro.url.searchParams.get('saved') === '1';
+const queryError = Astro.url.searchParams.get('error');
+const { data: collections, error: collectionsError } = await collectionOptions(supabase);
+let error: string | null = loaded.error ?? queryError;
+let values = undefined;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const sameOrigin = isSameOriginRequest(Astro.request);
+  const intents = form.getAll('intent').map(String);
+  const intent =
+    intents.find((value) => value === 'published' || value === 'draft' || value === 'review' || value === 'archived') ??
+    String(form.get('intent') ?? '');
+  logProductSaveDebug(form, { productId: id, sameOrigin, resolvedIntent: intent });
+
+  if (!sameOrigin) {
+    error = 'This request could not be verified.';
+    const parsed = parseProductForm(form);
+    values = 'error' in parsed ? parsed.values : parsed;
+  } else if (intent === 'delete_image' && !form.has('title')) {
+    const imageId = String(form.get('image_id') ?? '');
+    const deleteError = await deleteProductImage(supabase, id, imageId);
+    if (deleteError) {
+      error = deleteError;
+    } else {
+      return Astro.redirect(`/admin/products/${id}/edit/?saved=1`);
+    }
+  } else {
+    const parsed = parseProductForm(form);
+    if ('error' in parsed) {
+      logProductSaveDebug(form, {
+        productId: id,
+        parseError: parsed.error,
+        parsedStatus: parsed.values?.status ?? null,
+        parsedQualities: parsed.values?.qualities ?? null,
+      });
+      error = parsed.error;
+      values = parsed.values;
+    } else {
+      logProductSaveDebug(form, {
+        productId: id,
+        parsedStatus: parsed.status,
+        parsedQualities: parsed.qualities,
+      });
+      const result = await saveProduct(supabase, parsed, {
+        id,
+        current: editor.product ?? null,
+        existingImages: editor.images ?? [],
+      });
+
+      if (result.error) {
+        error = result.error;
+        values = parsed;
+      } else {
+        return Astro.redirect(`/admin/products/${id}/edit/?saved=1`);
+      }
+    }
+  }
+}
+
+const refreshed = await getProductEditorData(supabase, id);
+if (refreshed.data) {
+  editor = refreshed.data;
+}
+---
+
+<AdminAppLayout title="Edit product" description="Edit a product.">
+  {
+    saved && !error && (
+      <p class="admin-flash admin-flash--success" role="status">
+        Product saved.
+      </p>
+    )
+  }
+  <form
+    id="admin-delete-image"
+    method="post"
+    data-confirm="Delete this product image from storage? This cannot be undone."
+  >
+    <input type="hidden" name="intent" value="delete_image" />
+    <input id="admin-delete-image-id" type="hidden" name="image_id" value="" />
+  </form>
+  <ProductForm collections={collections ?? []} collectionsError={collectionsError} editor={editor} error={error} values={values} />
+</AdminAppLayout>

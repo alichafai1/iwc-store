@@ -1,0 +1,18 @@
+---
+import CheckoutPage from '../components/checkout/CheckoutPage.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/checkout.css';
+---
+
+<BaseLayout
+  title="Checkout"
+  description="Complete your order securely."
+  canonicalPath="/checkout/"
+  noindex
+>
+  <CheckoutPage />
+</BaseLayout>
+
+<script>
+  import '../scripts/checkout';
+</script>

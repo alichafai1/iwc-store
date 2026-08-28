@@ -1,0 +1,262 @@
+---
+import { Image } from 'astro:assets';
+import { paymentMarks } from '../../data/payment-marks';
+
+interface Props {
+  compact?: boolean;
+  class?: string;
+}
+
+const { compact = false, class: className } = Astro.props;
+---
+
+<ul
+  class:list={['payment-marks', compact && 'payment-marks--compact', className]}
+  aria-label={compact ? 'Accepted payment methods' : 'Payment methods'}
+>
+  {
+    paymentMarks.map((mark) => (
+      <li class={`payment-logo payment-logo--${mark.id}`}>
+        <Image
+          src={mark.image}
+          alt={mark.label}
+          width={mark.width}
+          height={mark.height}
+          densities={[2]}
+          loading="lazy"
+        />
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .payment-marks {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0.1rem 0 0;
+    padding: 0;
+    list-style: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .payment-logo {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 1.85rem;
+  }
+
+  .payment-logo :global(picture) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    max-width: 100%;
+  }
+
+  .payment-logo :global(img) {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .payment-logo--paypal :global(img) {
+    max-width: 4.15rem;
+    max-height: 1rem;
+  }
+
+  .payment-logo--apple-pay :global(img) {
+    width: auto;
+    height: 1.15rem;
+    max-width: 2.85rem;
+    max-height: 1.15rem;
+  }
+
+  .payment-logo--google-pay :global(img) {
+    max-width: 3.5rem;
+    max-height: 1.15rem;
+  }
+
+  @media (max-width: 29.99em) {
+    .payment-marks:not(.payment-marks--compact) {
+      gap: clamp(0.28rem, 1.8vw, 0.45rem);
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo {
+      height: 1.45rem;
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo--visa :global(img) {
+      max-width: 1.65rem;
+      max-height: 1rem;
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo--mastercard :global(img) {
+      max-width: 1.7rem;
+      max-height: 1rem;
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo--amex :global(img) {
+      max-width: 1.65rem;
+      max-height: 1rem;
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo--paypal :global(img) {
+      max-width: 2.85rem;
+      max-height: 0.7rem;
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo--apple-pay :global(img) {
+      width: auto;
+      height: 0.85rem;
+      max-width: 2.2rem;
+      max-height: 0.85rem;
+    }
+
+    .payment-marks:not(.payment-marks--compact) .payment-logo--google-pay :global(img) {
+      max-width: 2.35rem;
+      max-height: 0.85rem;
+    }
+  }
+
+  @media (min-width: 40em) {
+    .payment-marks {
+      gap: 0.75rem;
+    }
+
+    .payment-logo {
+      height: 2.25rem;
+    }
+
+    .payment-logo--visa :global(img) {
+      max-width: 2.7rem;
+      max-height: 1.65rem;
+    }
+
+    .payment-logo--mastercard :global(img) {
+      max-width: 2.8rem;
+      max-height: 1.65rem;
+    }
+
+    .payment-logo--amex :global(img) {
+      max-width: 2.75rem;
+      max-height: 1.65rem;
+    }
+
+    .payment-logo--paypal :global(img) {
+      max-width: 5.4rem;
+      max-height: 1.25rem;
+    }
+
+    .payment-logo--apple-pay :global(img) {
+      width: auto;
+      height: 1.45rem;
+      max-width: 3.55rem;
+      max-height: 1.45rem;
+    }
+
+    .payment-logo--google-pay :global(img) {
+      max-width: 4.4rem;
+      max-height: 1.45rem;
+    }
+  }
+
+  .payment-marks--compact {
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(0.45rem, 2.2vw, 0.65rem);
+    margin: 0;
+  }
+
+  .payment-marks--compact .payment-logo {
+    width: auto;
+    height: auto;
+  }
+
+  .payment-marks--compact .payment-logo :global(img) {
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .payment-marks--compact .payment-logo--visa :global(img) {
+    max-width: clamp(1.5rem, 6.4vw, 2.05rem);
+    max-height: clamp(0.88rem, 3.4vw, 1.15rem);
+  }
+
+  .payment-marks--compact .payment-logo--mastercard :global(img) {
+    max-width: clamp(1.55rem, 6.6vw, 2.1rem);
+    max-height: clamp(0.88rem, 3.4vw, 1.15rem);
+  }
+
+  .payment-marks--compact .payment-logo--amex :global(img) {
+    max-width: clamp(1.5rem, 6.4vw, 2.05rem);
+    max-height: clamp(0.88rem, 3.4vw, 1.15rem);
+  }
+
+  .payment-marks--compact .payment-logo--paypal :global(img) {
+    max-width: clamp(2.35rem, 9vw, 3.05rem);
+    max-height: clamp(0.58rem, 2.4vw, 0.78rem);
+  }
+
+  .payment-marks--compact .payment-logo--apple-pay :global(img) {
+    width: auto;
+    height: clamp(0.78rem, 3.2vw, 0.95rem);
+    max-width: clamp(2.05rem, 8.4vw, 2.55rem);
+    max-height: clamp(0.78rem, 3.2vw, 0.95rem);
+  }
+
+  .payment-marks--compact .payment-logo--google-pay :global(img) {
+    max-width: clamp(2.15rem, 8.6vw, 2.7rem);
+    max-height: clamp(0.72rem, 3vw, 0.92rem);
+  }
+
+  @media (max-width: 29.99em) {
+    .payment-marks--compact {
+      gap: 0.45rem;
+    }
+
+    .payment-marks--compact .payment-logo--visa :global(img) {
+      max-width: 1.55rem;
+      max-height: 1.05rem;
+    }
+
+    .payment-marks--compact .payment-logo--mastercard :global(img) {
+      max-width: 1.65rem;
+      max-height: 1.05rem;
+    }
+
+    .payment-marks--compact .payment-logo--amex :global(img) {
+      max-width: 1.55rem;
+      max-height: 1.05rem;
+    }
+
+    .payment-marks--compact .payment-logo--paypal :global(img) {
+      max-width: 2.6rem;
+      max-height: 0.66rem;
+    }
+
+    .payment-marks--compact .payment-logo--apple-pay :global(img) {
+      width: auto;
+      height: 0.92rem;
+      max-width: 2.35rem;
+      max-height: 0.92rem;
+    }
+
+    .payment-marks--compact .payment-logo--google-pay :global(img) {
+      max-width: 2.3rem;
+      max-height: 0.82rem;
+    }
+  }
+</style>

@@ -1,0 +1,34 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+**/logs/
+
+
+# environment variables
+.env
+.env.local
+.env.production
+.env*.local
+.env.keys
+
+# Cursor local MCP config (may include project refs)
+.cursor/mcp.json
+
+# Vercel
+.vercel/
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/

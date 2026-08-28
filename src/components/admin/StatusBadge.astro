@@ -1,0 +1,11 @@
+---
+import type { ContentStatus } from '../../lib/admin/constants';
+
+interface Props {
+  status: ContentStatus | string;
+}
+
+const { status } = Astro.props;
+---
+
+<span class={`admin-badge admin-badge--${status}`}>{status}</span>

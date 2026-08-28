@@ -1,0 +1,253 @@
+---
+import type { CollectionInput, CollectionOption, CollectionRecord, CollectionSeoEditor } from '../../lib/admin/collections';
+import { siteConfig } from '../../lib/site';
+import CollectionComparisonEditor from './CollectionComparisonEditor.astro';
+import FAQEditor from './FAQEditor.astro';
+import FeatureEditor from './FeatureEditor.astro';
+import FormSection from './FormSection.astro';
+import ImageUploader from './ImageUploader.astro';
+import InternalLinkEditor from './InternalLinkEditor.astro';
+import RelatedCollectionEditor from './RelatedCollectionEditor.astro';
+
+interface Props {
+  collection?: CollectionRecord | null;
+  imageUrl?: string | null;
+  error?: string | null;
+  values?: CollectionInput;
+  editor?: CollectionSeoEditor | null;
+  relatedOptions?: CollectionOption[];
+}
+
+const { collection, imageUrl = null, error = null, values, editor = null, relatedOptions = [] } = Astro.props;
+const name = values?.name ?? collection?.name ?? '';
+const slug = values?.slug ?? collection?.slug ?? '';
+const description = values?.description ?? collection?.description ?? '';
+const seoIntro = values?.seo_intro ?? collection?.seo_intro ?? '';
+const seoContent = values?.seo_content ?? collection?.seo_content ?? '';
+const aboutContent = values?.about_content ?? collection?.about_content ?? '';
+const overviewContent = values?.overview_content ?? collection?.overview_content ?? '';
+const historyContent = values?.history_content ?? collection?.history_content ?? '';
+const modelsGuideHeading = values?.models_guide_heading ?? collection?.models_guide_heading ?? '';
+const modelsGuideContent = values?.models_guide_content ?? collection?.models_guide_content ?? '';
+const buyingGuideContent = values?.buying_guide_content ?? collection?.buying_guide_content ?? '';
+const comparisonContent = values?.comparison_content ?? collection?.comparison_content ?? '';
+const relatedIntro = values?.related_intro ?? collection?.related_intro ?? '';
+const faqHeading = values?.faq_heading ?? collection?.faq_heading ?? '';
+const whyChooseHeading = values?.why_choose_heading ?? collection?.why_choose_heading ?? '';
+const whyChooseContent = values?.why_choose_content ?? collection?.why_choose_content ?? '';
+const h1 = values?.h1 ?? collection?.h1 ?? '';
+const imageAlt = values?.image_alt ?? collection?.image_alt ?? '';
+const metaTitle = values?.meta_title ?? collection?.meta_title ?? '';
+const metaDescription = values?.meta_description ?? collection?.meta_description ?? '';
+const featured = values?.featured ?? collection?.featured ?? false;
+const status = values?.status ?? collection?.status ?? 'published';
+const features = values?.features
+  ? values.features.map((feature) => ({ feature_text: feature.featureText, position: feature.position }))
+  : (editor?.features ?? []);
+const faqs = values?.faqs ?? editor?.faqs ?? [];
+const relatedRows = (values?.relatedCollections ?? editor?.relatedCollections ?? []).map((row) => ({
+  relatedCollectionId: row.relatedCollectionId,
+  anchorText: row.anchorText ?? '',
+  context: row.context ?? '',
+}));
+const comparisonRows = (values?.comparisons ?? editor?.comparisons ?? []).map((row) => ({
+  comparedCollectionId: row.comparedCollectionId,
+  body: row.body ?? '',
+}));
+const internalLinkRows = (values?.internalLinks ?? editor?.internalLinks ?? []).map((row) => ({
+  label: row.label,
+  href: row.href,
+}));
+const popularModelSlugs = (values?.popularModelSlugs ?? editor?.popularModelSlugs ?? []).join('\n');
+const mappedKeywords = (values?.mappedKeywords ?? editor?.mappedKeywords ?? []).join('\n');
+const slugPreview = `${siteConfig.url}/collections/${slug || 'your-slug'}/`;
+const lockIdentity = Boolean(collection);
+const otherCollections = relatedOptions.filter((item) => item.id !== collection?.id);
+---
+
+{
+  error && (
+    <p class="admin-flash admin-flash--error" role="alert">
+      {error}
+    </p>
+  )
+}
+
+<form class="admin-form" method="post" enctype="multipart/form-data" data-admin-form>
+  <FormSection title="Basic Information">
+    <div class="admin-grid admin-grid--2">
+      <label class="admin-field">
+        <span>Name</span>
+        <input type="text" name="name" value={name} required readonly={lockIdentity} data-slug-source />
+      </label>
+      <label class="admin-field">
+        <span>Slug</span>
+        <input type="text" name="slug" value={slug} readonly={lockIdentity} data-slug-target />
+      </label>
+    </div>
+    <label class="admin-field">
+      <span>Description</span>
+      <textarea name="description">{description}</textarea>
+    </label>
+    <p class="admin-help">Description is a fallback for the SEO intro if that field is empty. Leave copy empty until it is written.</p>
+  </FormSection>
+
+  <FormSection title="Collection image" help="Stored in the collection-images bucket. Alt text is required when an image is present. Used on collection pages and Open Graph images.">
+    <ImageUploader mode="single" currentUrl={imageUrl} currentAlt={imageAlt} />
+  </FormSection>
+
+  <FormSection title="SEO">
+    <p class="admin-help">Page URL preview: {slugPreview}. Leave copy empty until SEO content is written. Empty sections are hidden on the storefront.</p>
+    <label class="admin-field">
+      <span>Meta title</span>
+      <input type="text" name="meta_title" value={metaTitle} />
+    </label>
+    <label class="admin-field">
+      <span>Meta description</span>
+      <textarea name="meta_description">{metaDescription}</textarea>
+    </label>
+    <label class="admin-field">
+      <span>H1</span>
+      <input type="text" name="h1" value={h1} placeholder={name || 'Collection name'} />
+    </label>
+    <label class="admin-field">
+      <span>SEO intro</span>
+      <textarea name="seo_intro">{seoIntro}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Collection overview" help="Preferred overview body. If empty, the storefront falls back to About content, then SEO content.">
+    <label class="admin-field">
+      <span>Overview</span>
+      <textarea name="overview_content" rows="8">{overviewContent}</textarea>
+    </label>
+    <label class="admin-field">
+      <span>About content (fallback)</span>
+      <textarea name="about_content">{aboutContent}</textarea>
+    </label>
+    <label class="admin-field">
+      <span>SEO content (fallback)</span>
+      <textarea name="seo_content">{seoContent}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="History / design" help="Optional. Hidden on the storefront until filled.">
+    <label class="admin-field">
+      <span>History and design</span>
+      <textarea name="history_content" rows="8">{historyContent}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Models guide" help="Optional. Hidden on the storefront until filled. Heading defaults to Models guide if left empty.">
+    <label class="admin-field">
+      <span>Models guide heading</span>
+      <input type="text" name="models_guide_heading" value={modelsGuideHeading} placeholder="Models guide" />
+    </label>
+    <label class="admin-field">
+      <span>Models guide</span>
+      <textarea name="models_guide_content" rows="10">{modelsGuideContent}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Features" help="Optional collection feature list. Leave empty until copy is ready.">
+    <FeatureEditor features={features} />
+  </FormSection>
+
+  <FormSection title="Popular models" help="Optional product slugs, one per line. The storefront shows published products as product cards.">
+    <label class="admin-field">
+      <span>Product slugs</span>
+      <textarea name="popular_model_slugs" rows="6">{popularModelSlugs}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Buying guide" help="Optional. Hidden on the storefront until filled.">
+    <label class="admin-field">
+      <span>Buying guide</span>
+      <textarea name="buying_guide_content" rows="8">{buyingGuideContent}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Collection comparison" help="Optional intro plus compared collections. Hidden until either is filled.">
+    <label class="admin-field">
+      <span>Comparison intro</span>
+      <textarea name="comparison_content" rows="6">{comparisonContent}</textarea>
+    </label>
+    <CollectionComparisonEditor options={otherCollections} rows={comparisonRows} />
+  </FormSection>
+
+  <FormSection title="Related collections" help="Optional contextual links. If none are mapped, the explore carousel still shows other model collections.">
+    <label class="admin-field">
+      <span>Related collections intro</span>
+      <textarea name="related_intro">{relatedIntro}</textarea>
+    </label>
+    <RelatedCollectionEditor options={otherCollections} rows={relatedRows} />
+  </FormSection>
+
+  <FormSection title="Why choose this collection" help="Optional. Hidden on the storefront until filled. Renders before FAQ.">
+    <label class="admin-field">
+      <span>Why choose heading</span>
+      <input type="text" name="why_choose_heading" value={whyChooseHeading} placeholder="Why choose this collection" />
+    </label>
+    <label class="admin-field">
+      <span>Why choose</span>
+      <textarea name="why_choose_content" rows="8">{whyChooseContent}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="FAQ" help="Optional collection FAQs. Leave empty until copy is ready.">
+    <label class="admin-field">
+      <span>FAQ heading</span>
+      <input type="text" name="faq_heading" value={faqHeading} placeholder="Frequently Asked Questions" />
+    </label>
+    <FAQEditor faqs={faqs} />
+  </FormSection>
+
+  <FormSection title="Keyword mapping" help="Optional. Map existing Global Keyword Library phrases, one per line. The first line is stored as primary. Unknown keywords are rejected. Not shown on the storefront.">
+    <label class="admin-field">
+      <span>Keywords</span>
+      <textarea name="mapped_keywords" rows="8">{mappedKeywords}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Internal link mapping" help="Optional site-relative paths only, such as /collections/pilots/. Hidden on the storefront until mapped.">
+    <InternalLinkEditor rows={internalLinkRows} />
+  </FormSection>
+
+  <FormSection title="Merchandising">
+    <label class="admin-check">
+      <input type="checkbox" name="featured" value="true" checked={featured} />
+      Featured
+    </label>
+  </FormSection>
+
+  <FormSection title="Publishing">
+    <input type="hidden" name="status" value={status} />
+    <p class="admin-help">These collections are predefined. Name and slug stay fixed so storefront URLs do not change.</p>
+    <button class="btn" type="submit">Save</button>
+  </FormSection>
+</form>
+
+<script>
+  const source = document.querySelector('[data-slug-source]');
+  const target = document.querySelector('[data-slug-target]');
+  let dirty = Boolean(target instanceof HTMLInputElement && target.value);
+
+  function slugify(value: string) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80);
+  }
+
+  target?.addEventListener('input', () => {
+    dirty = true;
+  });
+
+  source?.addEventListener('input', () => {
+    if (!dirty && source instanceof HTMLInputElement && target instanceof HTMLInputElement) {
+      target.value = slugify(source.value);
+    }
+  });
+</script>

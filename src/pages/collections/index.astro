@@ -1,0 +1,10 @@
+---
+export const prerender = false;
+
+import CollectionsHub from '../../components/collection/CollectionsHub.astro';
+import { getPublishedStoreCollectionCards } from '../../lib/catalog';
+
+const collections = await getPublishedStoreCollectionCards();
+---
+
+<CollectionsHub collections={collections} />

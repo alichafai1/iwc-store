@@ -1,0 +1,96 @@
+---
+import { getEditorialPagePath } from '../../lib/editorial';
+
+interface Props {
+  basePath: string;
+  page: number;
+  totalPages: number;
+}
+
+const { basePath, page, totalPages } = Astro.props;
+const previousHref = page > 1 ? getEditorialPagePath(basePath, page - 1) : undefined;
+const nextHref = page < totalPages ? getEditorialPagePath(basePath, page + 1) : undefined;
+const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+---
+
+<nav class="pagination" aria-label="Pagination">
+  {
+    previousHref ? (
+      <a href={previousHref} rel="prev">
+        Previous
+      </a>
+    ) : (
+      <span aria-disabled="true">Previous</span>
+    )
+  }
+
+  <ol>
+    {
+      pages.map((number) => {
+        const href = getEditorialPagePath(basePath, number);
+        const isCurrent = number === page;
+
+        return (
+          <li>
+            {isCurrent ? (
+              <span aria-current="page">{number}</span>
+            ) : (
+              <a href={href}>{number}</a>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+
+  {
+    nextHref ? (
+      <a href={nextHref} rel="next">
+        Next
+      </a>
+    ) : (
+      <span aria-disabled="true">Next</span>
+    )
+  }
+</nav>
+
+<style>
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .pagination ol {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    list-style: none;
+  }
+
+  .pagination a,
+  .pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    text-decoration: none;
+  }
+
+  .pagination [aria-current='page'] {
+    color: var(--color-accent-dark);
+    font-weight: 600;
+  }
+
+  .pagination [aria-disabled='true'] {
+    opacity: 0.4;
+  }
+</style>

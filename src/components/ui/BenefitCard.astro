@@ -1,0 +1,46 @@
+---
+import { featureIcons } from '../../data/feature-icons';
+import type { FeatureIconName } from '../../data/feature-icons';
+import FeatureIcon from './FeatureIcon.astro';
+
+interface Props {
+  icon: FeatureIconName;
+  title: string;
+  text: string;
+}
+
+const { icon, title, text } = Astro.props;
+---
+
+<article class="benefit-card">
+  <FeatureIcon src={featureIcons[icon]} />
+  <h3>{title}</h3>
+  <p>{text}</p>
+</article>
+
+<style>
+  .benefit-card {
+    padding: var(--space-5) 0;
+  }
+
+  .benefit-card h3 {
+    margin: var(--space-3) 0 var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .benefit-card p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  @media (min-width: 48em) {
+    .benefit-card {
+      padding: var(--space-2) var(--space-4);
+    }
+  }
+</style>

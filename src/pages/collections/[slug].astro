@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+
+import CollectionTemplate from '../../components/collection/CollectionTemplate.astro';
+import { getPublishedCollectionPage, getPublishedProductsForCollection } from '../../lib/catalog';
+import { getCollectionBySlug } from '../../lib/content';
+
+const slug = Astro.params.slug;
+const known = slug ? getCollectionBySlug(slug) : undefined;
+
+if (!known) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const page = await getPublishedCollectionPage(known.slug);
+
+if (!page) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const products = await getPublishedProductsForCollection(page.collection.slug);
+---
+
+<CollectionTemplate page={page} products={products} />

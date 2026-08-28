@@ -1,0 +1,57 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src?: ImageMetadata | string;
+  alt?: string;
+}
+
+const { src, alt = '' } = Astro.props;
+const rasterSrc = typeof src === 'string' ? src : undefined;
+const assetSrc = src && typeof src !== 'string' ? src : undefined;
+---
+
+<span class="feature-icon">
+  <span class="feature-icon__frame">
+    {
+      assetSrc && (
+        <Image src={assetSrc} alt={alt} width={80} height={80} densities={[1, 2]} loading="lazy" />
+      )
+    }
+    {
+      rasterSrc && (
+        <img src={rasterSrc} alt={alt} width="80" height="80" loading="lazy" decoding="async" />
+      )
+    }
+  </span>
+</span>
+
+<style>
+  .feature-icon {
+    display: inline-flex;
+    flex: 0 0 48px;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--color-border);
+  }
+
+  .feature-icon__frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+  }
+
+  .feature-icon :global(img) {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    object-position: center center;
+  }
+</style>

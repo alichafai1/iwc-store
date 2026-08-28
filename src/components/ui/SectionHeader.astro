@@ -1,0 +1,61 @@
+---
+interface Props {
+  eyebrow?: string;
+  title: string;
+  headingId?: string;
+  href?: string;
+  linkLabel?: string;
+}
+
+const { eyebrow, title, headingId, href, linkLabel = 'View all' } = Astro.props;
+---
+
+<header class="section-header">
+  {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+  <div class="section-header__row">
+    <h2 id={headingId}>{title}</h2>
+    {
+      href && (
+        <a class="section-header__link" href={href}>
+          {linkLabel}
+        </a>
+      )
+    }
+  </div>
+</header>
+
+<style>
+  .section-header {
+    margin-bottom: var(--space-6);
+  }
+
+  .section-header h2 {
+    margin: 0;
+    font-size: var(--font-size-xl);
+  }
+
+  .section-header__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .section-header__link {
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  @media (min-width: 64em) {
+    .section-header {
+      margin-bottom: var(--space-8);
+    }
+
+    .section-header h2 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+</style>

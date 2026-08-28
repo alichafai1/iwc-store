@@ -1,0 +1,16 @@
+---
+import type { JsonLdNode } from '../../types/seo';
+
+interface Props {
+  schema?: JsonLdNode | JsonLdNode[];
+}
+
+const { schema } = Astro.props;
+const nodes = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+---
+
+{
+  nodes.map((node) => (
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(node)} />
+  ))
+}

@@ -1,0 +1,273 @@
+---
+import { Image } from 'astro:assets';
+import type { ProductImage } from '../../types/product';
+import { isRemoteMedia } from '../../lib/media';
+import { PRODUCT_GALLERY_IMAGE, PRODUCT_GALLERY_THUMB } from '../../lib/storage-image';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
+
+interface Props {
+  images: ProductImage[];
+  productTitle: string;
+}
+
+const { images, productTitle } = Astro.props;
+const canNavigate = images.length > 1;
+---
+
+<div class="product-gallery" data-product-gallery>
+  <div class="product-gallery__stage">
+    {
+      images.length === 0 ? (
+        <div class="product-gallery__frame product-media is-active product-gallery__frame--empty">
+          <span class="product-gallery__empty" aria-hidden="true" />
+        </div>
+      ) : (
+        images.map((image, index) => (
+          <div
+            class:list={['product-gallery__frame', 'product-media', index === 0 && 'is-active']}
+            data-product-slide={index}
+          >
+            {isRemoteMedia(image.src) ? (
+              <OptimizedRemoteImage
+                src={image.src}
+                alt={image.alt}
+                widths={PRODUCT_GALLERY_IMAGE.widths}
+                sizes={PRODUCT_GALLERY_IMAGE.sizes}
+                width={PRODUCT_GALLERY_IMAGE.width}
+                height={PRODUCT_GALLERY_IMAGE.height}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchpriority={index === 0 ? 'high' : undefined}
+              />
+            ) : (
+              <Image
+                src={image.src}
+                alt={image.alt}
+                width={900}
+                height={900}
+                sizes="(min-width: 64em) 42vw, 100vw"
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            )}
+          </div>
+        ))
+      )
+    }
+
+    {
+      canNavigate && (
+        <>
+          <button class="product-gallery__arrow product-gallery__arrow--prev" type="button" data-gallery-prev aria-label="Previous image">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M15.5 4.5 8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button class="product-gallery__arrow product-gallery__arrow--next" type="button" data-gallery-next aria-label="Next image">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M8.5 4.5 16 12l-7.5 7.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </>
+      )
+    }
+  </div>
+
+  {
+    canNavigate && (
+      <div class="product-gallery__thumbs" role="tablist" aria-label={`${productTitle} images`}>
+        {images.map((image, index) => (
+          <button
+            class:list={['product-gallery__thumb', index === 0 && 'is-active']}
+            type="button"
+            data-product-thumb={index}
+            aria-label={`View image ${index + 1} of ${images.length}`}
+            aria-pressed={index === 0}
+          >
+            <span class="product-gallery__frame product-gallery__frame--thumb product-media">
+              {isRemoteMedia(image.src) ? (
+                <OptimizedRemoteImage
+                  src={image.src}
+                  alt=""
+                  widths={PRODUCT_GALLERY_THUMB.widths}
+                  sizes={PRODUCT_GALLERY_THUMB.sizes}
+                  width={PRODUCT_GALLERY_THUMB.width}
+                  height={PRODUCT_GALLERY_THUMB.height}
+                  loading="lazy"
+                />
+              ) : (
+                <Image src={image.src} alt="" width={160} height={160} sizes="72px" loading="lazy" />
+              )}
+            </span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<script is:inline>
+  (() => {
+    document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
+      const slides = [...gallery.querySelectorAll('[data-product-slide]')];
+      const thumbs = [...gallery.querySelectorAll('[data-product-thumb]')];
+      const thumbsRow = gallery.querySelector('.product-gallery__thumbs');
+      const stage = gallery.querySelector('.product-gallery__stage');
+      const prev = gallery.querySelector('[data-gallery-prev]');
+      const next = gallery.querySelector('[data-gallery-next]');
+
+      if (slides.length < 2) {
+        return;
+      }
+
+      let current = 0;
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      const show = (index) => {
+        current = (index + slides.length) % slides.length;
+
+        slides.forEach((slide, slideIndex) => {
+          slide.classList.toggle('is-active', slideIndex === current);
+        });
+
+        thumbs.forEach((thumb, thumbIndex) => {
+          const active = thumbIndex === current;
+          thumb.classList.toggle('is-active', active);
+          thumb.setAttribute('aria-pressed', String(active));
+        });
+
+        const activeThumb = thumbs[current];
+        if (activeThumb && thumbsRow) {
+          const rowBox = thumbsRow.getBoundingClientRect();
+          const thumbBox = activeThumb.getBoundingClientRect();
+          const offset = thumbBox.left - rowBox.left - (rowBox.width - thumbBox.width) / 2;
+          thumbsRow.scrollBy({ left: offset, behavior: 'smooth' });
+        }
+      };
+
+      prev?.addEventListener('click', () => show(current - 1));
+      next?.addEventListener('click', () => show(current + 1));
+
+      thumbs.forEach((thumb) => {
+        thumb.addEventListener('click', () => {
+          show(Number(thumb.getAttribute('data-product-thumb')));
+        });
+      });
+
+      stage?.addEventListener(
+        'touchstart',
+        (event) => {
+          const touch = event.changedTouches[0];
+          touchStartX = touch.clientX;
+          touchStartY = touch.clientY;
+        },
+        { passive: true },
+      );
+
+      stage?.addEventListener(
+        'touchend',
+        (event) => {
+          const touch = event.changedTouches[0];
+          const deltaX = touch.clientX - touchStartX;
+          const deltaY = touch.clientY - touchStartY;
+
+          if (Math.abs(deltaX) < 40 || Math.abs(deltaX) < Math.abs(deltaY)) {
+            return;
+          }
+
+          show(current + (deltaX < 0 ? 1 : -1));
+        },
+        { passive: true },
+      );
+    });
+  })();
+</script>
+
+<style>
+  .product-gallery {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .product-gallery__stage {
+    position: relative;
+  }
+
+  .product-gallery__frame {
+    display: none;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    border: 1px solid var(--color-border);
+  }
+
+  .product-gallery__frame.is-active,
+  .product-gallery__frame--thumb {
+    display: flex;
+  }
+
+  .product-gallery__empty {
+    width: 100%;
+    height: 100%;
+  }
+
+  .product-gallery__arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 90%);
+    color: var(--color-text);
+    box-shadow: 0 2px 10px rgb(17 17 11 / 12%);
+    cursor: pointer;
+    transform: translateY(-50%);
+  }
+
+  .product-gallery__arrow svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .product-gallery__arrow--prev {
+    left: 0.75rem;
+  }
+
+  .product-gallery__arrow--next {
+    right: 0.75rem;
+  }
+
+  .product-gallery__thumbs {
+    display: flex;
+    gap: 0.65rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.15rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .product-gallery__thumb {
+    flex: 0 0 4.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    scroll-snap-align: start;
+  }
+
+  .product-gallery__thumb.is-active .product-gallery__frame--thumb {
+    border-color: var(--color-accent);
+  }
+
+  @media (min-width: 48em) {
+    .product-gallery__thumb {
+      flex-basis: 5.25rem;
+    }
+  }
+</style>

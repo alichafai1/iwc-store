@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Container from '../ui/Container.astro';
+import type { JsonLdNode, SeoInput } from '../../types/seo';
+
+interface Props extends SeoInput {
+  heading?: string;
+  jsonLd?: JsonLdNode | JsonLdNode[];
+}
+
+const { heading, ...layout } = Astro.props;
+---
+
+<BaseLayout {...layout}>
+  <section class="page-placeholder">
+    <Container>
+      <h1>{heading ?? layout.title}</h1>
+      <slot />
+    </Container>
+  </section>
+</BaseLayout>

@@ -1,0 +1,29 @@
+{
+  "name": "product-scraper",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node --import tsx --watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "scrape": "node --import tsx src/cli.ts",
+    "repair-specs": "node --import tsx src/repair-specs.ts",
+    "test": "node --import tsx --test src/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "cheerio": "^1.1.2",
+    "playwright": "^1.55.0",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

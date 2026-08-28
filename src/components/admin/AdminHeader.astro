@@ -1,0 +1,14 @@
+---
+interface Props {
+  title: string;
+  email: string;
+}
+
+const { title, email } = Astro.props;
+---
+
+<header class="admin-header">
+  <label class="admin-menu-btn" for="admin-nav">Menu</label>
+  <h1 class="admin-header__title">{title}</h1>
+  {email && <p class="admin-header__user">{email}</p>}
+</header>

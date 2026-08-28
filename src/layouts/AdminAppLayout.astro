@@ -1,0 +1,121 @@
+---
+import AdminHeader from '../components/admin/AdminHeader.astro';
+import AdminSidebar from '../components/admin/AdminSidebar.astro';
+import SeoHead from '../components/seo/SeoHead.astro';
+import { siteConfig } from '../lib/site';
+import '../styles/global.css';
+import '../styles/admin.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Admin dashboard.' } = Astro.props;
+const adminUser = Astro.locals.adminUser;
+const pathname = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang={siteConfig.locale}>
+  <head>
+    <SeoHead title={`${title} | Admin`} description={description} noindex />
+  </head>
+  <body class="admin-app">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="admin-shell">
+      <input id="admin-nav" class="admin-nav-toggle" type="checkbox" />
+      <AdminSidebar pathname={pathname} />
+      <div class="admin-main">
+        <AdminHeader title={title} email={adminUser?.email ?? ''} />
+        <main id="main" class="admin-content">
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
+
+<script>
+  document.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const button = target.closest('button[data-save-intent], button[type="submit"][name="intent"]');
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const form = button.form;
+      if (!form?.hasAttribute('data-admin-form')) {
+        return;
+      }
+
+      const intent = button.getAttribute('data-save-intent') || (button.name === 'intent' ? button.value : '');
+      if (!intent) {
+        return;
+      }
+
+      let field = form.querySelector('input[name="intent"][data-save-intent-field], input[type="hidden"][name="intent"]');
+      if (!(field instanceof HTMLInputElement)) {
+        field = document.createElement('input');
+        field.type = 'hidden';
+        field.name = 'intent';
+        field.setAttribute('data-save-intent-field', '');
+        form.prepend(field);
+      }
+      field.value = intent;
+    },
+    true,
+  );
+
+  document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) {
+      return;
+    }
+
+    const confirmMessage = form.dataset.confirm;
+    if (confirmMessage && !window.confirm(confirmMessage)) {
+      event.preventDefault();
+      return;
+    }
+
+    if (!form.hasAttribute('data-admin-form')) {
+      return;
+    }
+
+    if (form.dataset.submitting === 'true') {
+      event.preventDefault();
+      return;
+    }
+
+    form.dataset.submitting = 'true';
+    form.querySelectorAll('button[type="submit"]').forEach((button) => {
+      if (button instanceof HTMLButtonElement) {
+        button.disabled = true;
+      }
+    });
+
+    const submitter = event.submitter;
+    if (submitter instanceof HTMLButtonElement) {
+      const intent =
+        submitter.getAttribute('data-save-intent') || (submitter.name === 'intent' ? submitter.value : '');
+      if (intent) {
+        let field = form.querySelector('input[name="intent"][data-save-intent-field], input[type="hidden"][name="intent"]');
+        if (!(field instanceof HTMLInputElement)) {
+          field = document.createElement('input');
+          field.type = 'hidden';
+          field.name = 'intent';
+          field.setAttribute('data-save-intent-field', '');
+          form.prepend(field);
+        }
+        field.value = intent;
+      }
+    }
+  });
+</script>

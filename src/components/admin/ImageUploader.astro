@@ -1,0 +1,228 @@
+---
+import { MAX_IMAGE_MB } from '../../lib/admin/constants';
+
+interface ImageRow {
+  id?: string | null;
+  previewUrl?: string | null;
+  path?: string | null;
+  alt?: string;
+  position?: number;
+  isPrimary?: boolean;
+}
+
+interface Props {
+  mode?: 'single' | 'multiple';
+  name?: string;
+  altName?: string;
+  images?: ImageRow[];
+  currentUrl?: string | null;
+  currentAlt?: string | null;
+  requiredAlt?: boolean;
+}
+
+const {
+  mode = 'multiple',
+  name = 'image',
+  altName = 'image_alt',
+  images = [],
+  currentUrl = null,
+  currentAlt = null,
+  requiredAlt = true,
+} = Astro.props;
+---
+
+{
+  mode === 'single' ? (
+    <div class="admin-grid admin-grid--2">
+      <label class="admin-field">
+        <span>Collection image</span>
+        <input type="file" name={name} accept="image/jpeg,image/png,image/webp,image/avif,image/gif" />
+      </label>
+      <label class="admin-field">
+        <span>Image alt text</span>
+        <input type="text" name={altName} value={currentAlt ?? ''} required={requiredAlt && Boolean(currentUrl)} />
+      </label>
+      {currentUrl && (
+        <div class="admin-field">
+          <span>Current image</span>
+          <img class="admin-image-preview" src={currentUrl} alt={currentAlt || ''} />
+          <button class="btn btn--ghost" type="submit" form="admin-delete-image">
+            Delete image
+          </button>
+        </div>
+      )}
+    </div>
+  ) : (
+    <div data-image-uploader>
+      <p class="admin-help">Upload JPEG, PNG, WebP, AVIF, or GIF files up to {MAX_IMAGE_MB}MB. Alt text is required.</p>
+      <div class="admin-row-list" data-image-list>
+        {images.map((image, index) => (
+          <div class="admin-row admin-row--image" data-image-row>
+            {image.previewUrl ? (
+              <img class="admin-image-preview" src={image.previewUrl} alt="" />
+            ) : (
+              <div class="admin-thumb admin-thumb--empty">No preview</div>
+            )}
+            <div class="admin-grid">
+              <input type="hidden" name="image_ids" value={image.id ?? ''} />
+              <input type="hidden" name="image_paths" value={image.path ?? ''} />
+              <input type="file" name={`image_file_${index}`} accept="image/jpeg,image/png,image/webp,image/avif,image/gif" hidden data-image-file />
+              <label class="admin-field">
+                <span>Alt text</span>
+                <input type="text" name="image_alts" value={image.alt ?? ''} required />
+              </label>
+              <label class="admin-field">
+                <span>Position</span>
+                <input type="number" name="image_positions" min="0" step="1" value={image.position ?? index} />
+              </label>
+              <div class="admin-row__controls">
+                <label class="admin-check">
+                  <input type="radio" name="primary_image" value={String(index)} checked={image.isPrimary} />
+                  Primary image
+                </label>
+                <button class="btn btn--ghost" type="button" data-image-up>
+                  Up
+                </button>
+                <button class="btn btn--ghost" type="button" data-image-down>
+                  Down
+                </button>
+                <button
+                  class="btn btn--ghost"
+                  type="button"
+                  data-image-delete
+                  data-image-id={image.id ?? ''}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <label class="admin-field">
+        <span>Add images</span>
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" multiple data-image-add />
+      </label>
+    </div>
+  )
+}
+
+{
+  mode === 'multiple' && (
+    <script>
+      const root = document.querySelector('[data-image-uploader]');
+      const list = root?.querySelector('[data-image-list]');
+      const addInput = root?.querySelector('[data-image-add]');
+
+      function reindex() {
+        list?.querySelectorAll('[data-image-row]').forEach((row, index) => {
+          const fileInput = row.querySelector('[data-image-file]');
+          const primary = row.querySelector('input[name="primary_image"]');
+          const position = row.querySelector('input[name="image_positions"]');
+          if (fileInput instanceof HTMLInputElement) {
+            fileInput.name = `image_file_${index}`;
+          }
+          if (primary instanceof HTMLInputElement) {
+            primary.value = String(index);
+          }
+          if (position instanceof HTMLInputElement && position.value === '') {
+            position.value = String(index);
+          }
+        });
+      }
+
+      function createRow(file?: File) {
+        const row = document.createElement('div');
+        row.className = 'admin-row admin-row--image';
+        row.dataset.imageRow = '';
+        row.innerHTML = `
+          <img class="admin-image-preview" alt="" />
+          <div class="admin-grid">
+            <input type="hidden" name="image_ids" value="" />
+            <input type="hidden" name="image_paths" value="" />
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" hidden data-image-file />
+            <label class="admin-field"><span>Alt text</span><input type="text" name="image_alts" required /></label>
+            <label class="admin-field"><span>Position</span><input type="number" name="image_positions" min="0" step="1" /></label>
+            <div class="admin-row__controls">
+              <label class="admin-check"><input type="radio" name="primary_image" /> Primary image</label>
+              <button class="btn btn--ghost" type="button" data-image-up>Up</button>
+              <button class="btn btn--ghost" type="button" data-image-down>Down</button>
+              <button class="btn btn--ghost" type="button" data-image-delete>Delete</button>
+            </div>
+          </div>
+        `;
+
+        const preview = row.querySelector('img');
+        const fileInput = row.querySelector('[data-image-file]');
+        if (file && fileInput instanceof HTMLInputElement && preview instanceof HTMLImageElement) {
+          const transfer = new DataTransfer();
+          transfer.items.add(file);
+          fileInput.files = transfer.files;
+          preview.src = URL.createObjectURL(file);
+        }
+
+        list?.append(row);
+        reindex();
+        const rows = list?.querySelectorAll('[data-image-row]');
+        if (rows?.length === 1) {
+          const primary = row.querySelector('input[name="primary_image"]');
+          if (primary instanceof HTMLInputElement) {
+            primary.checked = true;
+          }
+        }
+      }
+
+      addInput?.addEventListener('change', () => {
+        if (!(addInput instanceof HTMLInputElement) || !addInput.files) {
+          return;
+        }
+
+        Array.from(addInput.files).forEach((file) => createRow(file));
+        addInput.value = '';
+      });
+
+      root?.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+
+        const row = target.closest('[data-image-row]');
+        if (!row) {
+          return;
+        }
+
+        if (target.closest('[data-image-up]')) {
+          row.previousElementSibling?.before(row);
+          reindex();
+        }
+
+        if (target.closest('[data-image-down]')) {
+          row.nextElementSibling?.after(row);
+          reindex();
+        }
+
+        if (target.closest('[data-image-delete]')) {
+          const imageId = target.closest('[data-image-delete]')?.getAttribute('data-image-id');
+
+          if (imageId) {
+            const form = document.getElementById('admin-delete-image');
+            const input = document.getElementById('admin-delete-image-id');
+            if (form instanceof HTMLFormElement && input instanceof HTMLInputElement) {
+              input.value = imageId;
+              form.requestSubmit();
+              return;
+            }
+          }
+
+          if (!window.confirm('Remove this unsaved image?')) {
+            return;
+          }
+
+          row.remove();
+          reindex();
+        }
+      });
+    </script>
+  )
+}

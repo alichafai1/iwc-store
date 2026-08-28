@@ -1,0 +1,94 @@
+---
+import { Image } from 'astro:assets';
+import { formatDate } from '../../lib/format';
+import type { Article } from '../../types/article';
+
+interface Props {
+  article: Article;
+  linkLabel?: string;
+  showDate?: boolean;
+}
+
+const { article, linkLabel = 'Read More', showDate = false } = Astro.props;
+---
+
+<article class="article-card">
+  <a class="media article-card__media" href={article.href}>
+    <Image
+      src={article.image}
+      alt={article.imageAlt}
+      width={1200}
+      height={800}
+      sizes="(min-width: 64em) 33vw, 100vw"
+      loading="lazy"
+    />
+  </a>
+  <p class="article-card__category">{article.category}</p>
+  <h3>
+    <a href={article.href}>{article.title}</a>
+  </h3>
+  <p class="article-card__excerpt">{article.excerpt}</p>
+  {
+    showDate && article.publishedAt ? (
+      <time class="article-card__date" datetime={article.publishedAt}>
+        {formatDate(article.publishedAt)}
+      </time>
+    ) : null
+  }
+  <a class="article-card__more" href={article.href}>{linkLabel}</a>
+</article>
+
+<style>
+  .article-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+  }
+
+  .article-card__media {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    margin-bottom: var(--space-4);
+    border: 1px solid var(--color-border);
+  }
+
+  .article-card__category {
+    margin: 0 0 var(--space-2);
+    color: var(--color-accent-dark);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .article-card h3 {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+  }
+
+  .article-card h3 a {
+    text-decoration: none;
+  }
+
+  .article-card__excerpt {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .article-card__date {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  .article-card__more {
+    margin-top: auto;
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+</style>

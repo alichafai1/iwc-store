@@ -1,0 +1,163 @@
+import caring from '../assets/images/editorial/caring-for-a-timepiece.svg';
+import choosing from '../assets/images/editorial/choosing-a-collection.svg';
+import finishing from '../assets/images/editorial/notes-on-finishing.svg';
+import type { Article, EditorialKind, EditorialPageContent } from '../types/article';
+
+const DEMO_NOTE = 'Demo content for layout review only. These are not published articles.';
+
+const blogPage: EditorialPageContent = {
+  kind: 'blog',
+  title: 'Blog',
+  intro: 'Notes on collections, finishing, and how pieces are presented. Replace this intro when the publishing system is connected.',
+  metaTitle: 'Blog',
+  metaDescription: 'Editorial notes on collections, finishing, and timepieces. Placeholder blog index for layout and SEO structure.',
+  note: DEMO_NOTE,
+  linkLabel: 'Read More',
+  showDate: true,
+  basePath: '/blog',
+};
+
+const guidesPage: EditorialPageContent = {
+  kind: 'guide',
+  title: 'Guides',
+  intro: 'Short guides for choosing a collection and caring for a timepiece. Replace this intro when the publishing system is connected.',
+  metaTitle: 'Guides',
+  metaDescription: 'Guides for choosing a collection and caring for a timepiece. Placeholder guides index for layout and SEO structure.',
+  note: DEMO_NOTE,
+  linkLabel: 'Read Guide',
+  showDate: false,
+  basePath: '/guides',
+};
+
+export const editorialPages: Record<EditorialKind, EditorialPageContent> = {
+  blog: blogPage,
+  guide: guidesPage,
+};
+
+export const demoBlogPosts: Article[] = [
+  {
+    slug: 'notes-on-finishing',
+    title: 'Notes on finishing',
+    excerpt: 'Demo excerpt. What to look for in case work, dials, and bracelet construction. Replace this text when articles are published.',
+    category: 'Finishing',
+    href: '/blog/notes-on-finishing/',
+    image: finishing,
+    imageAlt: 'Demo blog image for notes on finishing',
+    kind: 'blog',
+    publishedAt: '2026-03-12',
+    featured: true,
+    demo: true,
+  },
+  {
+    slug: 'how-a-collection-is-presented',
+    title: 'How a collection is presented',
+    excerpt: 'Demo excerpt. A short note on layout, photography, and the details that help a collection read clearly.',
+    category: 'Editorial',
+    href: '/blog/how-a-collection-is-presented/',
+    image: choosing,
+    imageAlt: 'Demo blog image for collection presentation',
+    kind: 'blog',
+    publishedAt: '2026-02-18',
+    demo: true,
+  },
+  {
+    slug: 'reading-a-dial',
+    title: 'Reading a dial',
+    excerpt: 'Demo excerpt. Temporary copy for spacing and typography on the blog index. This is not a published article.',
+    category: 'Design',
+    href: '/blog/reading-a-dial/',
+    image: caring,
+    imageAlt: 'Demo blog image for reading a dial',
+    kind: 'blog',
+    publishedAt: '2026-01-22',
+    demo: true,
+  },
+  {
+    slug: 'strap-and-clasp-notes',
+    title: 'Strap and clasp notes',
+    excerpt: 'Demo excerpt. Placeholder text so the card length and Read More link can be reviewed before real posts are added.',
+    category: 'Details',
+    href: '/blog/strap-and-clasp-notes/',
+    image: finishing,
+    imageAlt: 'Demo blog image for strap and clasp notes',
+    kind: 'blog',
+    publishedAt: '2025-12-09',
+    demo: true,
+  },
+  {
+    slug: 'what-a-chronograph-is-for',
+    title: 'What a chronograph is for',
+    excerpt: 'Demo excerpt. Use this card to check the second page of pagination. Replace it with a published article later.',
+    category: 'Complications',
+    href: '/blog/what-a-chronograph-is-for/',
+    image: choosing,
+    imageAlt: 'Demo blog image for chronograph notes',
+    kind: 'blog',
+    publishedAt: '2025-11-04',
+    demo: true,
+  },
+];
+
+export const demoGuides: Article[] = [
+  {
+    slug: 'how-to-choose-a-collection',
+    title: 'How to choose a collection',
+    excerpt: 'Demo description. A short guide to matching a collection with how a watch will be worn. Replace this when guides are published.',
+    category: 'Choosing',
+    href: '/guides/how-to-choose-a-collection/',
+    image: choosing,
+    imageAlt: 'Demo guide image for choosing a collection',
+    kind: 'guide',
+    publishedAt: '2026-03-04',
+    featured: true,
+    demo: true,
+  },
+  {
+    slug: 'caring-for-a-timepiece',
+    title: 'Caring for a timepiece',
+    excerpt: 'Demo description. Simple habits that keep a watch accurate and in good condition. This is placeholder copy only.',
+    category: 'Care',
+    href: '/guides/caring-for-a-timepiece/',
+    image: caring,
+    imageAlt: 'Demo guide image for caring for a timepiece',
+    kind: 'guide',
+    publishedAt: '2026-02-11',
+    demo: true,
+  },
+  {
+    slug: 'understanding-case-sizes',
+    title: 'Understanding case sizes',
+    excerpt: 'Demo description. Temporary text for the guides grid. Replace it with a short, factual guide when content is ready.',
+    category: 'Fit',
+    href: '/guides/understanding-case-sizes/',
+    image: finishing,
+    imageAlt: 'Demo guide image for case sizes',
+    kind: 'guide',
+    publishedAt: '2026-01-16',
+    demo: true,
+  },
+  {
+    slug: 'wearing-a-watch-daily',
+    title: 'Wearing a watch daily',
+    excerpt: 'Demo description. Placeholder copy so the card layout and Read Guide link can be reviewed on desktop and mobile.',
+    category: 'Wear',
+    href: '/guides/wearing-a-watch-daily/',
+    image: choosing,
+    imageAlt: 'Demo guide image for daily wear',
+    kind: 'guide',
+    publishedAt: '2025-12-20',
+    demo: true,
+  },
+  {
+    slug: 'storage-and-travel',
+    title: 'Storage and travel',
+    excerpt: 'Demo description. Use this card to check pagination. This is not a published guide.',
+    category: 'Care',
+    href: '/guides/storage-and-travel/',
+    image: caring,
+    imageAlt: 'Demo guide image for storage and travel',
+    kind: 'guide',
+    publishedAt: '2025-11-14',
+    demo: true,
+  },
+];

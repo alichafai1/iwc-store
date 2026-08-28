@@ -1,0 +1,239 @@
+---
+import type { ProductReview } from '../../types/product';
+
+interface Props {
+  rating: number;
+  reviews: ProductReview[];
+  isPlaceholder?: boolean;
+}
+
+const { rating, reviews, isPlaceholder = true } = Astro.props;
+const stars = Math.round(rating);
+const breakdown = [5, 4, 3, 2, 1].map((value) => ({
+  value,
+  count: reviews.filter((review) => review.rating === value).length,
+}));
+const maxCount = Math.max(...breakdown.map((item) => item.count), 1);
+const ratingLabel = isPlaceholder ? `Placeholder rating ${rating} out of 5` : `Rating ${rating} out of 5`;
+const reviewCountLabel = isPlaceholder ? `${reviews.length} placeholder reviews` : `${reviews.length} reviews`;
+---
+
+<section class="section product-reviews" aria-labelledby="reviews-heading">
+  <div class="container">
+    <h2 id="reviews-heading">Customer Reviews</h2>
+    {isPlaceholder ? (
+      <p class="product-reviews__note">Placeholder reviews for layout only. These are not customer statements.</p>
+    ) : null}
+
+    <div class="product-reviews__summary">
+      <div>
+        <p class="product-reviews__score" aria-label={ratingLabel}>
+          <span class="product-reviews__score-stars" aria-hidden="true">
+            <span>{'★'.repeat(stars)}</span>
+            {stars < 5 ? <span class="product-reviews__stars-empty">{'☆'.repeat(5 - stars)}</span> : null}
+          </span>
+          <strong>{rating.toFixed(1)}</strong>
+        </p>
+        <p>{reviewCountLabel}</p>
+      </div>
+      <ul class="product-reviews__breakdown">
+        {
+          breakdown.map((item) => (
+            <li>
+              <span>{item.value} star</span>
+              <span class="product-reviews__bar" aria-hidden="true">
+                <span style={`width: ${(item.count / maxCount) * 100}%`}></span>
+              </span>
+              <span>{item.count}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <ul class="product-reviews__list">
+      {
+        reviews.map((review) => {
+          const reviewStars = Math.round(review.rating);
+
+          return (
+            <li class="product-reviews__item">
+              <h3 class="product-reviews__title">{review.title}</h3>
+              <p class="product-reviews__meta">
+                <span class="product-reviews__stars" aria-label={`${review.rating} out of 5`}>
+                  <span aria-hidden="true">{'★'.repeat(reviewStars)}</span>
+                  {reviewStars < 5 ? <span class="product-reviews__stars-empty" aria-hidden="true">{'☆'.repeat(5 - reviewStars)}</span> : null}
+                </span>
+                <span class="product-reviews__author">{review.author}</span>
+                <time class="product-reviews__date">{review.date}</time>
+              </p>
+              <p class="product-reviews__body">{review.body}</p>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .product-reviews h2 {
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-xl);
+  }
+
+  .product-reviews__note,
+  .product-reviews__summary p {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .product-reviews__note {
+    margin-bottom: var(--space-6);
+  }
+
+  .product-reviews__summary {
+    display: grid;
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .product-reviews__score {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .product-reviews__score-stars {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-accent);
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .product-reviews__score strong {
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .product-reviews__breakdown {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    list-style: none;
+  }
+
+  .product-reviews__breakdown li {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr 1.5rem;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  .product-reviews__bar {
+    display: block;
+    height: 0.35rem;
+    overflow: hidden;
+    background: var(--color-muted);
+  }
+
+  .product-reviews__bar span {
+    display: block;
+    height: 100%;
+    background: var(--color-accent);
+  }
+
+  .product-reviews__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--color-bg);
+  }
+
+  .product-reviews__item {
+    padding: var(--space-6) 0;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  .product-reviews__item:first-child {
+    padding-top: 0;
+  }
+
+  .product-reviews__item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .product-reviews__title {
+    margin: 0 0 var(--space-2);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    line-height: var(--line-height-tight);
+  }
+
+  .product-reviews__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.65rem;
+    row-gap: 0.2rem;
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+  }
+
+  .product-reviews__stars {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-accent);
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .product-reviews__stars-empty {
+    color: #d8c9a3;
+  }
+
+  .product-reviews__author {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .product-reviews__date {
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .product-reviews__body {
+    margin: 0;
+    max-width: 42rem;
+    color: #4a4a4a;
+    font-size: var(--font-size-base);
+    font-weight: 400;
+    line-height: var(--line-height-body);
+  }
+
+  @media (min-width: 48em) {
+    .product-reviews__summary {
+      grid-template-columns: 14rem 1fr;
+      align-items: start;
+    }
+  }
+
+  @media (min-width: 64em) {
+    .product-reviews h2 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+</style>

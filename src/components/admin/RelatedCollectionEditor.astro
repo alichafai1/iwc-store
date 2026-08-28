@@ -1,0 +1,110 @@
+---
+import type { CollectionOption } from '../../lib/admin/collections';
+
+interface RelatedRow {
+  relatedCollectionId: string;
+  anchorText: string;
+  context: string;
+}
+
+interface Props {
+  options: CollectionOption[];
+  rows?: RelatedRow[];
+}
+
+const { options, rows = [] } = Astro.props;
+const items = rows.length > 0 ? rows : [{ relatedCollectionId: '', anchorText: '', context: '' }];
+---
+
+<div data-related-editor>
+  <div class="admin-row-list" data-related-list>
+    {
+      items.map((row) => (
+        <div class="admin-row" data-related-row>
+          <label class="admin-field">
+            <span>Collection</span>
+            <select name="related_collection_ids">
+              <option value="">Select collection</option>
+              {options.map((option) => (
+                <option value={option.id} selected={option.id === row.relatedCollectionId}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label class="admin-field">
+            <span>Anchor text</span>
+            <input type="text" name="related_anchor_texts" value={row.anchorText} />
+          </label>
+          <label class="admin-field">
+            <span>Context</span>
+            <textarea name="related_contexts">{row.context}</textarea>
+          </label>
+          <div class="admin-row__controls">
+            <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+            <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+            <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <button class="btn btn--ghost" type="button" data-related-add>Add related collection</button>
+</div>
+
+<template id="related-row-template">
+  <div class="admin-row" data-related-row>
+    <label class="admin-field">
+      <span>Collection</span>
+      <select name="related_collection_ids">
+        <option value="">Select collection</option>
+        {options.map((option) => (
+          <option value={option.id}>{option.name}</option>
+        ))}
+      </select>
+    </label>
+    <label class="admin-field"><span>Anchor text</span><input type="text" name="related_anchor_texts" /></label>
+    <label class="admin-field"><span>Context</span><textarea name="related_contexts"></textarea></label>
+    <div class="admin-row__controls">
+      <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+      <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+      <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+    </div>
+  </div>
+</template>
+
+<script>
+  const root = document.querySelector('[data-related-editor]');
+  const list = root?.querySelector('[data-related-list]');
+  const template = document.getElementById('related-row-template');
+
+  root?.querySelector('[data-related-add]')?.addEventListener('click', () => {
+    if (!(template instanceof HTMLTemplateElement)) {
+      return;
+    }
+    const row = template.content.firstElementChild?.cloneNode(true);
+    if (row) {
+      list?.append(row);
+    }
+  });
+
+  root?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const row = target.closest('[data-related-row]');
+    if (!row) {
+      return;
+    }
+    if (target.closest('[data-row-up]')) {
+      row.previousElementSibling?.before(row);
+    }
+    if (target.closest('[data-row-down]')) {
+      row.nextElementSibling?.after(row);
+    }
+    if (target.closest('[data-row-remove]')) {
+      row.remove();
+    }
+  });
+</script>

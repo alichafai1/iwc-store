@@ -1,0 +1,676 @@
+---
+import type { ProductQuality } from '../../types/product';
+import { DEFAULT_QUALITY } from '../../lib/qualities';
+import { transformedStorageUrl } from '../../lib/storage-image';
+import PaymentMarks from '../ui/PaymentMarks.astro';
+
+interface Props {
+  price: number;
+  compareAtPrice?: number;
+  qualities: ProductQuality[];
+  title: string;
+  slug: string;
+  imageSrc?: string;
+  imageAlt: string;
+}
+
+const { price, compareAtPrice, qualities, title, slug, imageSrc, imageAlt } = Astro.props;
+const money = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+});
+const quality =
+  qualities.find((item) => item.label === DEFAULT_QUALITY) ?? qualities[0] ?? {
+    id: DEFAULT_QUALITY,
+    label: DEFAULT_QUALITY,
+    price,
+    compareAtPrice,
+  };
+const onSale = Boolean(compareAtPrice && compareAtPrice > price);
+const savePercent = onSale && compareAtPrice ? Math.round((1 - price / compareAtPrice) * 100) : null;
+const selectedQuality = quality.label;
+const stickyThumbSrc = imageSrc
+  ? (transformedStorageUrl(imageSrc, { width: 96, height: 96 }) ?? imageSrc)
+  : undefined;
+---
+
+<div
+  class="product-purchase"
+  data-product-purchase
+  data-product-slug={slug}
+  data-product-title={title}
+  data-product-image={imageSrc}
+  data-product-image-alt={imageAlt}
+>
+  <p class="visually-hidden" data-purchase-status aria-live="polite" aria-atomic="true"></p>
+
+  <p class="product-purchase__price">
+    <strong data-price-current>{money.format(price)}</strong>
+    <s data-price-compare hidden={!compareAtPrice}>{compareAtPrice ? money.format(compareAtPrice) : ''}</s>
+    <span class="product-purchase__save" data-price-save hidden={!savePercent}>
+      {savePercent ? `Save ${savePercent}%` : ''}
+    </span>
+  </p>
+
+  <ul class="product-purchase__trust">
+    <li>Free Shipping</li>
+    <li>Easy Returns</li>
+    <li>Secure Payment</li>
+  </ul>
+
+  <div class="product-purchase__controls" data-purchase-anchor>
+    <fieldset class="product-purchase__versions">
+      <legend>Version</legend>
+      <div class="product-purchase__version-list">
+        <label>
+          <input
+            type="radio"
+            name="product-quality"
+            value={quality.label}
+            data-price={quality.price}
+            data-compare-at={quality.compareAtPrice ?? ''}
+            checked
+            tabindex="-1"
+          />
+          <span>{quality.label}</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="product-purchase__qty-block">
+      <p class="product-purchase__label" id="quantity-label">Quantity</p>
+      <div class="product-purchase__row">
+        <div class="product-purchase__stepper" data-product-qty>
+          <button type="button" data-qty-step="-1" aria-label="Decrease quantity">−</button>
+          <input type="number" name="quantity" min="1" value="1" inputmode="numeric" aria-labelledby="quantity-label" />
+          <button type="button" data-qty-step="1" aria-label="Increase quantity">+</button>
+        </div>
+        <button
+          class="product-purchase__cart"
+          type="button"
+          data-cart-action="add"
+          data-idle-label="Add to Cart"
+        >
+          Add to Cart
+        </button>
+      </div>
+    </div>
+
+    <button
+      class="product-purchase__buy"
+      type="button"
+      data-cart-action="buy"
+      data-idle-label="Buy Now"
+    >
+      Buy Now
+    </button>
+  </div>
+
+  <p class="product-purchase__express">Express checkout — skip the cart and pay securely</p>
+  <p class="product-purchase__secure">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="10" rx="1.5"></rect>
+      <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+    </svg>
+    Guaranteed safe &amp; secure checkout
+  </p>
+
+  <PaymentMarks />
+
+  <div
+    class="purchase-sticky"
+    data-purchase-sticky
+    role="region"
+    aria-label="Quick purchase"
+    aria-hidden="true"
+    inert
+  >
+    <div class="container purchase-sticky__inner">
+      <div class="purchase-sticky__product">
+        {
+          stickyThumbSrc ? (
+            <img class="purchase-sticky__thumb" src={stickyThumbSrc} alt="" width="48" height="48" loading="lazy" decoding="async" />
+          ) : null
+        }
+        <div class="purchase-sticky__meta">
+          <p class="purchase-sticky__title">{title}</p>
+          <p class="purchase-sticky__quality">
+            <span class="visually-hidden">Selected quality</span>
+            <span data-sticky-quality>{selectedQuality}</span>
+          </p>
+        </div>
+      </div>
+
+      <p class="purchase-sticky__price" data-sticky-price>{money.format(price)}</p>
+
+      <div class="purchase-sticky__qty" aria-label="Quantity">
+        <button type="button" data-sticky-qty-step="-1" aria-label="Decrease quantity">−</button>
+        <span data-sticky-qty-value>1</span>
+        <button type="button" data-sticky-qty-step="1" aria-label="Increase quantity">+</button>
+      </div>
+
+      <div class="purchase-sticky__actions">
+        <button
+          class="product-purchase__cart"
+          type="button"
+          data-cart-action="add"
+          data-idle-label="Add to Cart"
+        >
+          Add to Cart
+        </button>
+        <button
+          class="product-purchase__buy"
+          type="button"
+          data-cart-action="buy"
+          data-idle-label="Buy Now"
+        >
+          Buy Now
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/product-purchase';
+</script>
+
+<style>
+  .product-purchase {
+    display: grid;
+    gap: 1.05rem;
+  }
+
+  .product-purchase__controls {
+    display: grid;
+    gap: 1.05rem;
+  }
+
+  .product-purchase__price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 0.7rem;
+    margin: 0;
+  }
+
+  .product-purchase__price strong {
+    color: #111111;
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .product-purchase__price s {
+    color: #8a8a8a;
+    font-size: 0.95rem;
+  }
+
+  .product-purchase__price s[hidden],
+  .product-purchase__save[hidden] {
+    display: none;
+  }
+
+  .product-purchase__save {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.35rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: #c43b3b;
+    color: #ffffff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: background-color 0.15s ease;
+  }
+
+  .product-purchase__save:hover {
+    background: #a83232;
+  }
+
+  .product-purchase__trust {
+    display: grid;
+    gap: 0.72rem;
+    margin: 0;
+    list-style: none;
+  }
+
+  .product-purchase__trust li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: #111111;
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+
+  .product-purchase__trust li::before {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border: 1.25px solid var(--color-accent-dark);
+    border-radius: 50%;
+    color: var(--color-accent-dark);
+    content: "✓";
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .product-purchase__versions {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .product-purchase__versions legend,
+  .product-purchase__label {
+    margin: 0 0 0.45rem;
+    color: #8a8a8a;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .product-purchase__version-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .product-purchase__version-list label {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .product-purchase__version-list input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .product-purchase__version-list span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.65rem;
+    padding: 0.55rem 1.15rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111111;
+    font-size: 0.88rem;
+    font-weight: 400;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .product-purchase__version-list input:checked + span {
+    border-color: var(--color-accent);
+    background: #f7f1e4;
+    font-weight: 700;
+  }
+
+  .product-purchase__version-list input:focus-visible + span {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .product-purchase__qty-block {
+    display: grid;
+  }
+
+  .product-purchase__row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .product-purchase__stepper {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.85rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #ffffff;
+  }
+
+  .product-purchase__stepper button,
+  .product-purchase__stepper input {
+    height: 2.85rem;
+    border: 0;
+    background: transparent;
+    color: #111111;
+  }
+
+  .product-purchase__stepper button {
+    width: 2.15rem;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .product-purchase__stepper input {
+    width: 2rem;
+    padding: 0;
+    text-align: center;
+    appearance: textfield;
+  }
+
+  .product-purchase__stepper input::-webkit-outer-spin-button,
+  .product-purchase__stepper input::-webkit-inner-spin-button {
+    appearance: none;
+  }
+
+  .product-purchase__cart,
+  .product-purchase__buy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.85rem;
+    padding: 0 1rem;
+    border: 0;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      filter 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms ease,
+      opacity 200ms ease;
+  }
+
+  .product-purchase__cart {
+    flex: 1 1 auto;
+    background: #111111;
+    color: #ffffff;
+  }
+
+  .product-purchase__buy {
+    width: 100%;
+    background: var(--color-accent);
+    color: #ffffff;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .product-purchase__cart:hover:not(:disabled) {
+      background: var(--color-accent);
+      color: #111111;
+    }
+
+    .product-purchase__buy:hover:not(:disabled) {
+      filter: brightness(0.93);
+      box-shadow: 0 6px 14px rgb(17 17 11 / 12%);
+      transform: translateY(-1px);
+    }
+  }
+
+  .product-purchase__cart:active:not(:disabled),
+  .product-purchase__buy:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: none;
+  }
+
+  .product-purchase__buy:active:not(:disabled) {
+    filter: brightness(0.88);
+  }
+
+  .product-purchase__cart:focus-visible,
+  .product-purchase__buy:focus-visible,
+  .product-purchase__stepper button:focus-visible,
+  .purchase-sticky__qty button:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .product-purchase__cart:disabled,
+  .product-purchase__buy:disabled,
+  .product-purchase__stepper button:disabled,
+  .purchase-sticky__qty button:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+    transform: none;
+    box-shadow: none;
+    filter: none;
+  }
+
+  .product-purchase__express,
+  .product-purchase__secure {
+    margin: 0;
+    color: #8a8a8a;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  .product-purchase__secure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .product-purchase__secure svg {
+    color: var(--color-accent-dark);
+  }
+
+  .purchase-sticky {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 35;
+    background: #ffffff;
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -8px 28px rgb(17 17 11 / 6%);
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(100%);
+    transition:
+      opacity 220ms ease,
+      transform 220ms ease,
+      visibility 220ms ease;
+  }
+
+  .purchase-sticky.is-visible {
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .purchase-sticky__inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.55rem;
+    padding-top: 0.7rem;
+    padding-bottom: calc(0.7rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .purchase-sticky__product {
+    display: none;
+  }
+
+  .purchase-sticky__title,
+  .purchase-sticky__quality,
+  .purchase-sticky__price {
+    margin: 0;
+  }
+
+  .purchase-sticky__price {
+    color: #111111;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+
+  .purchase-sticky__qty {
+    display: none;
+  }
+
+  .purchase-sticky__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .purchase-sticky .product-purchase__cart,
+  .purchase-sticky .product-purchase__buy {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.55rem;
+    font-size: 0.68rem;
+  }
+
+  @media (min-width: 48em) {
+    .product-purchase__version-list {
+      flex-wrap: nowrap;
+    }
+
+    .purchase-sticky__inner {
+      display: flex;
+      gap: 1rem;
+      min-height: 4.35rem;
+      padding-top: 0.65rem;
+      padding-bottom: 0.65rem;
+    }
+
+    .purchase-sticky__product {
+      display: flex;
+      flex: 1 1 auto;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .purchase-sticky__thumb {
+      width: 2.75rem;
+      height: 2.75rem;
+      flex-shrink: 0;
+      object-fit: contain;
+      object-position: center center;
+      background: var(--product-media-bg);
+    }
+
+    .purchase-sticky__meta {
+      min-width: 0;
+    }
+
+    .purchase-sticky__title {
+      overflow: hidden;
+      color: #111111;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .purchase-sticky__quality {
+      margin-top: 0.15rem;
+      color: #8a8a8a;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+    }
+
+    .purchase-sticky__price {
+      font-size: 1.05rem;
+    }
+
+    .purchase-sticky__qty {
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      min-height: 2.5rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .purchase-sticky__qty button,
+    .purchase-sticky__qty span {
+      height: 2.5rem;
+      border: 0;
+      background: transparent;
+      color: #111111;
+    }
+
+    .purchase-sticky__qty button {
+      width: 1.9rem;
+      font-size: 0.95rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .purchase-sticky__qty span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.6rem;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .purchase-sticky__actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 0.55rem;
+    }
+
+    .purchase-sticky .product-purchase__cart,
+    .purchase-sticky .product-purchase__buy {
+      width: auto;
+      min-width: 9.5rem;
+      min-height: 2.5rem;
+      padding: 0 1rem;
+      font-size: 0.72rem;
+    }
+  }
+
+  @media (max-width: 29.99em) {
+    .product-purchase__row {
+      flex-wrap: wrap;
+    }
+
+    .product-purchase__cart {
+      flex: 1 1 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-purchase__cart,
+    .product-purchase__buy,
+    .purchase-sticky {
+      transition: none;
+    }
+
+    .product-purchase__cart:hover:not(:disabled),
+    .product-purchase__buy:hover:not(:disabled),
+    .product-purchase__cart:active:not(:disabled),
+    .product-purchase__buy:active:not(:disabled) {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .purchase-sticky {
+      transform: none;
+    }
+  }
+</style>

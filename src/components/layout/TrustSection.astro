@@ -1,0 +1,49 @@
+---
+import freeShippingIcon from '../../assets/icons/free-shipping.png';
+import returnsIcon from '../../assets/icons/returns.png';
+import secureCheckoutIcon from '../../assets/icons/secure-checkout.png';
+import Container from '../ui/Container.astro';
+import TrustItem from '../ui/TrustItem.astro';
+---
+
+<section class="trust" aria-labelledby="trust-heading">
+  <Container>
+    <h2 id="trust-heading" class="visually-hidden">Trust</h2>
+    <div class="trust-grid">
+      <TrustItem
+        icon={freeShippingIcon}
+        title="Free Shipping"
+        text="Free shipping worldwide. Delivery times vary by destination."
+      />
+      <TrustItem
+        icon={returnsIcon}
+        title="14-Day Returns"
+        text="Return requests accepted within 14 days of delivery."
+      />
+      <TrustItem
+        icon={secureCheckoutIcon}
+        title="Secure Checkout"
+        text="Payments are processed securely."
+      />
+    </div>
+  </Container>
+</section>
+
+<style>
+  .trust {
+    padding-block: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .trust-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  @media (min-width: 64em) {
+    .trust-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

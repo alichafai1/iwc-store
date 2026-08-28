@@ -1,0 +1,119 @@
+---
+export const prerender = false;
+
+import AdminAppLayout from '../../../layouts/AdminAppLayout.astro';
+import StatusBadge from '../../../components/admin/StatusBadge.astro';
+import { listCollections } from '../../../lib/admin/collections';
+import { CONTENT_STATUSES, COLLECTION_IMAGE_BUCKET } from '../../../lib/admin/constants';
+import { formatAdminDate } from '../../../lib/admin/dates';
+import { publicStorageUrl } from '../../../lib/admin/storage';
+import { createSupabaseServerClient } from '../../../lib/supabase.server';
+
+const supabase = createSupabaseServerClient(Astro);
+const flash = Astro.url.searchParams.get('saved') ? 'Collection saved.' : '';
+let error = Astro.url.searchParams.get('error') ?? '';
+
+const q = Astro.url.searchParams.get('q') ?? '';
+const status = Astro.url.searchParams.get('status') ?? 'all';
+const { data: collections, error: listError } = await listCollections(supabase, { q, status });
+if (listError) {
+  error = error || listError;
+}
+---
+
+<AdminAppLayout title="Collections" description="Manage store collections.">
+  {
+    flash && (
+      <p class="admin-flash admin-flash--success" role="status">
+        {flash}
+      </p>
+    )
+  }
+  {
+    error && (
+      <p class="admin-flash admin-flash--error" role="alert">
+        {error}
+      </p>
+    )
+  }
+
+  <form class="admin-toolbar" method="get">
+    <div class="admin-toolbar__filters">
+      <label class="admin-field">
+        <span>Search</span>
+        <input type="search" name="q" value={q} />
+      </label>
+      <label class="admin-field">
+        <span>Status</span>
+        <select name="status">
+          <option value="all" selected={status === 'all'}>All</option>
+          {
+            CONTENT_STATUSES.map((value) => (
+              <option value={value} selected={status === value}>
+                {value}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <button class="btn btn--ghost" type="submit">Filter</button>
+    </div>
+  </form>
+
+  {
+    collections.length === 0 ? (
+      <p class="admin-empty">No collections yet.</p>
+    ) : (
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>Status</th>
+              <th>Featured</th>
+              <th>Products</th>
+              <th>Updated</th>
+              <th class="admin-table__actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {collections.map((collection) => {
+              const imageUrl = publicStorageUrl(COLLECTION_IMAGE_BUCKET, collection.image_path);
+              const editHref = `/admin/collections/${collection.id}/edit/`;
+              return (
+                <tr>
+                  <td>
+                    {imageUrl ? (
+                      <img class="admin-thumb" src={imageUrl} alt={collection.image_alt || ''} />
+                    ) : (
+                      <div class="admin-thumb admin-thumb--empty">None</div>
+                    )}
+                  </td>
+                  <td>
+                    <a href={editHref}>{collection.name}</a>
+                  </td>
+                  <td>{collection.slug}</td>
+                  <td>
+                    <StatusBadge status={collection.status} />
+                  </td>
+                  <td>{collection.featured ? 'Yes' : 'No'}</td>
+                  <td>{collection.product_count}</td>
+                  <td>{formatAdminDate(collection.updated_at)}</td>
+                  <td class="admin-table__actions">
+                    <div class="admin-actions">
+                      <a class="btn btn--ghost" href={editHref}>
+                        Edit SEO / image
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</AdminAppLayout>

@@ -1,0 +1,48 @@
+---
+interface Props {
+  currentStep: 'source' | 'scrape' | 'ai' | 'review' | 'images' | 'publish';
+}
+
+const { currentStep } = Astro.props;
+
+const steps = [
+  { id: 'source', label: 'Source' },
+  { id: 'scrape', label: 'Scrape' },
+  { id: 'ai', label: 'AI Content' },
+  { id: 'review', label: 'Review' },
+  { id: 'images', label: 'Images' },
+  { id: 'publish', label: 'Publish' },
+] as const;
+
+const order = steps.map((step) => step.id);
+const currentIndex = order.indexOf(currentStep);
+---
+
+<nav class="admin-stepper" aria-label="Product publishing workflow">
+  <ol class="admin-stepper__list">
+    {
+      steps.map((step, index) => {
+        const isCurrent = step.id === currentStep;
+        const isComplete = index < currentIndex;
+        return (
+          <li
+            class:list={[
+              'admin-stepper__item',
+              {
+                'is-current': isCurrent,
+                'is-complete': isComplete,
+              },
+            ]}
+          >
+            <span class="admin-stepper__index">{index + 1}</span>
+            <span class="admin-stepper__label">{step.label}</span>
+          </li>
+        );
+      })
+    }
+  </ol>
+  <p class="admin-stepper__phase">
+    Current phase: {steps[currentIndex]?.label ?? 'Source'}
+    <span class="admin-stepper__note">Status only. Scrape and AI Content run automatically — this bar is not a set of buttons.</span>
+  </p>
+</nav>

@@ -1,0 +1,31 @@
+{
+  "name": "",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently --restart-tries 50 --restart-after 2000 --names astro,scraper,processor --prefix-colors cyan,green,magenta npm:dev:astro npm:dev:scraper npm:dev:processor",
+    "dev:astro": "astro dev",
+    "dev:scraper": "PORT=8787 npm run dev --prefix services/product-scraper",
+    "dev:processor": "PORT=8788 npm run dev --prefix services/product-processor",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test:supabase": "node scripts/test-supabase-connection.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^11.0.8",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3",
+    "astro": "^7.2.2",
+    "csv-parse": "^7.0.2",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.4",
+    "supabase": "^2.114.0"
+  }
+}

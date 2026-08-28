@@ -1,0 +1,167 @@
+---
+import { CONTENT_STATUSES } from '../../lib/admin/constants';
+import type { ProductReviewRecord } from '../../lib/admin/products';
+
+interface Props {
+  reviews?: ProductReviewRecord[];
+}
+
+const { reviews = [] } = Astro.props;
+const rows =
+  reviews.length > 0
+    ? reviews
+    : [
+        {
+          id: '',
+          product_id: '',
+          title: '',
+          rating: 5,
+          customer_name: '',
+          review_date: '',
+          review_text: '',
+          status: 'published' as const,
+          position: 0,
+          created_at: '',
+          updated_at: '',
+        },
+      ];
+---
+
+<div data-review-editor>
+  <div class="admin-row-list" data-review-list>
+    {
+      rows.map((review, index) => (
+        <div class="admin-row" data-review-row>
+          <div class="admin-grid admin-grid--2">
+            <label class="admin-field">
+              <span>Review Title</span>
+              <input type="text" name="review_titles" value={review.title} />
+            </label>
+            <label class="admin-field">
+              <span>Rating</span>
+              <select name="review_ratings">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <option value={value} selected={review.rating === value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label class="admin-field">
+              <span>Customer Name</span>
+              <input type="text" name="review_customer_names" value={review.customer_name} />
+            </label>
+            <label class="admin-field">
+              <span>Review Date</span>
+              <input type="date" name="review_dates" value={review.review_date} />
+            </label>
+            <label class="admin-field">
+              <span>Status</span>
+              <select name="review_statuses">
+                {CONTENT_STATUSES.map((status) => (
+                  <option value={status} selected={review.status === status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label class="admin-field">
+            <span>Review Text</span>
+            <textarea name="review_texts">{review.review_text}</textarea>
+          </label>
+          <input type="hidden" name="review_positions" value={review.position ?? index} />
+          <div class="admin-row__controls">
+            <button class="btn btn--ghost" type="button" data-row-up>
+              Up
+            </button>
+            <button class="btn btn--ghost" type="button" data-row-down>
+              Down
+            </button>
+            <button class="btn btn--ghost" type="button" data-row-remove>
+              Remove
+            </button>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <button class="btn btn--ghost" type="button" data-review-add>Add review</button>
+</div>
+
+<template id="review-row-template">
+  <div class="admin-row" data-review-row>
+    <div class="admin-grid admin-grid--2">
+      <label class="admin-field"><span>Review Title</span><input type="text" name="review_titles" /></label>
+      <label class="admin-field">
+        <span>Rating</span>
+        <select name="review_ratings">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+        </select>
+      </label>
+      <label class="admin-field"><span>Customer Name</span><input type="text" name="review_customer_names" /></label>
+      <label class="admin-field"><span>Review Date</span><input type="date" name="review_dates" /></label>
+      <label class="admin-field">
+        <span>Status</span>
+        <select name="review_statuses">
+          <option value="draft">draft</option>
+          <option value="review">review</option>
+          <option value="published" selected>published</option>
+          <option value="archived">archived</option>
+        </select>
+      </label>
+    </div>
+    <label class="admin-field"><span>Review Text</span><textarea name="review_texts"></textarea></label>
+    <input type="hidden" name="review_positions" value="0" />
+    <div class="admin-row__controls">
+      <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+      <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+      <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+    </div>
+  </div>
+</template>
+
+<script>
+  const root = document.querySelector('[data-review-editor]');
+  const list = root?.querySelector('[data-review-list]');
+  const template = document.getElementById('review-row-template');
+
+  root?.querySelector('[data-review-add]')?.addEventListener('click', () => {
+    if (!(template instanceof HTMLTemplateElement)) {
+      return;
+    }
+
+    const row = template.content.firstElementChild?.cloneNode(true);
+    if (row) {
+      list?.append(row);
+    }
+  });
+
+  root?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const row = target.closest('[data-review-row]');
+    if (!row) {
+      return;
+    }
+
+    if (target.closest('[data-row-up]')) {
+      row.previousElementSibling?.before(row);
+    }
+
+    if (target.closest('[data-row-down]')) {
+      row.nextElementSibling?.after(row);
+    }
+
+    if (target.closest('[data-row-remove]')) {
+      row.remove();
+    }
+  });
+</script>

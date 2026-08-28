@@ -1,0 +1,18 @@
+---
+import type { GetStaticPaths } from 'astro';
+import ArticleTemplate from '../../components/editorial/ArticleTemplate.astro';
+import { getEditorialArticlePaths } from '../../lib/editorial';
+import type { ArticlePageData } from '../../types/article';
+
+export const getStaticPaths = (() => {
+  return getEditorialArticlePaths('guide');
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: ArticlePageData;
+}
+
+const { page } = Astro.props;
+---
+
+<ArticleTemplate page={page} />

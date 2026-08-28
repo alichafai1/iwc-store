@@ -1,0 +1,322 @@
+---
+import { Image } from 'astro:assets';
+import { getPlaceholderProduct } from '../../data/products';
+import { getArticleAuthor, getRelatedArticles } from '../../lib/editorial';
+import { formatDate } from '../../lib/format';
+import { getArticleToc } from '../../lib/rich-text';
+import { articleJsonLd, breadcrumbJsonLd, defaultJsonLd, faqPageJsonLd } from '../../lib/seo';
+import type { ArticlePageData } from '../../types/article';
+import FAQSection from '../home/FAQSection.astro';
+import TrustSection from '../layout/TrustSection.astro';
+import ArticleCard from '../ui/ArticleCard.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Container from '../ui/Container.astro';
+import ProductCard from '../ui/ProductCard.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleAuthorBox from './ArticleAuthorBox.astro';
+import ArticleBody from './ArticleBody.astro';
+import ArticleInternalLinks from './ArticleInternalLinks.astro';
+import ArticleToc from './ArticleToc.astro';
+
+interface Props {
+  page: ArticlePageData;
+}
+
+const { page } = Astro.props;
+const { article, path, metaTitle, metaDescription, summary, datePublished, dateModified, blocks, recommendations, links, faqs } = page;
+const author = getArticleAuthor(page);
+const related = getRelatedArticles(page);
+const toc = getArticleToc(blocks);
+const indexLabel = article.kind === 'blog' ? 'Blog' : 'Guides';
+const indexPath = article.kind === 'blog' ? '/blog/' : '/guides/';
+const schemaType = article.kind === 'blog' ? 'BlogPosting' : 'Article';
+const recommendedProducts = (recommendations?.productSlugs ?? [])
+  .map((slug) => getPlaceholderProduct(slug))
+  .filter((product) => Boolean(product));
+const jsonLd = [
+  defaultJsonLd(),
+  articleJsonLd({
+    type: schemaType,
+    headline: article.title,
+    description: metaDescription,
+    path,
+    image: article.image.src,
+    datePublished,
+    dateModified,
+    authorName: author?.name ?? 'Editorial Team',
+    authorPath: `/authors/${page.authorSlug}/`,
+  }),
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: indexLabel, path: indexPath },
+    { name: article.title, path },
+  ]),
+  ...(faqs?.length ? [faqPageJsonLd(faqs)] : []),
+];
+---
+
+<BaseLayout
+  title={metaTitle}
+  description={metaDescription}
+  canonicalPath={path}
+  ogType="article"
+  ogImage={article.image.src}
+  twitterCard="summary_large_image"
+  jsonLd={jsonLd}
+>
+  <article class="article-page">
+    <header class="article-page__header">
+      <Container size="md">
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: indexLabel, href: indexPath },
+            { label: article.title },
+          ]}
+        />
+        <p class="article-page__category">{article.category}</p>
+        <h1>{article.title}</h1>
+        <p class="article-page__summary">{summary}</p>
+        <p class="article-page__meta">
+          {
+            author ? (
+              <a href={`/authors/${author.slug}/`}>{author.name}</a>
+            ) : (
+              <span>Editorial Team</span>
+            )
+          }
+          <time datetime={datePublished}>Published {formatDate(datePublished)}</time>
+          <time datetime={dateModified}>Updated {formatDate(dateModified)}</time>
+        </p>
+        {article.demo ? <p class="article-page__note">Demo article for layout and SEO review. This is not published content.</p> : null}
+      </Container>
+    </header>
+
+    <figure class="article-page__hero">
+      <Container size="md">
+        <div class="media article-page__hero-media">
+          <Image
+            src={article.image}
+            alt={article.imageAlt}
+            width={1600}
+            height={1000}
+            sizes="(min-width: 64em) 40rem, 100vw"
+            loading="eager"
+          />
+        </div>
+      </Container>
+    </figure>
+
+    <div class="article-page__content">
+      <Container size="md">
+        <ArticleToc items={toc} />
+        <ArticleBody blocks={blocks} />
+
+        {
+          recommendations && recommendedProducts.length > 0 && (
+            <section class="article-page__products" aria-labelledby="article-products-heading">
+              <h2 id="article-products-heading">{recommendations.heading ?? 'Recommended products'}</h2>
+              <ul>
+                {recommendedProducts.map((product) =>
+                  product ? (
+                    <li>
+                      <ProductCard product={product} />
+                      {recommendations.descriptions?.[product.slug] ? (
+                        <p>{recommendations.descriptions[product.slug]}</p>
+                      ) : null}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            </section>
+          )
+        }
+
+        <ArticleInternalLinks links={links} />
+      </Container>
+    </div>
+  </article>
+
+  {faqs?.length ? <FAQSection items={faqs} headingId="article-faq-heading" /> : null}
+
+  {
+    author && (
+      <section class="section article-page__author">
+        <Container size="md">
+          <ArticleAuthorBox author={author} />
+        </Container>
+      </section>
+    )
+  }
+
+  {
+    (related.same.length > 0 || related.other.length > 0) && (
+      <section class="section article-page__related" aria-labelledby="related-editorial-heading">
+        <Container>
+          <h2 id="related-editorial-heading" class="visually-hidden">Related reading</h2>
+          {related.same.length > 0 && (
+            <div class="article-page__related-block">
+              <SectionHeader
+                headingId="related-same-heading"
+                title={article.kind === 'blog' ? 'Related articles' : 'Related guides'}
+              />
+              <ul class="article-page__related-grid">
+                {related.same.map((item) => (
+                  <li>
+                    <ArticleCard
+                      article={item}
+                      linkLabel={item.kind === 'guide' ? 'Read Guide' : 'Read More'}
+                      showDate={item.kind === 'blog'}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {related.other.length > 0 && (
+            <div class="article-page__related-block">
+              <SectionHeader
+                headingId="related-other-heading"
+                title={article.kind === 'blog' ? 'Relevant guides' : 'Relevant articles'}
+              />
+              <ul class="article-page__related-grid">
+                {related.other.map((item) => (
+                  <li>
+                    <ArticleCard
+                      article={item}
+                      linkLabel={item.kind === 'guide' ? 'Read Guide' : 'Read More'}
+                      showDate={item.kind === 'blog'}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Container>
+      </section>
+    )
+  }
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .article-page__header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+  }
+
+  .article-page__header :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .article-page__category {
+    margin: 0 0 var(--space-3);
+    color: var(--color-accent-dark);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .article-page__header h1 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+  }
+
+  .article-page__summary,
+  .article-page__note {
+    max-width: 40rem;
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+  }
+
+  .article-page__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.85rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .article-page__meta a {
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .article-page__hero {
+    margin: 0 0 var(--space-6);
+  }
+
+  .article-page__hero-media {
+    aspect-ratio: 3 / 2;
+    border: 1px solid var(--color-border);
+  }
+
+  .article-page__content {
+    padding-bottom: var(--space-8);
+  }
+
+  .article-page__products {
+    margin-top: var(--space-8);
+  }
+
+  .article-page__products h2 {
+    margin: 0 0 var(--space-5);
+    scroll-margin-top: 6rem;
+    font-size: var(--font-size-xl);
+  }
+
+  .article-page__products ul {
+    display: grid;
+    gap: var(--space-5);
+    list-style: none;
+  }
+
+  .article-page__products li p {
+    margin: var(--space-3) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .article-page__author {
+    padding-top: 0;
+  }
+
+  .article-page__related {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .article-page__related-block + .article-page__related-block {
+    margin-top: var(--space-8);
+  }
+
+  .article-page__related-grid {
+    display: grid;
+    gap: var(--space-6) var(--space-5);
+    list-style: none;
+  }
+
+  @media (min-width: 48em) {
+    .article-page__header {
+      padding-top: var(--space-8);
+    }
+
+    .article-page__header h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .article-page__products ul,
+    .article-page__related-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .article-page__related-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

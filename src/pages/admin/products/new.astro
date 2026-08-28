@@ -1,0 +1,46 @@
+---
+export const prerender = false;
+
+import ProductForm from '../../../components/admin/ProductForm.astro';
+import AdminAppLayout from '../../../layouts/AdminAppLayout.astro';
+import { collectionOptions } from '../../../lib/admin/collections';
+import { parseProductForm, saveProduct } from '../../../lib/admin/products';
+import { isSameOriginRequest } from '../../../lib/admin-auth';
+import { createSupabaseServerClient } from '../../../lib/supabase.server';
+
+const supabase = createSupabaseServerClient(Astro);
+const { data: collections, error: collectionsError } = await collectionOptions(supabase);
+let error: string | null = null;
+let values = undefined;
+
+if (Astro.request.method === 'POST') {
+  if (!isSameOriginRequest(Astro.request)) {
+    error = 'This request could not be verified.';
+  } else {
+    const form = await Astro.request.formData();
+    const parsed = parseProductForm(form);
+    if ('error' in parsed) {
+      error = parsed.error;
+      values = parsed.values;
+    } else {
+      const result = await saveProduct(supabase, parsed, {});
+      if (result.id && result.error) {
+        return Astro.redirect(
+          `/admin/products/${result.id}/edit/?error=${encodeURIComponent(result.error)}`,
+        );
+      }
+
+      if (result.error || !result.id) {
+        error = result.error ?? 'Could not create the product.';
+        values = parsed;
+      } else {
+        return Astro.redirect(`/admin/products/${result.id}/edit/?saved=1`);
+      }
+    }
+  }
+}
+---
+
+<AdminAppLayout title="New product" description="Create a product.">
+  <ProductForm collections={collections ?? []} collectionsError={collectionsError} error={error} values={values} />
+</AdminAppLayout>

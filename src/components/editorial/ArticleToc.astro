@@ -1,0 +1,62 @@
+---
+import type { ArticleTocItem } from '../../types/article';
+
+interface Props {
+  items: ArticleTocItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <nav class="article-toc" aria-labelledby="article-toc-heading">
+      <h2 id="article-toc-heading">Table of contents</h2>
+      <ol>
+        {items.map((item) => (
+          <li class:list={{ 'article-toc__sub': item.level === 3 }}>
+            <a href={`#${item.id}`}>{item.text}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}
+
+<style>
+  .article-toc {
+    margin: 0 0 var(--space-8);
+    padding: var(--space-5) 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .article-toc h2 {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .article-toc ol {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+  }
+
+  .article-toc a {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+  }
+
+  .article-toc a:hover {
+    color: var(--color-accent-dark);
+  }
+
+  .article-toc__sub {
+    padding-left: var(--space-4);
+  }
+</style>

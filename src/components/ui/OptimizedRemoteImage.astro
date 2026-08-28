@@ -1,0 +1,52 @@
+---
+import {
+  isSupabaseStorageUrl,
+  storageImageSrcSet,
+  transformedStorageUrl,
+} from '../../lib/storage-image';
+
+interface Props {
+  src: string;
+  alt: string;
+  widths: readonly number[];
+  sizes: string;
+  width: number;
+  height: number;
+  loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  class?: string;
+}
+
+const {
+  src,
+  alt,
+  widths,
+  sizes,
+  width,
+  height,
+  loading = 'lazy',
+  fetchpriority,
+  class: className,
+} = Astro.props;
+
+const optimize = isSupabaseStorageUrl(src);
+const displaySrc = optimize
+  ? (transformedStorageUrl(src, { width, height: height || width }) ?? src)
+  : src;
+const srcset = optimize ? storageImageSrcSet(src, widths) : undefined;
+---
+
+<img
+  class={className}
+  src={displaySrc}
+  srcset={srcset}
+  sizes={srcset ? sizes : undefined}
+  alt={alt}
+  width={width}
+  height={height}
+  loading={loading}
+  decoding="async"
+  fetchpriority={fetchpriority}
+  data-original={optimize ? src : undefined}
+  onerror="if (this.dataset.original && this.src !== this.dataset.original) { this.onerror = null; this.removeAttribute('srcset'); this.src = this.dataset.original; }"
+/>

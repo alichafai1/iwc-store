@@ -1,0 +1,195 @@
+---
+import FormSection from './FormSection.astro';
+import { formatAdminDate } from '../../lib/admin/dates';
+import {
+  formatSourcePrice,
+  parseSpecifications,
+  SCRAPE_STATUS_LABELS,
+  type RawProduct,
+} from '../../lib/admin/raw-products';
+import { ADMIN_WORKFLOW_PATH } from '../../lib/admin/constants';
+
+interface Props {
+  product: RawProduct;
+  jobId?: string | null;
+}
+
+const { product, jobId } = Astro.props;
+const parsedPrimary = parseSpecifications(product.source_primary_specs);
+const primarySpecs = parsedPrimary.length
+  ? parsedPrimary
+  : parseSpecifications(product.source_specifications);
+const additionalInformation = parseSpecifications(product.source_additional_information);
+const failed = product.scrape_status === 'failed';
+const rawJson = JSON.stringify(product.raw_data ?? {}, null, 2);
+const backHref = jobId ? `${ADMIN_WORKFLOW_PATH}?job=${encodeURIComponent(jobId)}` : ADMIN_WORKFLOW_PATH;
+---
+
+{
+  failed && (
+    <p class="admin-flash admin-flash--error" role="alert">
+      Scrape failed{product.error_message ? `: ${product.error_message}` : '.'}
+    </p>
+  )
+}
+
+<section class="admin-section" aria-labelledby="workflow-basic">
+  <h2 class="admin-section__title" id="workflow-basic">Source Basic Data</h2>
+  <dl class="admin-meta-grid">
+    <div>
+      <dt>Source title</dt>
+      <dd>{product.source_title || '—'}</dd>
+    </div>
+    <div>
+      <dt>Source price</dt>
+      <dd>{formatSourcePrice(product.source_price, product.source_currency)}</dd>
+    </div>
+    <div>
+      <dt>Source currency</dt>
+      <dd>{product.source_currency || '—'}</dd>
+    </div>
+    <div>
+      <dt>Source URL</dt>
+      <dd>
+        <a href={product.source_url} rel="noreferrer" target="_blank">
+          {product.source_url}
+        </a>
+      </dd>
+    </div>
+    <div>
+      <dt>Collection URL</dt>
+      <dd>
+        {
+          product.source_collection_url ? (
+            <a href={product.source_collection_url} rel="noreferrer" target="_blank">
+              {product.source_collection_url}
+            </a>
+          ) : (
+            '—'
+          )
+        }
+      </dd>
+    </div>
+    <div>
+      <dt>Collection name</dt>
+      <dd>{product.source_collection_name || '—'}</dd>
+    </div>
+    <div>
+      <dt>Scraped date</dt>
+      <dd>{formatAdminDate(product.scraped_at)}</dd>
+    </div>
+    <div>
+      <dt>Status</dt>
+      <dd>
+        <span class={`admin-badge admin-badge--${product.scrape_status}`}>
+          {SCRAPE_STATUS_LABELS[product.scrape_status]}
+        </span>
+      </dd>
+    </div>
+  </dl>
+</section>
+
+<section class="admin-section" aria-labelledby="workflow-identity">
+  <h2 class="admin-section__title" id="workflow-identity">Model / Brand / Category</h2>
+  <dl class="admin-meta-grid">
+    <div>
+      <dt>Model</dt>
+      <dd>{product.source_model || '—'}</dd>
+    </div>
+    <div>
+      <dt>Brand</dt>
+      <dd>{product.source_brand || '—'}</dd>
+    </div>
+    <div>
+      <dt>Category</dt>
+      <dd>{product.source_category || '—'}</dd>
+    </div>
+  </dl>
+</section>
+
+<FormSection title="Main Specification Block">
+  {
+    primarySpecs.length === 0 ? (
+      <p class="admin-help">No source specifications were extracted.</p>
+    ) : (
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wrap">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {primarySpecs.map((spec) => (
+              <tr>
+                <td>{spec.label}</td>
+                <td>{spec.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</FormSection>
+
+<FormSection title="Description">
+  {
+    product.source_description ? (
+      <p class="admin-prose admin-prose--pre">{product.source_description}</p>
+    ) : (
+      <p class="admin-help">No source description was extracted.</p>
+    )
+  }
+</FormSection>
+
+<FormSection title="Additional Information">
+  {
+    additionalInformation.length === 0 ? (
+      <p class="admin-help">No additional information was extracted.</p>
+    ) : (
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wrap">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {additionalInformation.map((spec) => (
+              <tr>
+                <td>{spec.label}</td>
+                <td>{spec.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</FormSection>
+
+<FormSection title="Raw Data">
+  <details class="admin-raw">
+    <summary>View Raw Data</summary>
+    <pre class="admin-raw__json">{rawJson}</pre>
+  </details>
+</FormSection>
+
+<div class="admin-actions admin-workflow-actions">
+  {
+    failed && (
+      <form method="post" data-scrape-form>
+        <input type="hidden" name="intent" value="scrape-product" />
+        <input type="hidden" name="url" value={product.source_url} />
+        {jobId && <input type="hidden" name="job" value={jobId} />}
+        <button class="btn btn--ghost" type="submit" data-scrape-submit>
+          Retry this product
+        </button>
+      </form>
+    )
+  }
+  <a class="btn btn--ghost" href={backHref}>Back to collection</a>
+</div>

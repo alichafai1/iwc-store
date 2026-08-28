@@ -1,0 +1,108 @@
+---
+import { Image } from 'astro:assets';
+import { formatDate } from '../../lib/format';
+import type { Article } from '../../types/article';
+
+interface Props {
+  article: Article;
+  linkLabel: string;
+  showDate?: boolean;
+}
+
+const { article, linkLabel, showDate = false } = Astro.props;
+---
+
+<article class="featured-editorial">
+  <a class="media featured-editorial__media" href={article.href}>
+    <Image
+      src={article.image}
+      alt={article.imageAlt}
+      width={1600}
+      height={1000}
+      sizes="(min-width: 64em) 55vw, 100vw"
+      loading="eager"
+    />
+  </a>
+  <div class="featured-editorial__body">
+    <p class="featured-editorial__category">{article.category}</p>
+    <h2>
+      <a href={article.href}>{article.title}</a>
+    </h2>
+    <p class="featured-editorial__excerpt">{article.excerpt}</p>
+    {
+      showDate && article.publishedAt ? (
+        <time class="featured-editorial__date" datetime={article.publishedAt}>
+          {formatDate(article.publishedAt)}
+        </time>
+      ) : null
+    }
+    <a class="featured-editorial__more" href={article.href}>{linkLabel}</a>
+  </div>
+</article>
+
+<style>
+  .featured-editorial {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .featured-editorial__media {
+    aspect-ratio: 3 / 2;
+    border: 1px solid var(--color-border);
+  }
+
+  .featured-editorial__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .featured-editorial__category {
+    margin: 0 0 var(--space-3);
+    color: var(--color-accent-dark);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .featured-editorial h2 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+  }
+
+  .featured-editorial h2 a {
+    text-decoration: none;
+  }
+
+  .featured-editorial__excerpt {
+    max-width: 36rem;
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+  }
+
+  .featured-editorial__date {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .featured-editorial__more {
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-nav);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  @media (min-width: 64em) {
+    .featured-editorial {
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: var(--space-8);
+      align-items: center;
+    }
+
+    .featured-editorial h2 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+</style>

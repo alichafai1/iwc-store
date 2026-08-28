@@ -1,0 +1,21 @@
+---
+interface Props {
+  title: string;
+  help?: string;
+  sectionId?: string;
+}
+
+const { title, help, sectionId } = Astro.props;
+const headingId =
+  sectionId ??
+  `admin-section-${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')}`;
+---
+
+<section class="admin-section" aria-labelledby={headingId} data-admin-section={title}>
+  <h2 class="admin-section__title" id={headingId}>{title}</h2>
+  {help && <p class="admin-help">{help}</p>}
+  <slot />
+</section>

@@ -1,0 +1,238 @@
+---
+import type { StoreCollectionCard } from '../../lib/catalog';
+import { collectionsHub, collectionsHubLinks } from '../../data/collections-hub';
+import { isStorefrontModelCollectionSlug } from '../../data/collections';
+import { getCollectionImage } from '../../data/collection-media';
+import TrustSection from '../layout/TrustSection.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import CollectionCard from '../ui/CollectionCard.astro';
+import Container from '../ui/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { mediaUrl } from '../../lib/media';
+import { absoluteUrl, breadcrumbJsonLd, collectionPageJsonLd, defaultJsonLd, itemListJsonLd } from '../../lib/seo';
+
+interface Props {
+  collections: StoreCollectionCard[];
+}
+
+const { collections } = Astro.props;
+const modelCollections = collections.filter((collection) => isStorefrontModelCollectionSlug(collection.slug));
+const merchCollections = collections.filter((collection) => !isStorefrontModelCollectionSlug(collection.slug));
+const ogImage =
+  mediaUrl(modelCollections[0]?.image) ?? mediaUrl(getCollectionImage('da-vinci'));
+const hubPath = collectionsHub.path;
+const breadcrumbId = `${absoluteUrl(hubPath)}#breadcrumb`;
+const itemListId = `${absoluteUrl(hubPath)}#itemlist`;
+---
+
+<BaseLayout
+  title={collectionsHub.metaTitle}
+  description={collectionsHub.metaDescription}
+  canonicalPath={collectionsHub.path}
+  ogImage={ogImage}
+  jsonLd={[
+    defaultJsonLd(),
+    collectionPageJsonLd({
+      name: collectionsHub.heading,
+      description: collectionsHub.metaDescription,
+      path: hubPath,
+      image: ogImage,
+      breadcrumbId,
+      mainEntityId: collections.length > 0 ? itemListId : undefined,
+    }),
+    breadcrumbJsonLd(
+      [
+        { name: 'Home', path: '/' },
+        { name: 'Collections', path: hubPath },
+      ],
+      { id: breadcrumbId },
+    ),
+    ...(collections.length > 0
+      ? [
+          itemListJsonLd({
+            id: itemListId,
+            items: collections.map((collection) => ({
+              name: collection.name,
+              path: collection.href,
+            })),
+          }),
+        ]
+      : []),
+  ]}
+>
+  <section class="collection-header">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Collections' }]} />
+      <h1>{collectionsHub.heading}</h1>
+      <p>{collectionsHub.intro}</p>
+    </Container>
+  </section>
+
+  <section class="section collection-hub__grid" aria-labelledby="shop-collections-heading">
+    <Container>
+      <h2 id="shop-collections-heading">{collectionsHub.shopHeading}</h2>
+      <ul class="collection-hub__list">
+        {
+          modelCollections.map((collection) => (
+            <li>
+              <CollectionCard
+                name={collection.name}
+                href={collection.href}
+                image={collection.image}
+                imageAlt={collection.imageAlt}
+              />
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <section class="section section--muted collection-hub__merch" aria-labelledby="merch-collections-heading">
+    <Container>
+      <h2 id="merch-collections-heading">{collectionsHub.merchHeading}</h2>
+      <p class="collection-hub__lead">{collectionsHub.merchIntro}</p>
+      <ul class="collection-hub__list collection-hub__list--merch">
+        {
+          merchCollections.map((collection) => (
+            <li>
+              <CollectionCard
+                name={collection.name}
+                href={collection.href}
+                image={collection.image}
+                imageAlt={collection.imageAlt}
+              />
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <section class="section collection-seo" aria-labelledby="collections-seo-heading">
+    <Container size="md">
+      <h2 id="collections-seo-heading">{collectionsHub.seo.heading}</h2>
+      {collectionsHub.seo.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      <h3>{collectionsHub.seo.linksHeading}</h3>
+      <ul class="collection-hub__links">
+        {
+          collectionsHubLinks.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .collection-header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .collection-header :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .collection-header h1 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+  }
+
+  .collection-header p,
+  .collection-hub__lead {
+    max-width: 38rem;
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .collection-hub__grid h2,
+  .collection-hub__merch h2,
+  .collection-seo h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-xl);
+  }
+
+  .collection-hub__lead {
+    margin-bottom: var(--space-5);
+  }
+
+  .collection-hub__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .collection-seo p,
+  .collection-seo h3 {
+    color: var(--color-text-muted);
+  }
+
+  .collection-seo p {
+    font-size: var(--font-size-sm);
+  }
+
+  .collection-seo h3 {
+    margin: var(--space-6) 0 var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+  }
+
+  .collection-hub__links {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .collection-hub__links a {
+    color: inherit;
+  }
+
+  @media (min-width: 48em) {
+    .collection-header {
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-8);
+    }
+
+    .collection-header h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .collection-hub__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .collection-hub__list--merch {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .collection-hub__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .collection-hub__list--merch {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 40rem;
+    }
+
+    .collection-hub__grid h2,
+    .collection-hub__merch h2,
+    .collection-seo h2 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+</style>

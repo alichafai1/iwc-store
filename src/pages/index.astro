@@ -1,0 +1,136 @@
+---
+export const prerender = false;
+
+import CollectionCarousel from '../components/home/CollectionCarousel.astro';
+import FAQSection from '../components/home/FAQSection.astro';
+import Hero from '../components/home/Hero.astro';
+import ArticleCard from '../components/ui/ArticleCard.astro';
+import BenefitCard from '../components/ui/BenefitCard.astro';
+import Container from '../components/ui/Container.astro';
+import Gallery from '../components/ui/Gallery.astro';
+import TrustSection from '../components/layout/TrustSection.astro';
+import ProductCard from '../components/ui/ProductCard.astro';
+import SectionHeader from '../components/ui/SectionHeader.astro';
+import { placeholderArticles } from '../data/articles';
+import { BEST_SELLERS_SLUG, isStorefrontModelCollectionSlug } from '../data/collections';
+import { homepageFaqs } from '../data/faq';
+import { placeholderGallery } from '../data/gallery';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPublishedProductsForCollection, getPublishedStoreCollectionCards } from '../lib/catalog';
+import { defaultJsonLd, faqPageJsonLd } from '../lib/seo';
+
+const collections = (await getPublishedStoreCollectionCards()).filter((collection) =>
+  isStorefrontModelCollectionSlug(collection.slug),
+);
+const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_SLUG);
+---
+
+<BaseLayout
+  title="Home"
+  description="Explore the collections, new arrivals, guides, and editorial."
+  jsonLd={[defaultJsonLd(), faqPageJsonLd(homepageFaqs)]}
+>
+  <Hero />
+
+  <section class="section" aria-labelledby="collections-heading">
+    <Container>
+      <SectionHeader headingId="collections-heading" title="Shop by Collection" href="/collections/" linkLabel="View all" />
+      <CollectionCarousel
+        collections={collections.map((collection) => ({
+          name: collection.name,
+          href: collection.href,
+          image: collection.image,
+          imageAlt: collection.imageAlt,
+        }))}
+      />
+    </Container>
+  </section>
+
+  <section class="section section--muted" id="best-sellers" aria-labelledby="best-sellers-heading">
+    <Container>
+      <SectionHeader headingId="best-sellers-heading" title="Best Sellers" href="/collections/best-sellers/" />
+      {
+        bestSellerProducts.length > 0 ? (
+          <div class="product-grid">
+            {bestSellerProducts.map((product) => <ProductCard product={product} />)}
+          </div>
+        ) : (
+          <p class="home-empty">No published products are listed yet.</p>
+        )
+      }
+    </Container>
+  </section>
+
+  <section class="section" aria-labelledby="benefits-heading">
+    <Container>
+      <SectionHeader headingId="benefits-heading" title="Why Shop With Us" />
+      <div class="benefit-grid">
+        <BenefitCard icon="quality" title="Premium Quality" text="Replica IWC watches are chosen for materials, finishing, and design accuracy to the listed reference. Each published listing shows its Top 1:1 Clone grade and movement—automatic when that is what the spec table states." />
+        <BenefitCard icon="secure" title="Secure Payments" text="A protected checkout keeps your order details in a secure payment flow. You can review the watch, grade, and total before confirming—so the purchase feels considered, not hurried." />
+        <BenefitCard icon="shipping" title="Worldwide Shipping" text="International orders of IWC replica watches receive tracked delivery; times vary by destination. Parcels are packed and processed with the same care used for every store shipment." />
+        <BenefitCard icon="support" title="Customer Support" text="Support is here before you order and after the watch arrives. Ask about specs, a collection, or which replica IWC watch matches the reference you already have in mind." />
+      </div>
+    </Container>
+  </section>
+
+  <section class="section section--muted" aria-labelledby="gallery-heading">
+    <Container size="xl">
+      <SectionHeader headingId="gallery-heading" title="Customer Gallery" />
+      <Gallery items={placeholderGallery} />
+    </Container>
+  </section>
+
+  <section class="section" aria-labelledby="editorial-heading">
+    <Container>
+      <SectionHeader headingId="editorial-heading" title="Blogs & Guides" href="/blog/" />
+      <div class="article-grid">
+        {placeholderArticles.map((article) => <ArticleCard article={article} />)}
+      </div>
+    </Container>
+  </section>
+
+  <FAQSection items={homepageFaqs} title="IWC Replica Watch FAQs" />
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .product-grid,
+  .article-grid,
+  .benefit-grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-empty {
+    margin: 0;
+    color: var(--color-muted);
+  }
+
+  @media (min-width: 48em) {
+    .benefit-grid,
+    .article-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .product-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .benefit-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .article-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

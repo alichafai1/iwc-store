@@ -1,0 +1,386 @@
+---
+import { footerNav } from '../../data/navigation';
+import { siteConfig } from '../../lib/site';
+
+const year = new Date().getFullYear();
+
+const sections = [
+  { title: 'Shop', links: footerNav.shop },
+  { title: 'Collections', links: footerNav.collections },
+  { title: 'Customer Care', links: footerNav.customerCare },
+  { title: 'Legal', links: footerNav.legal },
+] as const;
+---
+
+<footer class="site-footer" data-footer>
+  <div class="container site-footer__inner">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <a class="site-footer__logo" href="/">{siteConfig.name}</a>
+        <p>A focused house of collections, presented with clarity.</p>
+      </div>
+
+      <div class="site-footer__columns">
+        {
+          sections.map((section) => {
+            const id = `footer-${section.title.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+            const panelId = `${id}-panel`;
+            return (
+              <nav class="site-footer__item" data-footer-item aria-labelledby={id}>
+                <h2 class="site-footer__heading" id={id}>
+                  <button
+                    class="site-footer__toggle"
+                    type="button"
+                    data-footer-toggle
+                    aria-expanded="false"
+                    aria-controls={panelId}
+                  >
+                    {section.title}
+                    <span class="site-footer__toggle-icon" aria-hidden="true"></span>
+                  </button>
+                </h2>
+                <div class="site-footer__panel" id={panelId}>
+                  <ul class="site-footer__panel-inner">
+                    {section.links.map((link) => (
+                      <li>
+                        <a href={link.href}>{link.label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </nav>
+            );
+          })
+        }
+      </div>
+    </div>
+
+    <form class="site-footer__newsletter" action="/contact/" method="get">
+      <div>
+        <h2 class="site-footer__heading">Newsletter</h2>
+        <p>Notes on collections and new arrivals.</p>
+      </div>
+      <div class="site-footer__fields">
+        <label class="visually-hidden" for="newsletter-email">Email address</label>
+        <input id="newsletter-email" name="email" type="email" autocomplete="email" required placeholder="Email address" />
+        <button class="btn" type="submit">Subscribe</button>
+      </div>
+    </form>
+
+    <p class="site-footer__legal">© {year} {siteConfig.name}</p>
+  </div>
+</footer>
+
+<noscript>
+  <style>
+    @media (max-width: 47.99em) {
+      .site-footer__panel {
+        grid-template-rows: 1fr;
+      }
+
+      .site-footer__panel-inner {
+        visibility: visible;
+      }
+    }
+  </style>
+</noscript>
+
+<script>
+  const MOBILE_FOOTER = '(max-width: 47.99em)';
+
+  function syncFooterAccordion(footer: HTMLElement) {
+    const mobile = window.matchMedia(MOBILE_FOOTER).matches;
+    const buttons = footer.querySelectorAll<HTMLButtonElement>('[data-footer-toggle]');
+
+    footer.toggleAttribute('data-accordion', mobile);
+
+    buttons.forEach((button) => {
+      const item = button.closest('[data-footer-item]');
+      const panel = document.getElementById(button.getAttribute('aria-controls') ?? '');
+
+      if (!mobile) {
+        button.setAttribute('aria-expanded', 'true');
+        button.setAttribute('tabindex', '-1');
+        item?.classList.add('is-open');
+        panel?.removeAttribute('inert');
+        return;
+      }
+
+      button.removeAttribute('tabindex');
+      button.setAttribute('aria-expanded', 'false');
+      item?.classList.remove('is-open');
+      panel?.setAttribute('inert', '');
+    });
+  }
+
+  function initFooterAccordion() {
+    const footer = document.querySelector<HTMLElement>('[data-footer]');
+    if (!footer || footer.hasAttribute('data-footer-ready')) {
+      return;
+    }
+
+    footer.setAttribute('data-footer-ready', '');
+    const media = window.matchMedia(MOBILE_FOOTER);
+
+    footer.querySelectorAll<HTMLButtonElement>('[data-footer-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!media.matches) {
+          return;
+        }
+
+        const item = button.closest('[data-footer-item]');
+        const panel = document.getElementById(button.getAttribute('aria-controls') ?? '');
+        const open = button.getAttribute('aria-expanded') !== 'true';
+
+        button.setAttribute('aria-expanded', String(open));
+        item?.classList.toggle('is-open', open);
+
+        if (open) {
+          panel?.removeAttribute('inert');
+        } else {
+          panel?.setAttribute('inert', '');
+        }
+      });
+    });
+
+    const onChange = () => syncFooterAccordion(footer);
+    media.addEventListener('change', onChange);
+    onChange();
+  }
+
+  initFooterAccordion();
+  document.addEventListener('astro:page-load', initFooterAccordion);
+</script>
+
+<style>
+  .site-footer {
+    overflow-x: clip;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+    padding-block: var(--space-8);
+  }
+
+  .site-footer__grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .site-footer__logo {
+    display: inline-block;
+    margin-bottom: var(--space-3);
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    letter-spacing: 0.16em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .site-footer__brand p,
+  .site-footer__newsletter p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .site-footer__heading {
+    margin-bottom: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .site-footer__toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    text-transform: inherit;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .site-footer__toggle-icon {
+    display: none;
+  }
+
+  .site-footer ul {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+  }
+
+  .site-footer a {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+  }
+
+  .site-footer__newsletter {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .site-footer__fields {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .site-footer input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .site-footer__legal {
+    margin: var(--space-8) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  @media (max-width: 47.99em) {
+    .site-footer__columns {
+      display: grid;
+      width: 100%;
+    }
+
+    .site-footer__item {
+      min-width: 0;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .site-footer__item:last-child {
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .site-footer__item .site-footer__heading {
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+
+    .site-footer__toggle {
+      min-height: 3.375rem;
+      gap: var(--space-4);
+      padding-right: 0.1rem;
+    }
+
+    .site-footer__toggle-icon {
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: flex-end;
+      width: 1.1rem;
+      margin-left: auto;
+      font-size: 1.15rem;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .site-footer__toggle-icon::before {
+      content: "+";
+    }
+
+    .site-footer__toggle[aria-expanded="true"] .site-footer__toggle-icon::before {
+      content: "−";
+    }
+
+    .site-footer__panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 220ms ease;
+    }
+
+    .site-footer__item.is-open .site-footer__panel {
+      grid-template-rows: 1fr;
+    }
+
+    .site-footer__panel-inner {
+      min-height: 0;
+      overflow: hidden;
+      padding-bottom: 0.35rem;
+      visibility: hidden;
+      transition: visibility 0s 220ms;
+    }
+
+    .site-footer__item.is-open .site-footer__panel-inner {
+      visibility: visible;
+      transition-delay: 0s;
+    }
+
+    .site-footer__item .site-footer__panel-inner {
+      gap: 0;
+    }
+
+    .site-footer__panel a {
+      display: flex;
+      align-items: center;
+      min-height: 2.75rem;
+      color: var(--color-text-muted);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+
+    .site-footer__panel a:hover,
+    .site-footer__panel a:active {
+      color: var(--color-accent);
+    }
+
+    .site-footer__legal {
+      margin-top: var(--space-6);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--color-border);
+      text-align: center;
+    }
+  }
+
+  @media (min-width: 48em) {
+    .site-footer__grid {
+      grid-template-columns: 13rem 1fr;
+      align-items: start;
+    }
+
+    .site-footer__columns {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-6);
+    }
+
+    .site-footer__columns nav {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .site-footer__toggle {
+      pointer-events: none;
+    }
+
+    .site-footer__fields {
+      grid-template-columns: minmax(0, 22rem) auto;
+      align-items: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-footer__panel,
+    .site-footer__panel-inner {
+      transition: none;
+    }
+  }
+</style>

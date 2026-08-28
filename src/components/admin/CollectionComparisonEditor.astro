@@ -1,0 +1,104 @@
+---
+import type { CollectionOption } from '../../lib/admin/collections';
+
+interface ComparisonRow {
+  comparedCollectionId: string;
+  body: string;
+}
+
+interface Props {
+  options: CollectionOption[];
+  rows?: ComparisonRow[];
+}
+
+const { options, rows = [] } = Astro.props;
+const items = rows.length > 0 ? rows : [{ comparedCollectionId: '', body: '' }];
+---
+
+<div data-comparison-editor>
+  <div class="admin-row-list" data-comparison-list>
+    {
+      items.map((row) => (
+        <div class="admin-row" data-comparison-row>
+          <label class="admin-field">
+            <span>Collection</span>
+            <select name="comparison_collection_ids">
+              <option value="">Select collection</option>
+              {options.map((option) => (
+                <option value={option.id} selected={option.id === row.comparedCollectionId}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label class="admin-field">
+            <span>Comparison note</span>
+            <textarea name="comparison_bodies">{row.body}</textarea>
+          </label>
+          <div class="admin-row__controls">
+            <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+            <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+            <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <button class="btn btn--ghost" type="button" data-comparison-add>Add comparison</button>
+</div>
+
+<template id="comparison-row-template">
+  <div class="admin-row" data-comparison-row>
+    <label class="admin-field">
+      <span>Collection</span>
+      <select name="comparison_collection_ids">
+        <option value="">Select collection</option>
+        {options.map((option) => (
+          <option value={option.id}>{option.name}</option>
+        ))}
+      </select>
+    </label>
+    <label class="admin-field"><span>Comparison note</span><textarea name="comparison_bodies"></textarea></label>
+    <div class="admin-row__controls">
+      <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+      <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+      <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+    </div>
+  </div>
+</template>
+
+<script>
+  const root = document.querySelector('[data-comparison-editor]');
+  const list = root?.querySelector('[data-comparison-list]');
+  const template = document.getElementById('comparison-row-template');
+
+  root?.querySelector('[data-comparison-add]')?.addEventListener('click', () => {
+    if (!(template instanceof HTMLTemplateElement)) {
+      return;
+    }
+    const row = template.content.firstElementChild?.cloneNode(true);
+    if (row) {
+      list?.append(row);
+    }
+  });
+
+  root?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const row = target.closest('[data-comparison-row]');
+    if (!row) {
+      return;
+    }
+    if (target.closest('[data-row-up]')) {
+      row.previousElementSibling?.before(row);
+    }
+    if (target.closest('[data-row-down]')) {
+      row.nextElementSibling?.after(row);
+    }
+    if (target.closest('[data-row-remove]')) {
+      row.remove();
+    }
+  });
+</script>

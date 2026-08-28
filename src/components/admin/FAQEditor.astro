@@ -1,0 +1,97 @@
+---
+interface Props {
+  faqs?: { question: string; answer: string; position?: number }[];
+}
+
+const { faqs = [] } = Astro.props;
+const rows = faqs.length > 0 ? faqs : [{ question: '', answer: '', position: 0 }];
+---
+
+<div data-faq-editor>
+  <div class="admin-row-list" data-faq-list>
+    {
+      rows.map((faq, index) => (
+        <div class="admin-row" data-faq-row>
+          <label class="admin-field">
+            <span>Question</span>
+            <input type="text" name="faq_questions" value={faq.question} />
+          </label>
+          <label class="admin-field">
+            <span>Answer</span>
+            <textarea name="faq_answers">{faq.answer}</textarea>
+          </label>
+          <label class="admin-field">
+            <span>Position</span>
+            <input type="number" name="faq_positions" min="0" step="1" value={faq.position ?? index} />
+          </label>
+          <div class="admin-row__controls">
+            <button class="btn btn--ghost" type="button" data-row-up>
+              Up
+            </button>
+            <button class="btn btn--ghost" type="button" data-row-down>
+              Down
+            </button>
+            <button class="btn btn--ghost" type="button" data-row-remove>
+              Remove
+            </button>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <button class="btn btn--ghost" type="button" data-faq-add>Add FAQ</button>
+</div>
+
+<template id="faq-row-template">
+  <div class="admin-row" data-faq-row>
+    <label class="admin-field"><span>Question</span><input type="text" name="faq_questions" /></label>
+    <label class="admin-field"><span>Answer</span><textarea name="faq_answers"></textarea></label>
+    <label class="admin-field"><span>Position</span><input type="number" name="faq_positions" min="0" step="1" /></label>
+    <div class="admin-row__controls">
+      <button class="btn btn--ghost" type="button" data-row-up>Up</button>
+      <button class="btn btn--ghost" type="button" data-row-down>Down</button>
+      <button class="btn btn--ghost" type="button" data-row-remove>Remove</button>
+    </div>
+  </div>
+</template>
+
+<script>
+  const root = document.querySelector('[data-faq-editor]');
+  const list = root?.querySelector('[data-faq-list]');
+  const template = document.getElementById('faq-row-template');
+
+  root?.querySelector('[data-faq-add]')?.addEventListener('click', () => {
+    if (!(template instanceof HTMLTemplateElement)) {
+      return;
+    }
+
+    const row = template.content.firstElementChild?.cloneNode(true);
+    if (row) {
+      list?.append(row);
+    }
+  });
+
+  root?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const row = target.closest('[data-faq-row]');
+    if (!row) {
+      return;
+    }
+
+    if (target.closest('[data-row-up]')) {
+      row.previousElementSibling?.before(row);
+    }
+
+    if (target.closest('[data-row-down]')) {
+      row.nextElementSibling?.after(row);
+    }
+
+    if (target.closest('[data-row-remove]')) {
+      row.remove();
+    }
+  });
+</script>

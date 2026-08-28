@@ -1,0 +1,46 @@
+---
+import { siteConfig } from '../../lib/site';
+import { absoluteUrl, buildPageTitle, buildRobots } from '../../lib/seo';
+import type { SeoInput } from '../../types/seo';
+
+interface Props extends SeoInput {}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  robots,
+  noindex,
+  ogType = 'website',
+  ogImage,
+  twitterCard,
+} = Astro.props;
+
+const pageTitle = buildPageTitle(title);
+const canonical = absoluteUrl(canonicalPath ?? Astro.url.pathname);
+const robotsContent = buildRobots({ robots, noindex });
+const image = ogImage ? absoluteUrl(ogImage) : undefined;
+const card = twitterCard ?? (image ? 'summary_large_image' : 'summary');
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{pageTitle}</title>
+<meta name="description" content={description} />
+<meta name="robots" content={robotsContent} />
+<link rel="canonical" href={canonical} />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="generator" content={Astro.generator} />
+
+<meta property="og:type" content={ogType} />
+<meta property="og:site_name" content={siteConfig.name} />
+<meta property="og:locale" content={siteConfig.locale} />
+<meta property="og:title" content={pageTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+{image && <meta property="og:image" content={image} />}
+
+<meta name="twitter:card" content={card} />
+<meta name="twitter:title" content={pageTitle} />
+<meta name="twitter:description" content={description} />
+{image && <meta name="twitter:image" content={image} />}

@@ -1,0 +1,143 @@
+---
+import TrustSection from '../layout/TrustSection.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Container from '../ui/Container.astro';
+import ArticleCard from '../ui/ArticleCard.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { breadcrumbJsonLd, collectionPageJsonLd, defaultJsonLd } from '../../lib/seo';
+import type { Article, EditorialPageContent } from '../../types/article';
+import FeaturedEditorial from './FeaturedEditorial.astro';
+import Pagination from './Pagination.astro';
+
+interface Props {
+  content: EditorialPageContent;
+  featured?: Article;
+  items: Article[];
+  page: number;
+  totalPages: number;
+}
+
+const { content, featured, items, page, totalPages } = Astro.props;
+const path = page <= 1 ? `${content.basePath}/` : `${content.basePath}/page/${page}/`;
+const listingHeading = content.kind === 'blog' ? 'Articles' : 'All guides';
+---
+
+<BaseLayout
+  title={content.metaTitle}
+  description={content.metaDescription}
+  canonicalPath={path}
+  jsonLd={[
+    defaultJsonLd(),
+    collectionPageJsonLd({
+      name: content.title,
+      description: content.metaDescription,
+      path,
+      type: content.kind === 'blog' ? 'Blog' : 'CollectionPage',
+    }),
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: content.title, path },
+    ]),
+  ]}
+>
+  <header class="editorial-header">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: content.title }]} />
+      <h1>{content.title}</h1>
+      <p>{content.intro}</p>
+      <p class="editorial-header__note">{content.note}</p>
+    </Container>
+  </header>
+
+  {
+    featured && (
+      <section class="section editorial-featured" aria-labelledby="featured-editorial-heading">
+        <Container>
+          <SectionHeader
+            headingId="featured-editorial-heading"
+            title={content.kind === 'blog' ? 'Featured article' : 'Featured guide'}
+          />
+          <FeaturedEditorial article={featured} linkLabel={content.linkLabel} showDate={content.showDate} />
+        </Container>
+      </section>
+    )
+  }
+
+  <section class="section editorial-listing" aria-labelledby="editorial-listing-heading">
+    <Container>
+      <h2 id="editorial-listing-heading" class="visually-hidden">{listingHeading}</h2>
+      <ul class="editorial-grid">
+        {
+          items.map((article) => (
+            <li>
+              <ArticleCard article={article} linkLabel={content.linkLabel} showDate={content.showDate} />
+            </li>
+          ))
+        }
+      </ul>
+      <Pagination basePath={content.basePath} page={page} totalPages={totalPages} />
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .editorial-header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .editorial-header :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .editorial-header h1 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+  }
+
+  .editorial-header p {
+    max-width: 38rem;
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .editorial-header__note {
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .editorial-featured {
+    padding-bottom: 0;
+  }
+
+  .editorial-listing {
+    padding-top: var(--space-8);
+  }
+
+  .editorial-grid {
+    display: grid;
+    gap: var(--space-8) var(--space-5);
+    list-style: none;
+  }
+
+  @media (min-width: 48em) {
+    .editorial-header {
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-8);
+    }
+
+    .editorial-header h1 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+
+  @media (min-width: 64em) {
+    .editorial-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

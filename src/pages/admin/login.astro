@@ -1,0 +1,148 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { ADMIN_HOME_PATH, isSameOriginRequest } from '../../lib/admin-auth';
+import { createSupabaseServerClient } from '../../lib/supabase.server';
+
+const queryError = Astro.url.searchParams.get('error');
+let errorMessage =
+  queryError === 'unauthorized'
+    ? 'This account is not authorized to access admin.'
+    : '';
+let email = '';
+
+if (Astro.request.method === 'POST') {
+  if (!isSameOriginRequest(Astro.request)) {
+    errorMessage = `This login request could not be verified. Open ${Astro.url.origin}/admin/login/ in Chrome or Safari and try again.`;
+  } else {
+    const formData = await Astro.request.formData();
+    email = String(formData.get('email') ?? '').trim();
+    const password = String(formData.get('password') ?? '');
+
+    if (!email || !password) {
+      errorMessage = 'Enter your email and password.';
+    } else {
+      const responseHeaders = new Headers();
+      const supabase = createSupabaseServerClient(Astro, responseHeaders);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        console.error('[admin-login]', error.code ?? 'no_code', error.message);
+        errorMessage =
+          error.message === 'Email not confirmed'
+            ? 'This email is not confirmed in Supabase Auth yet.'
+            : /fetch|network|timeout/i.test(error.message)
+              ? 'Could not reach authentication. Check your connection and try again.'
+              : 'Invalid email or password.';
+      } else {
+        const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
+
+        if (adminError || isAdmin !== true) {
+          console.error('[admin-login]', adminError?.message ?? 'not_admin');
+          await supabase.auth.signOut();
+          errorMessage = 'This account is not authorized to access admin.';
+        } else {
+          const response = Astro.redirect(ADMIN_HOME_PATH);
+          responseHeaders.forEach((value, key) => {
+            response.headers.set(key, value);
+          });
+          return response;
+        }
+      }
+    }
+  }
+}
+---
+
+<AdminLayout title="Admin login" description="Sign in to the admin area.">
+  <section class="admin-login">
+    <h1>Admin login</h1>
+    <p class="admin-login__intro">Sign in with your admin email and password.</p>
+
+    {
+      errorMessage && (
+        <p class="admin-login__error" role="alert">
+          {errorMessage}
+        </p>
+      )
+    }
+
+    <form class="admin-login__form" method="post" data-admin-login>
+      <label class="admin-login__field">
+        <span>Email</span>
+        <input
+          type="email"
+          name="email"
+          autocomplete="username"
+          required
+          inputmode="email"
+          value={email}
+        />
+      </label>
+
+      <label class="admin-login__field">
+        <span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required />
+      </label>
+
+      <button class="btn" type="submit" data-admin-login-submit>Login</button>
+      <p class="visually-hidden" data-admin-login-status aria-live="polite"></p>
+    </form>
+  </section>
+</AdminLayout>
+
+<style>
+  .admin-login {
+    width: min(100%, 24rem);
+    margin-inline: auto;
+  }
+
+  .admin-login__intro,
+  .admin-login__error {
+    margin-bottom: var(--space-5);
+    color: var(--color-text-muted);
+  }
+
+  .admin-login__error {
+    color: #8a1f1f;
+  }
+
+  .admin-login__form {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .admin-login__field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .admin-login__field input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+</style>
+
+<script>
+  const form = document.querySelector('[data-admin-login]');
+  const submit = document.querySelector('[data-admin-login-submit]');
+  const status = document.querySelector('[data-admin-login-status]');
+
+  form?.addEventListener('submit', () => {
+    if (submit instanceof HTMLButtonElement) {
+      submit.disabled = true;
+      submit.textContent = 'Signing in…';
+    }
+
+    if (status) {
+      status.textContent = 'Signing in';
+    }
+  });
+</script>

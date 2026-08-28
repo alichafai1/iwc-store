@@ -1,0 +1,266 @@
+---
+import { PRODUCT_IMAGE_BUCKET } from '../../lib/admin/constants';
+import type { CollectionOption } from '../../lib/admin/collections';
+import type { ProductEditorData, ProductInput } from '../../lib/admin/products';
+import { publicStorageUrl } from '../../lib/admin/storage';
+import { siteConfig } from '../../lib/site';
+import FAQEditor from './FAQEditor.astro';
+import FeatureEditor from './FeatureEditor.astro';
+import FormSection from './FormSection.astro';
+import ImageUploader from './ImageUploader.astro';
+import PublishControls from './PublishControls.astro';
+import ReviewEditor from './ReviewEditor.astro';
+import SpecEditor from './SpecEditor.astro';
+import QualityEditor from './QualityEditor.astro';
+
+interface Props {
+  collections: CollectionOption[];
+  collectionsError?: string | null;
+  editor?: ProductEditorData | null;
+  error?: string | null;
+  values?: ProductInput;
+}
+
+const { collections = [], collectionsError = null, editor = null, error = null, values } = Astro.props;
+const product = editor?.product;
+const title = values?.title ?? product?.title ?? '';
+const slug = values?.slug ?? product?.slug ?? '';
+const sku = values?.sku ?? product?.sku ?? '';
+const collectionIds = values?.collectionIds ?? editor?.collectionIds ?? [];
+const shortDescription = values?.shortDescription ?? product?.short_description ?? '';
+const description = values?.description ?? product?.description ?? '';
+const aboutHeading = values?.aboutHeading ?? product?.about_heading ?? '';
+const metaTitle = values?.metaTitle ?? product?.meta_title ?? '';
+const metaDescription = values?.metaDescription ?? product?.meta_description ?? '';
+const canonicalUrl = values?.canonicalUrl ?? product?.canonical_url ?? '';
+const featured = values?.featured ?? product?.featured ?? false;
+const status = values?.status ?? product?.status ?? null;
+const qualities = values
+  ? (values.qualities ?? []).map((quality) => ({
+      id: '',
+      product_id: product?.id ?? '',
+      quality: quality.quality,
+      price: quality.price,
+      compare_at_price: quality.compareAtPrice,
+      created_at: '',
+      updated_at: '',
+    }))
+  : (editor?.qualities ?? []);
+const specs = values
+  ? (values.specs ?? []).map((spec) => ({
+      id: '',
+      product_id: product?.id ?? '',
+      label: spec.label,
+      value: spec.value,
+      position: spec.position,
+    }))
+  : (editor?.specs ?? []);
+const features = values
+  ? (values.features ?? []).map((feature) => ({
+      id: '',
+      product_id: product?.id ?? '',
+      feature_text: feature.featureText,
+      position: feature.position,
+      created_at: '',
+      updated_at: '',
+    }))
+  : (editor?.features ?? []);
+const reviews = values
+  ? (values.reviews ?? []).map((review) => ({
+      id: '',
+      product_id: product?.id ?? '',
+      title: review.title,
+      rating: review.rating,
+      customer_name: review.customerName,
+      review_date: review.reviewDate,
+      review_text: review.reviewText,
+      status: review.status,
+      position: review.position,
+      created_at: '',
+      updated_at: '',
+    }))
+  : (editor?.reviews ?? []);
+const faqs = values
+  ? (values.faqs ?? []).map((faq) => ({
+      id: '',
+      product_id: product?.id ?? '',
+      question: faq.question,
+      answer: faq.answer,
+      position: faq.position,
+      created_at: '',
+      updated_at: '',
+    }))
+  : (editor?.faqs ?? []);
+const images = values
+  ? (values.images ?? []).map((image) => ({
+      id: image.id,
+      path: image.storagePath,
+      alt: image.alt,
+      position: image.position,
+      isPrimary: image.isPrimary,
+      previewUrl: publicStorageUrl(PRODUCT_IMAGE_BUCKET, image.storagePath),
+    }))
+  : (editor?.images ?? []).map((image) => ({
+      id: image.id,
+      path: image.storage_path,
+      alt: image.alt_text ?? '',
+      position: image.position,
+      isPrimary: image.is_primary,
+      previewUrl: publicStorageUrl(PRODUCT_IMAGE_BUCKET, image.storage_path),
+    }));
+const slugPreview = `${siteConfig.url}/products/${slug || 'your-slug'}/`;
+---
+
+{
+  error && (
+    <p class="admin-flash admin-flash--error" role="alert">
+      {error}
+    </p>
+  )
+}
+
+{
+  collectionsError && (
+    <p class="admin-flash admin-flash--error" role="alert">
+      Could not load collections: {collectionsError}
+    </p>
+  )
+}
+
+<form class="admin-form" method="post" enctype="multipart/form-data" data-admin-form novalidate>
+  <FormSection title="Basic Information">
+    <div class="admin-grid admin-grid--2">
+      <label class="admin-field">
+        <span>Title</span>
+        <input type="text" name="title" value={title} required data-slug-source />
+      </label>
+      <label class="admin-field">
+        <span>Slug</span>
+        <input type="text" name="slug" value={slug} data-slug-target />
+      </label>
+      <label class="admin-field">
+        <span>SKU</span>
+        <input type="text" name="sku" value={sku} />
+      </label>
+    </div>
+    <label class="admin-field">
+      <span>Short description</span>
+      <textarea name="short_description">{shortDescription}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Collections">
+    {
+      collections.length === 0 && !collectionsError ? (
+        <p class="admin-help">Collections have not been loaded yet. Refresh the page and try again.</p>
+      ) : (
+        <p class="admin-help">
+          Select every collection this product should appear in. Choose at least one model collection. Best
+          Sellers and New Arrivals can be added as well.
+        </p>
+      )
+    }
+    <fieldset class="admin-field">
+      <legend class="visually-hidden">Collections</legend>
+      <div class="admin-grid admin-grid--2">
+        {
+          collections.map((collection) => (
+            <label class="admin-check">
+              <input
+                type="checkbox"
+                name="collection_ids"
+                value={collection.id}
+                checked={collectionIds.includes(collection.id)}
+              />
+              {collection.name}
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+  </FormSection>
+
+  <FormSection title="Product Images">
+    <ImageUploader images={images} />
+  </FormSection>
+
+  <FormSection title="Price">
+    <QualityEditor qualities={qualities} />
+  </FormSection>
+
+  <FormSection title="Specifications">
+    <SpecEditor specs={specs} />
+  </FormSection>
+
+  <FormSection title="About Product">
+    <label class="admin-field">
+      <span>About Heading</span>
+      <input type="text" name="about_heading" value={aboutHeading} />
+    </label>
+    <label class="admin-field">
+      <span>Main Description</span>
+      <textarea name="description">{description}</textarea>
+    </label>
+  </FormSection>
+
+  <FormSection title="Key Features">
+    <FeatureEditor features={features} />
+  </FormSection>
+
+  <FormSection title="Customer Reviews">
+    <ReviewEditor reviews={reviews} />
+  </FormSection>
+
+  <FormSection title="FAQ">
+    <FAQEditor faqs={faqs} />
+  </FormSection>
+
+  <FormSection title="SEO">
+    <p class="admin-help">Generated page slug preview: {slugPreview}</p>
+    <label class="admin-field">
+      <span>Meta title</span>
+      <input type="text" name="meta_title" value={metaTitle} />
+    </label>
+    <label class="admin-field">
+      <span>Meta description</span>
+      <textarea name="meta_description">{metaDescription}</textarea>
+    </label>
+    <label class="admin-field">
+      <span>Canonical URL</span>
+      <input type="url" name="canonical_url" value={canonicalUrl} />
+    </label>
+  </FormSection>
+
+  <FormSection title="Publishing">
+    <label class="admin-check">
+      <input type="checkbox" name="featured" value="true" checked={featured} />
+      Featured
+    </label>
+    <PublishControls status={status} />
+  </FormSection>
+</form>
+
+<script>
+  const source = document.querySelector('[data-slug-source]');
+  const target = document.querySelector('[data-slug-target]');
+  let dirty = Boolean(target instanceof HTMLInputElement && target.value);
+
+  function slugify(value: string) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80);
+  }
+
+  target?.addEventListener('input', () => {
+    dirty = true;
+  });
+
+  source?.addEventListener('input', () => {
+    if (!dirty && source instanceof HTMLInputElement && target instanceof HTMLInputElement) {
+      target.value = slugify(source.value);
+    }
+  });
+</script>

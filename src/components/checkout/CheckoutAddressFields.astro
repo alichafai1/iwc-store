@@ -1,0 +1,71 @@
+---
+import { countries } from '../../data/countries';
+
+interface Props {
+  prefix: 'shipping' | 'billing';
+}
+
+const { prefix } = Astro.props;
+const fieldId = (field: string) => `${prefix}-${field}`;
+---
+
+<div class="checkout__fields">
+  <div class="checkout__field">
+    <label for={fieldId('country')}>Country / Region</label>
+    <select class="checkout__control" id={fieldId('country')} name={prefix === 'shipping' ? 'country' : 'billing.country'} autocomplete="country" data-checkout-input>
+      {countries.map((country) => (
+        <option value={country.code} selected={country.code === 'US'}>
+          {country.name}
+        </option>
+      ))}
+    </select>
+    <p class="checkout__error" id={`${fieldId('country')}-error`} hidden></p>
+  </div>
+
+  <div class="checkout__row-2">
+    <div class="checkout__field">
+      <label for={fieldId('firstName')}>First name</label>
+      <input class="checkout__control" id={fieldId('firstName')} name={prefix === 'shipping' ? 'firstName' : 'billing.firstName'} autocomplete="given-name" data-checkout-input />
+      <p class="checkout__error" id={`${fieldId('firstName')}-error`} hidden></p>
+    </div>
+    <div class="checkout__field">
+      <label for={fieldId('lastName')}>Last name</label>
+      <input class="checkout__control" id={fieldId('lastName')} name={prefix === 'shipping' ? 'lastName' : 'billing.lastName'} autocomplete="family-name" data-checkout-input />
+      <p class="checkout__error" id={`${fieldId('lastName')}-error`} hidden></p>
+    </div>
+  </div>
+
+  <div class="checkout__field">
+    <label for={fieldId('address')}>Address</label>
+    <input class="checkout__control" id={fieldId('address')} name={prefix === 'shipping' ? 'address' : 'billing.address'} autocomplete="address-line1" placeholder="Street and house number" data-checkout-input />
+    <p class="checkout__error" id={`${fieldId('address')}-error`} hidden></p>
+  </div>
+
+  <div class="checkout__field">
+    <label for={fieldId('apartment')}>
+      Apartment, suite, etc.
+      <span class="checkout__optional">(optional)</span>
+    </label>
+    <input class="checkout__control" id={fieldId('apartment')} name={prefix === 'shipping' ? 'apartment' : 'billing.apartment'} autocomplete="address-line2" data-checkout-input />
+  </div>
+
+  <div class="checkout__row-3">
+    <div class="checkout__field">
+      <label for={fieldId('city')}>City</label>
+      <input class="checkout__control" id={fieldId('city')} name={prefix === 'shipping' ? 'city' : 'billing.city'} autocomplete="address-level2" data-checkout-input />
+      <p class="checkout__error" id={`${fieldId('city')}-error`} hidden></p>
+    </div>
+    <div class="checkout__field">
+      <label for={fieldId('state')}>
+        State / Province
+        <span class="checkout__optional">(optional)</span>
+      </label>
+      <input class="checkout__control" id={fieldId('state')} name={prefix === 'shipping' ? 'state' : 'billing.state'} autocomplete="address-level1" data-checkout-input />
+    </div>
+    <div class="checkout__field">
+      <label for={fieldId('postalCode')}>Postal code</label>
+      <input class="checkout__control" id={fieldId('postalCode')} name={prefix === 'shipping' ? 'postalCode' : 'billing.postalCode'} autocomplete="postal-code" data-checkout-input />
+      <p class="checkout__error" id={`${fieldId('postalCode')}-error`} hidden></p>
+    </div>
+  </div>
+</div>

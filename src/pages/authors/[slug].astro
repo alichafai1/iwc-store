@@ -1,0 +1,140 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import ArticleCard from '../../components/ui/ArticleCard.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Container from '../../components/ui/Container.astro';
+import TrustSection from '../../components/layout/TrustSection.astro';
+import { getAuthors } from '../../data/authors';
+import { getArticlesByAuthor } from '../../lib/editorial';
+import { breadcrumbJsonLd, defaultJsonLd } from '../../lib/seo';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import type { Author } from '../../types/author';
+
+export const getStaticPaths = (() => {
+  return getAuthors().map((author) => ({
+    params: { slug: author.slug },
+    props: { author },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  author: Author;
+}
+
+const { author } = Astro.props;
+const articles = getArticlesByAuthor(author.slug);
+const path = `/authors/${author.slug}/`;
+---
+
+<BaseLayout
+  title={author.name}
+  description={author.bio}
+  canonicalPath={path}
+  jsonLd={[
+    defaultJsonLd(),
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: author.name, path },
+    ]),
+  ]}
+>
+  <header class="author-page">
+    <Container size="md">
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: author.name }]} />
+      <div class="author-page__intro">
+        <div class="media author-page__media">
+          <Image src={author.image} alt={author.imageAlt} width={160} height={160} loading="eager" />
+        </div>
+        <div>
+          <h1>{author.name}</h1>
+          {author.role ? <p class="author-page__role">{author.role}</p> : null}
+          <p>{author.bio}</p>
+        </div>
+      </div>
+    </Container>
+  </header>
+
+  <section class="section" aria-labelledby="author-articles-heading">
+    <Container>
+      <h2 id="author-articles-heading">Articles</h2>
+      <ul class="author-page__grid">
+        {
+          articles.map((article) => (
+            <li>
+              <ArticleCard
+                article={article}
+                linkLabel={article.kind === 'guide' ? 'Read Guide' : 'Read More'}
+                showDate={article.kind === 'blog'}
+              />
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .author-page {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .author-page :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .author-page__intro {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .author-page__media {
+    width: 5.5rem;
+    height: 5.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+  }
+
+  .author-page h1 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-xl);
+  }
+
+  .author-page__role,
+  .author-page p {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-muted);
+  }
+
+  .author-page__grid {
+    display: grid;
+    gap: var(--space-6) var(--space-5);
+    list-style: none;
+  }
+
+  @media (min-width: 48em) {
+    .author-page {
+      padding-top: var(--space-8);
+    }
+
+    .author-page__intro {
+      grid-template-columns: 5.5rem 1fr;
+      align-items: start;
+    }
+
+    .author-page__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .author-page__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -1,0 +1,82 @@
+---
+import { Image } from 'astro:assets';
+import heroImage from '../../assets/images/hero.svg';
+import Button from '../ui/Button.astro';
+---
+
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="container hero__inner">
+    <div class="hero__copy">
+      <p class="eyebrow">The collections</p>
+      <h1 id="hero-heading">Instruments for the wrist.</h1>
+      <p class="hero__text">Houses of design, presented with clarity and restraint.</p>
+      <div class="hero__actions">
+        <Button href="/collections/">Shop the collections</Button>
+        <Button href="/guides/" variant="ghost">Read the guides</Button>
+      </div>
+    </div>
+    <div class="media hero__media">
+      <Image
+        src={heroImage}
+        alt="Editorial photograph of a timepiece"
+        width={1600}
+        height={1000}
+        sizes="(min-width: 64em) 54vw, 100vw"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hero__inner {
+    display: grid;
+    gap: var(--space-6);
+    padding-block: var(--space-8);
+  }
+
+  .hero__copy {
+    max-width: 34rem;
+  }
+
+  .hero h1 {
+    margin-bottom: var(--space-4);
+  }
+
+  .hero__text {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-md);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .hero__media {
+    aspect-ratio: 8 / 5;
+    border: 1px solid var(--color-border);
+  }
+
+  @media (min-width: 64em) {
+    .hero__inner {
+      grid-template-columns: minmax(18rem, 0.85fr) minmax(0, 1.15fr);
+      align-items: center;
+      gap: var(--space-10);
+      min-height: 36rem;
+      padding-block: var(--space-10);
+    }
+  }
+
+  @media (min-width: 80em) {
+    .hero__inner {
+      min-height: 40rem;
+    }
+  }
+</style>
