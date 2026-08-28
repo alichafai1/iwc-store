@@ -36,6 +36,51 @@ export function validateImageFile(file: File): string | null {
   return null;
 }
 
+function sanitizeImageBasename(originalName: string): string {
+  const trimmed = originalName.trim();
+  const lastDot = trimmed.lastIndexOf('.');
+  const rawBase = lastDot > 0 ? trimmed.slice(0, lastDot) : trimmed;
+
+  const basename = rawBase
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120);
+
+  return basename || 'image';
+}
+
+function shortUniqueSuffix(): string {
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 4);
+}
+
+function isDuplicateObjectError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('already exists') ||
+    normalized.includes('duplicate') ||
+    normalized.includes('resource exists')
+  );
+}
+
+async function storageObjectExists(
+  supabase: SupabaseClient<Database>,
+  bucket: string,
+  folder: string,
+  filename: string,
+): Promise<boolean> {
+  const { data } = await supabase.storage.from(bucket).list(folder, {
+    search: filename,
+    limit: 100,
+  });
+
+  return (data ?? []).some((item) => item.name === filename);
+}
+
 export async function uploadAdminImage(
   supabase: SupabaseClient<Database>,
   bucket: string,
@@ -48,17 +93,34 @@ export async function uploadAdminImage(
   }
 
   const extension = IMAGE_EXTENSIONS[file.type] ?? 'bin';
-  const path = `${folder}/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from(bucket).upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  });
+  const basename = sanitizeImageBasename(file.name);
+  let filename = `${basename}.${extension}`;
 
-  if (error) {
-    return { error: error.message };
+  if (await storageObjectExists(supabase, bucket, folder, filename)) {
+    filename = `${basename}-${shortUniqueSuffix()}.${extension}`;
   }
 
-  return { path };
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (attempt > 0) {
+      filename = `${basename}-${shortUniqueSuffix()}.${extension}`;
+    }
+
+    const path = `${folder}/${filename}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+    if (!error) {
+      return { path };
+    }
+
+    if (!isDuplicateObjectError(error.message) || attempt === 3) {
+      return { error: error.message };
+    }
+  }
+
+  return { error: 'Could not store the image with a unique filename.' };
 }
 
 export async function removeAdminImage(
