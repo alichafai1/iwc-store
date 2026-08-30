@@ -1,0 +1,464 @@
+---
+import type { ShopProduct, StoreCollectionCard } from '../../lib/catalog';
+import {
+  shopDiscoverParagraphs,
+  shopExploreTitles,
+  shopFaqs,
+  shopFeaturedBlocks,
+  shopPage,
+} from '../../data/shop';
+import { collectionPath } from '../../data/collections';
+import CollectionCarousel from '../home/CollectionCarousel.astro';
+import FAQSection from '../home/FAQSection.astro';
+import TrustSection from '../layout/TrustSection.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Container from '../ui/Container.astro';
+import ProductCard from '../ui/ProductCard.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { faqAnswerParts } from '../../lib/faq-text';
+import { mediaUrl } from '../../lib/media';
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  collectionPageJsonLd,
+  defaultJsonLd,
+  faqPageJsonLd,
+  itemListJsonLd,
+} from '../../lib/seo';
+
+interface Props {
+  products: ShopProduct[];
+  exploreCollections: StoreCollectionCard[];
+  filterCollections: StoreCollectionCard[];
+  filters: {
+    collection: string;
+    min: string;
+    max: string;
+    ref: string;
+  };
+  totalCount: number;
+}
+
+const { products, exploreCollections, filterCollections, filters, totalCount } = Astro.props;
+const ogImage = mediaUrl(products[0]?.image) ?? mediaUrl(exploreCollections[0]?.image);
+const pageUrl = absoluteUrl(shopPage.path);
+const breadcrumbId = `${pageUrl}#breadcrumb`;
+const itemListId = `${pageUrl}#itemlist`;
+const jsonLd = [
+  defaultJsonLd(),
+  collectionPageJsonLd({
+    name: shopPage.heading,
+    description: shopPage.metaDescription,
+    path: shopPage.path,
+    image: ogImage,
+    breadcrumbId,
+    mainEntityId: products.length > 0 ? itemListId : undefined,
+  }),
+  breadcrumbJsonLd(
+    [
+      { name: 'Home', path: '/' },
+      { name: 'Shop', path: shopPage.path },
+    ],
+    { id: breadcrumbId },
+  ),
+  faqPageJsonLd(shopFaqs),
+];
+
+if (products.length > 0) {
+  jsonLd.push(
+    itemListJsonLd({
+      id: itemListId,
+      items: products.map((product) => ({
+        name: product.title,
+        path: `/products/${product.slug}/`,
+      })),
+    }),
+  );
+}
+
+const featured = shopFeaturedBlocks.filter((block) =>
+  exploreCollections.some((collection) => collection.slug === block.slug),
+);
+---
+
+<BaseLayout
+  title={shopPage.metaTitle}
+  description={shopPage.metaDescription}
+  canonicalPath={shopPage.path}
+  ogImage={ogImage}
+  jsonLd={jsonLd}
+>
+  <section class="shop-hero">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Shop' }]} />
+      <h1>{shopPage.heading}</h1>
+      <p>{shopPage.intro}</p>
+    </Container>
+  </section>
+
+  <section class="section shop-explore" aria-labelledby="explore-collections-heading">
+    <Container>
+      <SectionHeader headingId="explore-collections-heading" title={shopPage.exploreHeading} href="/collections/" />
+      <CollectionCarousel
+        collections={exploreCollections.map((collection) => ({
+          name: shopExploreTitles[collection.slug] ?? `${collection.name} Watches`,
+          href: collection.href,
+          image: collection.image,
+          imageAlt: collection.imageAlt,
+        }))}
+      />
+    </Container>
+  </section>
+
+  <section class="section shop-catalog" aria-labelledby="shop-catalog-heading">
+    <Container>
+      <div class="shop-catalog__layout">
+        <aside class="shop-filters" aria-label="Product filters">
+          <p class="shop-filters__title">Filter</p>
+          <form class="shop-filters__form" method="get" action={shopPage.path}>
+            <label class="shop-filters__field">
+              <span>Collection</span>
+              <select name="collection">
+                <option value="">All collections</option>
+                {filterCollections.map((collection) => (
+                  <option value={collection.slug} selected={filters.collection === collection.slug}>
+                    {collection.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div class="shop-filters__prices">
+              <label class="shop-filters__field">
+                <span>Min price</span>
+                <input type="number" name="min" min="0" step="1" inputmode="decimal" value={filters.min} placeholder="0" />
+              </label>
+              <label class="shop-filters__field">
+                <span>Max price</span>
+                <input type="number" name="max" min="0" step="1" inputmode="decimal" value={filters.max} placeholder="Any" />
+              </label>
+            </div>
+            <label class="shop-filters__field">
+              <span>Reference number</span>
+              <input type="search" name="ref" value={filters.ref} placeholder="IW3777" autocomplete="off" />
+            </label>
+            <button class="shop-filters__submit" type="submit">Apply filters</button>
+            <a class="shop-filters__clear" href={shopPage.path}>Clear</a>
+          </form>
+        </aside>
+
+        <div class="shop-catalog__main">
+          <header class="shop-catalog__header">
+            <h2 id="shop-catalog-heading">{shopPage.catalogHeading}</h2>
+            <p>
+              {shopPage.catalogIntro} Showing {products.length}
+              {products.length === 1 ? ' watch' : ' watches'}
+              {products.length !== totalCount ? ` of ${totalCount}` : ''}.
+            </p>
+          </header>
+          {
+            products.length > 0 ? (
+              <ul class="shop-grid">
+                {products.map((product) => (
+                  <li>
+                    <ProductCard product={product} showSku={true} ctaLabel="View product" />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="shop-empty">No published watches match these filters. Clear the filters to see the full shop.</p>
+            )
+          }
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <section class="section shop-featured" aria-label="Featured IWC collections">
+    <Container size="md">
+      {
+        featured.map((block) => (
+          <article class="shop-featured__block">
+            <h2>{block.heading}</h2>
+            {block.paragraphs.map((paragraph) => (
+              <p>
+                {faqAnswerParts(paragraph).map((part) =>
+                  part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value,
+                )}
+              </p>
+            ))}
+            <a class="shop-featured__link" href={collectionPath(block.slug)}>
+              View {block.heading.replace('Explore ', '')}
+            </a>
+          </article>
+        ))
+      }
+    </Container>
+  </section>
+
+  <section class="section section--muted shop-discover" aria-labelledby="discover-heading">
+    <Container size="md">
+      <h2 id="discover-heading">{shopPage.discoverHeading}</h2>
+      {shopDiscoverParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </Container>
+  </section>
+
+  <FAQSection items={shopFaqs} title="Shopping FAQs" headingId="shop-faq-heading" />
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .shop-hero {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .shop-hero :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .shop-hero h1 {
+    margin: 0 0 var(--space-5);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: var(--line-height-tight);
+  }
+
+  .shop-hero p {
+    max-width: 46rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .shop-explore {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .shop-catalog__layout {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .shop-filters {
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .shop-filters__title {
+    margin: 0 0 var(--space-5);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .shop-filters__form {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .shop-filters__field {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .shop-filters__field span {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .shop-filters__field input,
+  .shop-filters__field select {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-size-sm);
+  }
+
+  .shop-filters__prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+
+  .shop-filters__submit,
+  .shop-filters__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .shop-filters__submit {
+    border: 1px solid var(--color-text);
+    background: var(--color-text);
+    color: var(--color-bg);
+    cursor: pointer;
+  }
+
+  .shop-filters__submit:hover,
+  .shop-filters__submit:focus-visible {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .shop-filters__clear {
+    color: var(--color-text-muted);
+  }
+
+  .shop-filters__clear:hover {
+    color: var(--color-text);
+  }
+
+  .shop-catalog__header {
+    margin-bottom: var(--space-6);
+  }
+
+  .shop-catalog__header h2 {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+  }
+
+  .shop-catalog__header p,
+  .shop-empty,
+  .shop-discover p,
+  .shop-featured__block p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .shop-empty {
+    max-width: 32rem;
+  }
+
+  .shop-featured {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .shop-featured__block {
+    padding-bottom: var(--space-8);
+    margin-bottom: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .shop-featured__block:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .shop-featured__block h2 {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+  }
+
+  .shop-featured__block p + p {
+    margin-top: var(--space-4);
+  }
+
+  .shop-featured__link {
+    display: inline-flex;
+    margin-top: var(--space-5);
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .shop-featured__link:hover {
+    color: var(--color-accent-dark);
+  }
+
+  .shop-discover h2 {
+    margin: 0 0 var(--space-5);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+  }
+
+  .shop-discover p + p {
+    margin-top: var(--space-4);
+  }
+
+  @media (min-width: 48em) {
+    .shop-hero {
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-10);
+    }
+
+    .shop-hero h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .shop-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+  }
+
+  @media (min-width: 64em) {
+    .shop-hero h1 {
+      font-size: var(--font-size-3xl);
+    }
+
+    .shop-hero p {
+      font-size: var(--font-size-base);
+    }
+
+    .shop-catalog__layout {
+      grid-template-columns: 16.5rem minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-10);
+    }
+
+    .shop-filters {
+      position: sticky;
+      top: calc(var(--header-height) + var(--announce-height) + var(--space-4));
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .shop-catalog__header h2,
+    .shop-featured__block h2,
+    .shop-discover h2 {
+      font-size: var(--font-size-xl);
+    }
+
+    .shop-grid {
+      gap: var(--space-8);
+    }
+  }
+</style>

@@ -2,6 +2,7 @@
 import { PRODUCT_IMAGE_BUCKET } from '../../lib/admin/constants';
 import type { CollectionOption } from '../../lib/admin/collections';
 import type { ProductEditorData, ProductInput } from '../../lib/admin/products';
+import { isUuid } from '../../lib/admin/query';
 import { publicStorageUrl } from '../../lib/admin/storage';
 import { siteConfig } from '../../lib/site';
 import FAQEditor from './FAQEditor.astro';
@@ -109,6 +110,10 @@ const images = values
       previewUrl: publicStorageUrl(PRODUCT_IMAGE_BUCKET, image.storage_path),
     }));
 const slugPreview = `${siteConfig.url}/products/${slug || 'your-slug'}/`;
+const imageFolder =
+  product?.id ??
+  images.map((image) => image.path?.split('/')[0] ?? '').find((folder) => isUuid(folder)) ??
+  crypto.randomUUID();
 ---
 
 {
@@ -181,7 +186,7 @@ const slugPreview = `${siteConfig.url}/products/${slug || 'your-slug'}/`;
   </FormSection>
 
   <FormSection title="Product Images">
-    <ImageUploader images={images} />
+    <ImageUploader images={images} bucket={PRODUCT_IMAGE_BUCKET} folder={imageFolder} />
   </FormSection>
 
   <FormSection title="Price">

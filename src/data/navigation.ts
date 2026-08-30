@@ -3,7 +3,7 @@ import { collections } from './collections';
 
 export const headerNav: NavLink[] = [
   { href: '/', label: 'Home' },
-  { href: '/collections/', label: 'Shop' },
+  { href: '/shop/', label: 'Shop' },
   { href: '/collections/', label: 'Collections' },
   { href: '/collections/new-arrivals/', label: 'New Arrival' },
   { href: '/guides/', label: 'Guides' },
@@ -21,7 +21,7 @@ export const headerCollectionLinks: NavLink[] = [
 
 export const footerNav: FooterNav = {
   shop: [
-    { href: '/collections/', label: 'Shop' },
+    { href: '/shop/', label: 'Shop' },
     { href: '/collections/new-arrivals/', label: 'New Arrival' },
     { href: '/collections/best-sellers/', label: 'Best Sellers' },
   ],

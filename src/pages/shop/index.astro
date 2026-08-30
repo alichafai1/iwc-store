@@ -1,0 +1,75 @@
+---
+export const prerender = false;
+
+import ShopPage from '../../components/shop/ShopPage.astro';
+import { getPublishedShopProducts, getPublishedStoreCollectionCards } from '../../lib/catalog';
+import { isStorefrontModelCollectionSlug, storeCollections } from '../../data/collections';
+
+function queryValue(params: URLSearchParams, key: string): string {
+  return params.get(key)?.trim() ?? '';
+}
+
+function queryNumber(params: URLSearchParams, key: string): number | null {
+  const raw = queryValue(params, key);
+  if (!raw) {
+    return null;
+  }
+
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+const params = Astro.url.searchParams;
+const collectionFilter = queryValue(params, 'collection');
+const referenceFilter = queryValue(params, 'ref').toLowerCase();
+const minPrice = queryNumber(params, 'min');
+const maxPrice = queryNumber(params, 'max');
+const allowedSlugs = new Set(storeCollections.map((collection) => collection.slug));
+const activeCollection = allowedSlugs.has(collectionFilter) ? collectionFilter : '';
+
+const [allProducts, collectionCards] = await Promise.all([
+  getPublishedShopProducts(),
+  getPublishedStoreCollectionCards(),
+]);
+
+const products = allProducts.filter((product) => {
+  if (activeCollection && !product.collectionSlugs.includes(activeCollection)) {
+    return false;
+  }
+
+  if (minPrice !== null && product.price < minPrice) {
+    return false;
+  }
+
+  if (maxPrice !== null && product.price > maxPrice) {
+    return false;
+  }
+
+  if (referenceFilter) {
+    const sku = product.sku?.toLowerCase() ?? '';
+    const title = product.title.toLowerCase();
+    if (!sku.includes(referenceFilter) && !title.includes(referenceFilter)) {
+      return false;
+    }
+  }
+
+  return true;
+});
+
+const featuredCards = collectionCards.filter((collection) => isStorefrontModelCollectionSlug(collection.slug));
+const merchCards = collectionCards.filter((collection) => !isStorefrontModelCollectionSlug(collection.slug));
+const exploreCollections = [...featuredCards, ...merchCards];
+---
+
+<ShopPage
+  products={products}
+  exploreCollections={exploreCollections}
+  filterCollections={collectionCards}
+  filters={{
+    collection: activeCollection,
+    min: minPrice !== null ? String(minPrice) : '',
+    max: maxPrice !== null ? String(maxPrice) : '',
+    ref: queryValue(params, 'ref'),
+  }}
+  totalCount={allProducts.length}
+/>

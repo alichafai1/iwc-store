@@ -1,5 +1,5 @@
 ---
-import { MAX_IMAGE_MB } from '../../lib/admin/constants';
+import { MAX_IMAGE_MB, PRODUCT_IMAGE_BUCKET } from '../../lib/admin/constants';
 
 interface ImageRow {
   id?: string | null;
@@ -18,6 +18,8 @@ interface Props {
   currentUrl?: string | null;
   currentAlt?: string | null;
   requiredAlt?: boolean;
+  bucket?: string;
+  folder?: string;
 }
 
 const {
@@ -28,33 +30,45 @@ const {
   currentUrl = null,
   currentAlt = null,
   requiredAlt = true,
+  bucket = PRODUCT_IMAGE_BUCKET,
+  folder = '',
 } = Astro.props;
 ---
 
 {
   mode === 'single' ? (
-    <div class="admin-grid admin-grid--2">
-      <label class="admin-field">
-        <span>Collection image</span>
-        <input type="file" name={name} accept="image/jpeg,image/png,image/webp,image/avif,image/gif" />
-      </label>
-      <label class="admin-field">
-        <span>Image alt text</span>
-        <input type="text" name={altName} value={currentAlt ?? ''} required={requiredAlt && Boolean(currentUrl)} />
-      </label>
-      {currentUrl && (
-        <div class="admin-field">
-          <span>Current image</span>
-          <img class="admin-image-preview" src={currentUrl} alt={currentAlt || ''} />
-          <button class="btn btn--ghost" type="submit" form="admin-delete-image">
-            Delete image
-          </button>
-        </div>
-      )}
+    <div data-image-uploader data-image-bucket={bucket} data-image-folder={folder}>
+      <p class="admin-help">Images upload as soon as you choose them, up to {MAX_IMAGE_MB}MB each. Alt text is required.</p>
+      <p class="admin-image-status" data-image-form-status hidden></p>
+      <div class="admin-grid admin-grid--2" data-image-single>
+        <label class="admin-field">
+          <span>Collection image</span>
+          <input type="hidden" name="uploaded_image_path" value="" />
+          <input type="file" name={name} accept="image/jpeg,image/png,image/webp,image/avif,image/gif" />
+          <p class="admin-image-status" data-image-row-status hidden></p>
+        </label>
+        <label class="admin-field">
+          <span>Image alt text</span>
+          <input type="text" name={altName} value={currentAlt ?? ''} required={requiredAlt && Boolean(currentUrl)} />
+        </label>
+        {currentUrl && (
+          <div class="admin-field">
+            <span>Current image</span>
+            <img class="admin-image-preview" src={currentUrl} alt={currentAlt || ''} />
+            <button class="btn btn--ghost" type="submit" form="admin-delete-image">
+              Delete image
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   ) : (
-    <div data-image-uploader>
-      <p class="admin-help">Upload JPEG, PNG, WebP, AVIF, or GIF files up to {MAX_IMAGE_MB}MB. Alt text is required.</p>
+    <div data-image-uploader data-image-bucket={bucket} data-image-folder={folder}>
+      <p class="admin-help">
+        Images upload as soon as you add them, up to {MAX_IMAGE_MB}MB each. You can add several at once, then save the
+        product. Alt text is required.
+      </p>
+      <p class="admin-image-status" data-image-form-status hidden></p>
       <div class="admin-row-list" data-image-list>
         {images.map((image, index) => (
           <div class="admin-row admin-row--image" data-image-row>
@@ -71,6 +85,7 @@ const {
                 <span>Alt text</span>
                 <input type="text" name="image_alts" value={image.alt ?? ''} required />
               </label>
+              <p class="admin-image-status" data-image-row-status hidden></p>
               <label class="admin-field">
                 <span>Position</span>
                 <input type="number" name="image_positions" min="0" step="1" value={image.position ?? index} />
@@ -142,6 +157,7 @@ const {
             <input type="hidden" name="image_paths" value="" />
             <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" hidden data-image-file />
             <label class="admin-field"><span>Alt text</span><input type="text" name="image_alts" required /></label>
+            <p class="admin-image-status" data-image-row-status hidden></p>
             <label class="admin-field"><span>Position</span><input type="number" name="image_positions" min="0" step="1" /></label>
             <div class="admin-row__controls">
               <label class="admin-check"><input type="radio" name="primary_image" /> Primary image</label>
@@ -226,3 +242,9 @@ const {
     </script>
   )
 }
+
+<script>
+  import { initAdminDirectImageUpload } from '../../scripts/admin-direct-image-upload';
+
+  initAdminDirectImageUpload();
+</script>

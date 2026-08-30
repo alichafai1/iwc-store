@@ -60,10 +60,12 @@ if (Astro.request.method === 'POST') {
         error = parsed.error;
       } else {
         const image = form.get('image');
+        const uploadedImagePath = String(form.get('uploaded_image_path') ?? '').trim();
         const result = await saveCollection(supabase, parsed, {
           id,
           current: collection,
           imageFile: image instanceof File ? image : null,
+          uploadedImagePath,
         });
 
         if (result.error) {

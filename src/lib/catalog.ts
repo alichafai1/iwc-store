@@ -133,6 +133,7 @@ function catalogProductCard(
     reviewCount: reviewRows.length,
     image: imageUrl ?? '',
     imageAlt: primaryImage?.alt_text || row.title,
+    sku: row.sku ?? undefined,
   };
 }
 
@@ -690,6 +691,113 @@ export async function getPublishedStoreCollectionCards(): Promise<StoreCollectio
     image: collectionCardImage(collection, covers.get(collection.slug)),
     imageAlt: collection.image_alt?.trim() || `${collection.name} collection`,
   }));
+}
+
+export interface CollectionHubSection extends StoreCollectionCard {
+  products: Product[];
+}
+
+export interface ShopProduct extends Product {
+  collectionSlugs: string[];
+}
+
+export async function getPublishedShopProducts(): Promise<ShopProduct[]> {
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('*, collections:primary_collection_id(name, slug)')
+    .eq('status', 'published')
+    .order('title');
+
+  if (error) {
+    console.error('Failed to load shop products:', error.message);
+    return [];
+  }
+
+  const rows = (products ?? []) as Array<ProductRow & { collections: CollectionName | null }>;
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const ids = rows.map((row) => row.id);
+  const [imagesResult, qualitiesResult, reviewsResult, joinsResult, collectionsResult] = await Promise.all([
+    supabase.from('product_images').select('*').in('product_id', ids).order('position'),
+    supabase.from('product_qualities').select('*').in('product_id', ids),
+    supabase
+      .from('product_reviews')
+      .select('*')
+      .in('product_id', ids)
+      .eq('status', 'published')
+      .order('position'),
+    supabase.from('product_collections').select('product_id, collection_id').in('product_id', ids),
+    supabase.from('collections').select('id, slug').eq('status', 'published'),
+  ]);
+
+  const childError =
+    imagesResult.error?.message ||
+    qualitiesResult.error?.message ||
+    reviewsResult.error?.message ||
+    joinsResult.error?.message ||
+    collectionsResult.error?.message;
+
+  if (childError) {
+    console.error('Failed to load shop product details:', childError);
+    return [];
+  }
+
+  const imagesByProduct = groupBy(imagesResult.data, (row) => row.product_id);
+  const qualitiesByProduct = groupBy(qualitiesResult.data, (row) => row.product_id);
+  const reviewsByProduct = groupBy(reviewsResult.data, (row) => row.product_id);
+  const collectionIdsByProduct = new Map<string, string[]>();
+  const slugByCollectionId = new Map((collectionsResult.data ?? []).map((row) => [row.id, row.slug]));
+
+  for (const join of joinsResult.data ?? []) {
+    const current = collectionIdsByProduct.get(join.product_id) ?? [];
+    current.push(join.collection_id);
+    collectionIdsByProduct.set(join.product_id, current);
+  }
+
+  return rows
+    .filter((row) =>
+      isStorefrontProduct(row, imagesByProduct.get(row.id), collectionIdsByProduct.get(row.id) ?? []),
+    )
+    .map((row) => {
+      const card = catalogProductCard(
+        row,
+        imagesByProduct.get(row.id),
+        qualitiesByProduct.get(row.id),
+        reviewsByProduct.get(row.id),
+      );
+      const slugs = new Set<string>();
+      if (row.collections?.slug) {
+        slugs.add(row.collections.slug);
+      }
+      for (const collectionId of collectionIdsByProduct.get(row.id) ?? []) {
+        const slug = slugByCollectionId.get(collectionId);
+        if (slug) {
+          slugs.add(slug);
+        }
+      }
+
+      return {
+        ...card,
+        collectionSlugs: [...slugs],
+      };
+    })
+    .filter((product) => Boolean(product.image));
+}
+
+export async function getCollectionHubSections(limit = 6): Promise<CollectionHubSection[]> {
+  const collections = await getPublishedStoreCollectionCards();
+  const productLists = await Promise.all(
+    collections.map((collection) => getPublishedProductsForCollection(collection.slug)),
+  );
+
+  return collections
+    .map((collection, index) => ({
+      ...collection,
+      products: (productLists[index] ?? []).slice(0, limit),
+    }))
+    .sort((left, right) => Number(right.products.length > 0) - Number(left.products.length > 0));
 }
 
 function nonempty(value: string | null | undefined): string | null {

@@ -2,9 +2,9 @@
 export const prerender = false;
 
 import CollectionsHub from '../../components/collection/CollectionsHub.astro';
-import { getPublishedStoreCollectionCards } from '../../lib/catalog';
+import { getCollectionHubSections } from '../../lib/catalog';
 
-const collections = await getPublishedStoreCollectionCards();
+const sections = await getCollectionHubSections(6);
 ---
 
-<CollectionsHub collections={collections} />
+<CollectionsHub sections={sections} />

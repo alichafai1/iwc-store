@@ -25,6 +25,13 @@ export const PRODUCT_GALLERY_THUMB = {
   sizes: '84px',
 } as const;
 
+export const COLLECTION_HUB_IMAGE = {
+  widths: [480, 720, 960, 1200],
+  width: 960,
+  height: 1200,
+  sizes: '(min-width: 64em) 36vw, 100vw',
+} as const;
+
 export interface StorageImageTransform {
   width: number;
   height?: number;

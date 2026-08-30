@@ -1,5 +1,6 @@
 ---
 import type { CollectionInput, CollectionOption, CollectionRecord, CollectionSeoEditor } from '../../lib/admin/collections';
+import { COLLECTION_IMAGE_BUCKET } from '../../lib/admin/constants';
 import { siteConfig } from '../../lib/site';
 import CollectionComparisonEditor from './CollectionComparisonEditor.astro';
 import FAQEditor from './FAQEditor.astro';
@@ -93,7 +94,13 @@ const otherCollections = relatedOptions.filter((item) => item.id !== collection?
   </FormSection>
 
   <FormSection title="Collection image" help="Stored in the collection-images bucket. Alt text is required when an image is present. Used on collection pages and Open Graph images.">
-    <ImageUploader mode="single" currentUrl={imageUrl} currentAlt={imageAlt} />
+    <ImageUploader
+      mode="single"
+      currentUrl={imageUrl}
+      currentAlt={imageAlt}
+      bucket={COLLECTION_IMAGE_BUCKET}
+      folder={collection?.id ?? ''}
+    />
   </FormSection>
 
   <FormSection title="SEO">

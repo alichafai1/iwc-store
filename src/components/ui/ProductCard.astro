@@ -8,9 +8,11 @@ import OptimizedRemoteImage from './OptimizedRemoteImage.astro';
 
 interface Props {
   product: Product;
+  showSku?: boolean;
+  ctaLabel?: string;
 }
 
-const { product } = Astro.props;
+const { product, showSku = false, ctaLabel = 'Shop Now' } = Astro.props;
 const href = `/products/${product.slug}/`;
 const compareAtPrice = product.compareAtPrice;
 const showCompareAt = typeof compareAtPrice === 'number' && compareAtPrice > product.price;
@@ -50,6 +52,11 @@ const ratingLabel =
     </div>
     <div class="product-card__body">
       <h3 class="product-card__title">{product.title}</h3>
+      {
+        showSku && product.sku && (
+          <p class="product-card__sku">Ref. {product.sku}</p>
+        )
+      }
       <p class="product-card__reviews" aria-label={ratingLabel}>
         <span class="product-card__stars" aria-hidden="true">
           {[0, 1, 2, 3, 4].map(() => (
@@ -70,7 +77,7 @@ const ratingLabel =
       </p>
     </div>
   </a>
-  <a class="product-card__cta" href={href}>Shop Now</a>
+  <a class="product-card__cta" href={href}>{ctaLabel}</a>
 </article>
 
 <style>
@@ -117,6 +124,14 @@ const ratingLabel =
     flex: 1 1 auto;
     flex-direction: column;
     padding-top: var(--space-4);
+  }
+
+  .product-card__sku {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   .product-card__title {

@@ -3,7 +3,7 @@ import type { Database } from '../../types/database';
 import { getSupabasePublicEnv } from '../supabase-env';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_MB } from './constants';
 
-const IMAGE_EXTENSIONS: Record<string, string> = {
+export const IMAGE_EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
@@ -36,7 +36,7 @@ export function validateImageFile(file: File): string | null {
   return null;
 }
 
-function sanitizeImageBasename(originalName: string): string {
+export function sanitizeImageBasename(originalName: string): string {
   const trimmed = originalName.trim();
   const lastDot = trimmed.lastIndexOf('.');
   const rawBase = lastDot > 0 ? trimmed.slice(0, lastDot) : trimmed;
@@ -54,7 +54,7 @@ function sanitizeImageBasename(originalName: string): string {
   return basename || 'image';
 }
 
-function shortUniqueSuffix(): string {
+export function shortUniqueSuffix(): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 4);
 }
 
@@ -79,6 +79,28 @@ async function storageObjectExists(
   });
 
   return (data ?? []).some((item) => item.name === filename);
+}
+
+export async function allocateAdminImagePath(
+  supabase: SupabaseClient<Database>,
+  bucket: string,
+  folder: string,
+  originalName: string,
+  contentType: string,
+): Promise<{ path: string } | { error: string }> {
+  const extension = IMAGE_EXTENSIONS[contentType];
+  if (!extension) {
+    return { error: 'Use a JPEG, PNG, WebP, AVIF, or GIF image.' };
+  }
+
+  const basename = sanitizeImageBasename(originalName);
+  let filename = `${basename}.${extension}`;
+
+  if (await storageObjectExists(supabase, bucket, folder, filename)) {
+    filename = `${basename}-${shortUniqueSuffix()}.${extension}`;
+  }
+
+  return { path: `${folder}/${filename}` };
 }
 
 export async function uploadAdminImage(

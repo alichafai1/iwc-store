@@ -1,28 +1,73 @@
 ---
-import type { StoreCollectionCard } from '../../lib/catalog';
-import { collectionsHub, collectionsHubLinks } from '../../data/collections-hub';
-import { isStorefrontModelCollectionSlug } from '../../data/collections';
-import { getCollectionImage } from '../../data/collection-media';
+import type { CollectionHubSection } from '../../lib/catalog';
+import { collectionsHub, collectionsHubFaqs, getCollectionHubCopy } from '../../data/collections-hub';
+import { faqAnswerParts } from '../../lib/faq-text';
 import TrustSection from '../layout/TrustSection.astro';
+import CollectionCarousel from '../home/CollectionCarousel.astro';
+import FAQSection from '../home/FAQSection.astro';
 import Breadcrumb from '../ui/Breadcrumb.astro';
-import CollectionCard from '../ui/CollectionCard.astro';
 import Container from '../ui/Container.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import ProductCard from '../ui/ProductCard.astro';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { mediaUrl } from '../../lib/media';
-import { absoluteUrl, breadcrumbJsonLd, collectionPageJsonLd, defaultJsonLd, itemListJsonLd } from '../../lib/seo';
+import { Image } from 'astro:assets';
+import { isRemoteMedia, mediaUrl } from '../../lib/media';
+import { COLLECTION_HUB_IMAGE } from '../../lib/storage-image';
+import { absoluteUrl, breadcrumbJsonLd, collectionPageJsonLd, defaultJsonLd, faqPageJsonLd, itemListJsonLd } from '../../lib/seo';
 
 interface Props {
-  collections: StoreCollectionCard[];
+  sections: CollectionHubSection[];
 }
 
-const { collections } = Astro.props;
-const modelCollections = collections.filter((collection) => isStorefrontModelCollectionSlug(collection.slug));
-const merchCollections = collections.filter((collection) => !isStorefrontModelCollectionSlug(collection.slug));
-const ogImage =
-  mediaUrl(modelCollections[0]?.image) ?? mediaUrl(getCollectionImage('da-vinci'));
+const { sections } = Astro.props;
+const ogImage = mediaUrl(sections[0]?.image);
 const hubPath = collectionsHub.path;
 const breadcrumbId = `${absoluteUrl(hubPath)}#breadcrumb`;
-const itemListId = `${absoluteUrl(hubPath)}#itemlist`;
+const collectionListId = `${absoluteUrl(hubPath)}#collections`;
+const productListId = `${absoluteUrl(hubPath)}#products`;
+const featuredProducts = sections.flatMap((section) =>
+  section.products.map((product) => ({
+    name: product.title,
+    path: `/products/${product.slug}/`,
+  })),
+);
+
+const jsonLd = [
+  defaultJsonLd(),
+  collectionPageJsonLd({
+    name: collectionsHub.heading,
+    description: collectionsHub.metaDescription,
+    path: hubPath,
+    image: ogImage,
+    breadcrumbId,
+    mainEntityId: collectionListId,
+  }),
+  breadcrumbJsonLd(
+    [
+      { name: 'Home', path: '/' },
+      { name: 'Collections', path: hubPath },
+    ],
+    { id: breadcrumbId },
+  ),
+  itemListJsonLd({
+    id: collectionListId,
+    items: sections.map((section) => ({
+      name: section.name,
+      path: section.href,
+    })),
+  }),
+  faqPageJsonLd(collectionsHubFaqs),
+];
+
+if (featuredProducts.length > 0) {
+  jsonLd.push(
+    itemListJsonLd({
+      id: productListId,
+      items: featuredProducts,
+    }),
+  );
+}
 ---
 
 <BaseLayout
@@ -30,37 +75,9 @@ const itemListId = `${absoluteUrl(hubPath)}#itemlist`;
   description={collectionsHub.metaDescription}
   canonicalPath={collectionsHub.path}
   ogImage={ogImage}
-  jsonLd={[
-    defaultJsonLd(),
-    collectionPageJsonLd({
-      name: collectionsHub.heading,
-      description: collectionsHub.metaDescription,
-      path: hubPath,
-      image: ogImage,
-      breadcrumbId,
-      mainEntityId: collections.length > 0 ? itemListId : undefined,
-    }),
-    breadcrumbJsonLd(
-      [
-        { name: 'Home', path: '/' },
-        { name: 'Collections', path: hubPath },
-      ],
-      { id: breadcrumbId },
-    ),
-    ...(collections.length > 0
-      ? [
-          itemListJsonLd({
-            id: itemListId,
-            items: collections.map((collection) => ({
-              name: collection.name,
-              path: collection.href,
-            })),
-          }),
-        ]
-      : []),
-  ]}
+  jsonLd={jsonLd}
 >
-  <section class="collection-header">
+  <section class="hub-hero">
     <Container>
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Collections' }]} />
       <h1>{collectionsHub.heading}</h1>
@@ -68,102 +85,233 @@ const itemListId = `${absoluteUrl(hubPath)}#itemlist`;
     </Container>
   </section>
 
-  <section class="section collection-hub__grid" aria-labelledby="shop-collections-heading">
+  <section class="section hub-carousel" aria-labelledby="shop-collections-heading">
     <Container>
-      <h2 id="shop-collections-heading">{collectionsHub.shopHeading}</h2>
-      <ul class="collection-hub__list">
-        {
-          modelCollections.map((collection) => (
-            <li>
-              <CollectionCard
-                name={collection.name}
-                href={collection.href}
-                image={collection.image}
-                imageAlt={collection.imageAlt}
-              />
-            </li>
-          ))
-        }
-      </ul>
+      <SectionHeader headingId="shop-collections-heading" title={collectionsHub.shopHeading} />
+      <CollectionCarousel
+        collections={sections.map((section) => ({
+          name: section.name,
+          href: section.href,
+          image: section.image,
+          imageAlt: section.imageAlt,
+        }))}
+      />
     </Container>
   </section>
 
-  <section class="section section--muted collection-hub__merch" aria-labelledby="merch-collections-heading">
-    <Container>
-      <h2 id="merch-collections-heading">{collectionsHub.merchHeading}</h2>
-      <p class="collection-hub__lead">{collectionsHub.merchIntro}</p>
-      <ul class="collection-hub__list collection-hub__list--merch">
-        {
-          merchCollections.map((collection) => (
-            <li>
-              <CollectionCard
-                name={collection.name}
-                href={collection.href}
-                image={collection.image}
-                imageAlt={collection.imageAlt}
-              />
-            </li>
-          ))
-        }
-      </ul>
-    </Container>
-  </section>
+  {
+    sections.map((section, index) => {
+      const copy = getCollectionHubCopy(section.slug, section.name);
+      const headingId = `${section.slug}-heading`;
+      const aboutId = `${section.slug}-about`;
 
-  <section class="section collection-seo" aria-labelledby="collections-seo-heading">
-    <Container size="md">
-      <h2 id="collections-seo-heading">{collectionsHub.seo.heading}</h2>
-      {collectionsHub.seo.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
-      <h3>{collectionsHub.seo.linksHeading}</h3>
-      <ul class="collection-hub__links">
-        {
-          collectionsHubLinks.map((link) => (
-            <li>
-              <a href={link.href}>{link.label}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </Container>
-  </section>
+      return (
+        <section
+          class:list={['hub-collection', index % 2 === 1 && 'hub-collection--alt']}
+          aria-labelledby={headingId}
+          id={section.slug}
+        >
+          <Container>
+            <div class="hub-collection__layout">
+              <div class="hub-collection__aside">
+                <a class="hub-collection__cover" href={section.href}>
+                  <div class:list={['media', 'hub-collection__media', isRemoteMedia(section.image) && 'hub-collection__media--photo']}>
+                    {isRemoteMedia(section.image) ? (
+                      <OptimizedRemoteImage
+                        src={section.image}
+                        alt={section.imageAlt}
+                        widths={COLLECTION_HUB_IMAGE.widths}
+                        sizes={COLLECTION_HUB_IMAGE.sizes}
+                        width={COLLECTION_HUB_IMAGE.width}
+                        height={COLLECTION_HUB_IMAGE.height}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        fetchpriority={index === 0 ? 'high' : undefined}
+                      />
+                    ) : (
+                      <Image
+                        src={section.image}
+                        alt={section.imageAlt}
+                        width={960}
+                        height={1200}
+                        sizes={COLLECTION_HUB_IMAGE.sizes}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                      />
+                    )}
+                  </div>
+                </a>
+                <a class="hub-collection__cta" href={section.href}>
+                  <span>View all products</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </a>
+              </div>
 
+              <div class="hub-collection__products">
+                <h2 id={headingId}>{copy.heading}</h2>
+                {section.products.length > 0 ? (
+                  <ul class="hub-collection__grid">
+                    {section.products.map((product) => (
+                      <li>
+                        <ProductCard product={product} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p class="hub-collection__empty">Published watches for this collection will appear here.</p>
+                )}
+              </div>
+            </div>
+
+            <div class="hub-collection__seo" aria-labelledby={aboutId}>
+              <h3 id={aboutId}>{copy.aboutHeading}</h3>
+              {copy.paragraphs.map((paragraph) => (
+                <p>
+                  {faqAnswerParts(paragraph).map((part) =>
+                    part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value,
+                  )}
+                </p>
+              ))}
+            </div>
+          </Container>
+        </section>
+      );
+    })
+  }
+
+  <FAQSection items={collectionsHubFaqs} title="Frequently Asked Questions" headingId="collections-faq-heading" />
   <TrustSection />
 </BaseLayout>
 
 <style>
-  .collection-header {
+  .hub-hero {
     padding-top: var(--space-6);
-    padding-bottom: var(--space-6);
+    padding-bottom: var(--space-8);
     border-bottom: 1px solid var(--color-border);
   }
 
-  .collection-header :global(.breadcrumb) {
+  .hub-hero :global(.breadcrumb) {
     margin-bottom: var(--space-5);
   }
 
-  .collection-header h1 {
-    margin: 0 0 var(--space-4);
+  .hub-hero h1 {
+    margin: 0 0 var(--space-5);
+    font-family: var(--font-display);
     font-size: var(--font-size-xl);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: var(--line-height-tight);
   }
 
-  .collection-header p,
-  .collection-hub__lead {
-    max-width: 38rem;
+  .hub-hero p {
+    max-width: 46rem;
     margin: 0;
     color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
   }
 
-  .collection-hub__grid h2,
-  .collection-hub__merch h2,
-  .collection-seo h2 {
+  .hub-carousel {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hub-collection {
+    padding-block: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hub-collection--alt {
+    background: var(--color-muted);
+  }
+
+  .hub-collection__layout {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .hub-collection__aside {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+  }
+
+  .hub-collection__cover {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .hub-collection__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--color-text);
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      transform 200ms ease;
+  }
+
+  .hub-collection__cta svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .hub-collection__cta:hover,
+  .hub-collection__cta:focus-visible {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .hub-collection__cta:active {
+    background: var(--color-accent-dark);
+    border-color: var(--color-accent-dark);
+    color: var(--color-bg);
+    transform: translateY(1px);
+  }
+
+  .hub-collection__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    overflow: hidden;
+    background: #f6f6f6;
+  }
+
+  .hub-collection__media :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+  }
+
+  .hub-collection__products h2 {
     margin: 0 0 var(--space-5);
-    font-size: var(--font-size-xl);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    line-height: var(--line-height-tight);
   }
 
-  .collection-hub__lead {
-    margin-bottom: var(--space-5);
-  }
-
-  .collection-hub__list {
+  .hub-collection__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-5);
@@ -172,67 +320,99 @@ const itemListId = `${absoluteUrl(hubPath)}#itemlist`;
     list-style: none;
   }
 
-  .collection-seo p,
-  .collection-seo h3 {
+  .hub-collection__empty {
+    margin: 0;
     color: var(--color-text-muted);
-  }
-
-  .collection-seo p {
     font-size: var(--font-size-sm);
   }
 
-  .collection-seo h3 {
-    margin: var(--space-6) 0 var(--space-3);
+  .hub-collection__seo {
+    max-width: 46rem;
+    margin-top: var(--space-8);
+  }
+
+  .hub-collection__seo h3 {
+    margin: 0 0 var(--space-4);
     font-family: var(--font-sans);
     font-size: var(--font-size-base);
     font-weight: 500;
   }
 
-  .collection-hub__links {
-    display: grid;
-    gap: var(--space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .hub-collection__seo p {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
   }
 
-  .collection-hub__links a {
-    color: inherit;
+  .hub-collection__seo p :global(a) {
+    color: var(--color-text);
+    text-underline-offset: 0.18em;
   }
+
+  .hub-collection__seo p :global(a:hover) {
+    color: var(--color-accent-dark);
+  }
+
 
   @media (min-width: 48em) {
-    .collection-header {
+    .hub-hero {
       padding-top: var(--space-8);
-      padding-bottom: var(--space-8);
+      padding-bottom: var(--space-10);
     }
 
-    .collection-header h1 {
+    .hub-hero h1 {
       font-size: var(--font-size-2xl);
     }
 
-    .collection-hub__list {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .collection-hub__list--merch {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .hub-collection {
+      padding-block: var(--space-10);
     }
   }
 
   @media (min-width: 64em) {
-    .collection-hub__list {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+    .hub-hero h1 {
+      font-size: var(--font-size-3xl);
     }
 
-    .collection-hub__list--merch {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      max-width: 40rem;
+    .hub-hero p {
+      font-size: var(--font-size-base);
     }
 
-    .collection-hub__grid h2,
-    .collection-hub__merch h2,
-    .collection-seo h2 {
-      font-size: var(--font-size-2xl);
+    .hub-collection {
+      padding-block: var(--space-12);
+    }
+
+    .hub-collection__layout {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      align-items: start;
+      gap: var(--space-10);
+    }
+
+    .hub-collection__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+
+    .hub-collection__products h2 {
+      font-size: var(--font-size-xl);
+    }
+
+    .hub-collection__seo {
+      margin-top: var(--space-10);
+    }
+
+    .hub-collection__cta {
+      min-height: 3.15rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hub-collection__cta {
+      transition: none;
+    }
+
+    .hub-collection__cta:active {
+      transform: none;
     }
   }
 </style>

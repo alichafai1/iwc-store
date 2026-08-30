@@ -586,6 +586,7 @@ export async function saveCollection(
     id?: string;
     current?: CollectionRecord | null;
     imageFile?: File | null;
+    uploadedImagePath?: string | null;
     removeImage?: boolean;
   },
 ): Promise<{ id?: string; error?: string }> {
@@ -593,8 +594,9 @@ export async function saveCollection(
     return { error: 'Collections are predefined and cannot be created.' };
   }
   const current = options.current ?? null;
+  const uploadedImagePath = options.uploadedImagePath?.trim() || null;
 
-  if (options.imageFile && options.imageFile.size > 0 && !input.image_alt) {
+  if (((options.imageFile && options.imageFile.size > 0) || uploadedImagePath) && !input.image_alt) {
     return { error: 'Image alt text is required when uploading a collection image.' };
   }
 
@@ -667,7 +669,12 @@ export async function saveCollection(
     await removeAdminImage(supabase, COLLECTION_IMAGE_BUCKET, current.image_path);
   }
 
-  if (options.imageFile && options.imageFile.size > 0) {
+  if (uploadedImagePath) {
+    if (current?.image_path && current.image_path !== uploadedImagePath) {
+      await removeAdminImage(supabase, COLLECTION_IMAGE_BUCKET, current.image_path);
+    }
+    imagePath = uploadedImagePath;
+  } else if (options.imageFile && options.imageFile.size > 0) {
     const invalid = validateImageFile(options.imageFile);
     if (invalid) {
       return { id: collectionId, error: invalid };
@@ -688,6 +695,9 @@ export async function saveCollection(
     }
 
     imagePath = uploaded.path;
+  }
+
+  if (imagePath && imagePath !== current?.image_path) {
     const { error } = await supabase
       .from('collections')
       .update({

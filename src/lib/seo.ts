@@ -246,6 +246,7 @@ export const sitemapExcludedPaths = ['/cart/', '/checkout/', '/robots.txt'] as c
 
 export function sitemapCollectionPages(): string[] {
   return [
+    absoluteUrl('/shop/'),
     absoluteUrl('/collections/'),
     ...storeCollections.map((collection) => absoluteUrl(`/collections/${collection.slug}/`)),
   ];

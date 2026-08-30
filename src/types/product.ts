@@ -14,6 +14,7 @@ export interface Product {
   reviewCount: number;
   image: ProductMedia;
   imageAlt: string;
+  sku?: string;
 }
 
 export interface ProductImage {
