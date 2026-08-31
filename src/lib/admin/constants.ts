@@ -6,6 +6,7 @@ export const CONTENT_STATUSES = ['draft', 'review', 'published', 'archived'] as 
 
 export const PRODUCT_IMAGE_BUCKET = 'product-images';
 export const COLLECTION_IMAGE_BUCKET = 'collection-images';
+export const SITE_ASSETS_BUCKET = 'site-assets';
 export const ADMIN_IMAGE_BUCKETS = [PRODUCT_IMAGE_BUCKET, COLLECTION_IMAGE_BUCKET] as const;
 export type AdminImageBucket = (typeof ADMIN_IMAGE_BUCKETS)[number];
 

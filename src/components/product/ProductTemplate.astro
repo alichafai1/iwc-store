@@ -1,6 +1,7 @@
 ---
 import type { Product, ProductPageData } from '../../types/product';
 import FAQSection from '../home/FAQSection.astro';
+import CustomerReviewsSection from '../home/CustomerReviewsSection.astro';
 import TrustSection from '../layout/TrustSection.astro';
 import Breadcrumb from '../ui/Breadcrumb.astro';
 import Container from '../ui/Container.astro';
@@ -143,6 +144,8 @@ const ratingLabel = isCatalog
   </section>
 
   <ProductReviews rating={product.rating} reviews={reviews} isPlaceholder={!isCatalog} />
+
+  <CustomerReviewsSection headingId="product-customer-reviews-heading" />
 
   <FAQSection items={faqs} headingId="product-faq-heading" />
 

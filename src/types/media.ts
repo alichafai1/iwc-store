@@ -1,6 +1,4 @@
-import type { ImageMetadata } from 'astro';
-
 export interface MediaItem {
-  image: ImageMetadata;
+  src: string;
   alt: string;
 }

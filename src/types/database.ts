@@ -738,6 +738,36 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_review_screenshots: {
+        Row: {
+          alt: string
+          created_at: string
+          id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["content_status"]
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          alt: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["content_status"]
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          alt?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["content_status"]
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       keyword_imports: {
         Row: {
           completed_at: string | null

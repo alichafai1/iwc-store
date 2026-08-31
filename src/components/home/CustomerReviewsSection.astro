@@ -1,0 +1,24 @@
+---
+import Container from '../ui/Container.astro';
+import Gallery from '../ui/Gallery.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import { getPublishedCustomerReviewScreenshots } from '../../lib/catalog';
+
+interface Props {
+  headingId?: string;
+}
+
+const { headingId = 'customer-reviews-heading' } = Astro.props;
+const items = await getPublishedCustomerReviewScreenshots();
+---
+
+{
+  items.length > 0 && (
+    <section class="section" aria-labelledby={headingId}>
+      <Container size="xl">
+        <SectionHeader headingId={headingId} title="Happy Customer Reviews" />
+        <Gallery items={items} />
+      </Container>
+    </section>
+  )
+}

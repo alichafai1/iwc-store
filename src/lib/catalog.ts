@@ -1,4 +1,4 @@
-import { PRODUCT_IMAGE_BUCKET, COLLECTION_IMAGE_BUCKET } from './admin/constants';
+import { PRODUCT_IMAGE_BUCKET, COLLECTION_IMAGE_BUCKET, SITE_ASSETS_BUCKET } from './admin/constants';
 import { publicStorageUrl } from './admin/storage';
 import { supabase } from './supabase';
 import { DEFAULT_QUALITY, sortProductQualities, startingQuality } from './qualities';
@@ -989,4 +989,26 @@ export async function getPublishedCollectionPage(slug: string): Promise<Collecti
     }),
     otherCollections,
   };
+}
+
+export async function getPublishedCustomerReviewScreenshots(): Promise<Array<{ src: string; alt: string }>> {
+  const { data, error } = await supabase
+    .from('customer_review_screenshots')
+    .select('storage_path, alt')
+    .eq('status', 'published')
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('Failed to load customer review screenshots:', error.message);
+    return [];
+  }
+
+  return (data ?? []).flatMap((row) => {
+    const src = publicStorageUrl(SITE_ASSETS_BUCKET, row.storage_path);
+    if (!src) {
+      return [];
+    }
+
+    return [{ src, alt: row.alt }];
+  });
 }

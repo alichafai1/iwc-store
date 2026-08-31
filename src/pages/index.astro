@@ -2,19 +2,18 @@
 export const prerender = false;
 
 import CollectionCarousel from '../components/home/CollectionCarousel.astro';
+import CustomerReviewsSection from '../components/home/CustomerReviewsSection.astro';
 import FAQSection from '../components/home/FAQSection.astro';
 import Hero from '../components/home/Hero.astro';
 import ArticleCard from '../components/ui/ArticleCard.astro';
 import BenefitCard from '../components/ui/BenefitCard.astro';
 import Container from '../components/ui/Container.astro';
-import Gallery from '../components/ui/Gallery.astro';
 import TrustSection from '../components/layout/TrustSection.astro';
 import ProductCard from '../components/ui/ProductCard.astro';
 import SectionHeader from '../components/ui/SectionHeader.astro';
 import { placeholderArticles } from '../data/articles';
 import { BEST_SELLERS_SLUG, isStorefrontModelCollectionSlug } from '../data/collections';
 import { homepageFaqs } from '../data/faq';
-import { placeholderGallery } from '../data/gallery';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getPublishedProductsForCollection, getPublishedStoreCollectionCards } from '../lib/catalog';
 import { defaultJsonLd, faqPageJsonLd } from '../lib/seo';
@@ -73,12 +72,7 @@ const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_
     </Container>
   </section>
 
-  <section class="section section--muted" aria-labelledby="gallery-heading">
-    <Container size="xl">
-      <SectionHeader headingId="gallery-heading" title="Customer Gallery" />
-      <Gallery items={placeholderGallery} />
-    </Container>
-  </section>
+  <CustomerReviewsSection />
 
   <section class="section" aria-labelledby="editorial-heading">
     <Container>

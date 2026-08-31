@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import type { ShopProduct, StoreCollectionCard } from '../../lib/catalog';
 import {
   shopDiscoverParagraphs,
@@ -7,7 +8,6 @@ import {
   shopFeaturedBlocks,
   shopPage,
 } from '../../data/shop';
-import { collectionPath } from '../../data/collections';
 import CollectionCarousel from '../home/CollectionCarousel.astro';
 import FAQSection from '../home/FAQSection.astro';
 import TrustSection from '../layout/TrustSection.astro';
@@ -77,9 +77,22 @@ if (products.length > 0) {
   );
 }
 
-const featured = shopFeaturedBlocks.filter((block) =>
-  exploreCollections.some((collection) => collection.slug === block.slug),
-);
+const collectionsBySlug = new Map(exploreCollections.map((collection) => [collection.slug, collection]));
+const featured = shopFeaturedBlocks.flatMap((block) => {
+  const collection = collectionsBySlug.get(block.slug);
+  if (!collection) {
+    return [];
+  }
+
+  return [
+    {
+      ...block,
+      href: collection.href,
+      image: collection.image,
+      imageAlt: collection.imageAlt || `${collection.name} collection`,
+    },
+  ];
+});
 ---
 
 <BaseLayout
@@ -175,21 +188,42 @@ const featured = shopFeaturedBlocks.filter((block) =>
   </section>
 
   <section class="section shop-featured" aria-label="Featured IWC collections">
-    <Container size="md">
+    <Container>
       {
         featured.map((block) => (
-          <article class="shop-featured__block">
-            <h2>{block.heading}</h2>
-            {block.paragraphs.map((paragraph) => (
-              <p>
-                {faqAnswerParts(paragraph).map((part) =>
-                  part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value,
-                )}
-              </p>
-            ))}
-            <a class="shop-featured__link" href={collectionPath(block.slug)}>
-              View {block.heading.replace('Explore ', '')}
+          <article class:list={['shop-featured__block', 'shop-featured__block--with-cover']}>
+            <a class="shop-featured__cover" href={block.href} tabindex="-1" aria-hidden="true">
+              {
+                typeof block.image === 'string' ? (
+                  <img src={block.image} alt="" width="800" height="1000" loading="lazy" />
+                ) : (
+                  <Image src={block.image} alt="" width={320} height={400} sizes="10rem" loading="lazy" />
+                )
+              }
             </a>
+            <div class="shop-featured__copy">
+              <h2>{block.heading}</h2>
+              {block.paragraphs.map((paragraph) => (
+                <p>
+                  {faqAnswerParts(paragraph).map((part) =>
+                    part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value,
+                  )}
+                </p>
+              ))}
+              <a class="shop-featured__cta" href={block.href}>
+                <span>View {block.heading.replace('Explore ', '')}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            </div>
           </article>
         ))
       }
@@ -376,6 +410,32 @@ const featured = shopFeaturedBlocks.filter((block) =>
     border-bottom: 0;
   }
 
+  .shop-featured__block--with-cover {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .shop-featured__copy p {
+    max-width: 38rem;
+  }
+
+  .shop-featured__cover {
+    display: block;
+    max-width: 10rem;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    background: #f6f6f6;
+  }
+
+  .shop-featured__cover :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
   .shop-featured__block h2 {
     margin: 0 0 var(--space-4);
     font-family: var(--font-display);
@@ -387,19 +447,61 @@ const featured = shopFeaturedBlocks.filter((block) =>
     margin-top: var(--space-4);
   }
 
-  .shop-featured__link {
+  .shop-featured__cta {
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    max-width: 100%;
+    min-height: 2.85rem;
     margin-top: var(--space-5);
-    color: var(--color-text);
+    padding: 0.75rem 1.35rem 0.75rem 1.45rem;
+    border: 1px solid var(--color-text);
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-family: var(--font-sans);
     font-size: var(--font-size-xs);
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    text-align: center;
     text-decoration: none;
     text-transform: uppercase;
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      transform 200ms ease;
   }
 
-  .shop-featured__link:hover {
-    color: var(--color-accent-dark);
+  .shop-featured__cta svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  .shop-featured__cta:hover,
+  .shop-featured__cta:focus-visible {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .shop-featured__cta:active {
+    background: var(--color-accent-dark);
+    border-color: var(--color-accent-dark);
+    color: var(--color-bg);
+    transform: translateY(1px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shop-featured__cta {
+      transition: none;
+    }
+
+    .shop-featured__cta:active {
+      transform: none;
+    }
   }
 
   .shop-discover h2 {
@@ -411,6 +513,12 @@ const featured = shopFeaturedBlocks.filter((block) =>
 
   .shop-discover p + p {
     margin-top: var(--space-4);
+  }
+
+  @media (max-width: 47.99em) {
+    .shop-featured__cta {
+      width: 100%;
+    }
   }
 
   @media (min-width: 48em) {
@@ -425,6 +533,12 @@ const featured = shopFeaturedBlocks.filter((block) =>
 
     .shop-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+
+    .shop-featured__block--with-cover {
+      grid-template-columns: 10rem minmax(0, 1fr);
+      align-items: center;
       gap: var(--space-6);
     }
   }
