@@ -3,6 +3,7 @@ import { publicStorageUrl } from './admin/storage';
 import { supabase } from './supabase';
 import { DEFAULT_QUALITY, sortProductQualities, startingQuality } from './qualities';
 import {
+  isMerchandisingCollectionSlug,
   isModelCollectionSlug,
   sortCollectionsByStoreOrder,
   storeCollections,
@@ -787,7 +788,9 @@ export async function getPublishedShopProducts(): Promise<ShopProduct[]> {
 }
 
 export async function getCollectionHubSections(limit = 6): Promise<CollectionHubSection[]> {
-  const collections = await getPublishedStoreCollectionCards();
+  const collections = (await getPublishedStoreCollectionCards()).filter(
+    (collection) => !isMerchandisingCollectionSlug(collection.slug),
+  );
   const productLists = await Promise.all(
     collections.map((collection) => getPublishedProductsForCollection(collection.slug)),
   );

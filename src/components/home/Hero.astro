@@ -1,27 +1,31 @@
 ---
 import { Image } from 'astro:assets';
-import heroImage from '../../assets/images/hero.svg';
+import heroImage from '../../assets/images/hero.jpg';
 import Button from '../ui/Button.astro';
 ---
 
 <section class="hero" aria-labelledby="hero-heading">
   <div class="container hero__inner">
     <div class="hero__copy">
-      <p class="eyebrow">The collections</p>
-      <h1 id="hero-heading">Instruments for the wrist.</h1>
-      <p class="hero__text">Houses of design, presented with clarity and restraint.</p>
+      <p class="eyebrow">Discover</p>
+      <h1 id="hero-heading">Our IWC replica watches.</h1>
+      <p class="hero__text">
+        Explore the Pilot, Portugieser, Portofino, Aquatimer, and Ingenieur collections. Each published listing shows the line, the finishing, and the Top 1:1 Clone grade.
+      </p>
       <div class="hero__actions">
-        <Button href="/collections/">Shop the collections</Button>
+        <Button href="/collections/">Discover the collections</Button>
         <Button href="/guides/" variant="ghost">Read the guides</Button>
       </div>
     </div>
     <div class="media hero__media">
       <Image
         src={heroImage}
-        alt="Editorial photograph of a timepiece"
-        width={1600}
-        height={1000}
+        alt="IWC replica watches from the Pilot, Portugieser, Portofino, and related collections"
+        width={1024}
+        height={575}
+        widths={[640, 800, 1024]}
         sizes="(min-width: 64em) 54vw, 100vw"
+        quality={90}
         loading="eager"
         fetchpriority="high"
       />
@@ -62,6 +66,12 @@ import Button from '../ui/Button.astro';
   .hero__media {
     aspect-ratio: 8 / 5;
     border: 1px solid var(--color-border);
+    background: #ffffff;
+  }
+
+  .hero__media :global(img) {
+    object-fit: contain;
+    object-position: center center;
   }
 
   @media (min-width: 64em) {

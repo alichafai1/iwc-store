@@ -10,6 +10,7 @@ import Container from '../ui/Container.astro';
 import ProductCard from '../ui/ProductCard.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPublishedStoreCollectionCards } from '../../lib/catalog';
+import { isMerchandisingCollectionSlug } from '../../data/collections';
 import { absoluteUrl, breadcrumbJsonLd, collectionPageJsonLd, defaultJsonLd, faqPageJsonLd, itemListJsonLd } from '../../lib/seo';
 
 interface Props {
@@ -52,7 +53,9 @@ const popularProducts = popularModels.flatMap((model) => {
 });
 const collectionCards = await getPublishedStoreCollectionCards();
 const cardsBySlug = new Map(collectionCards.map((card) => [card.slug, card]));
-const exploreCollections = otherCollections.map((item) => {
+const exploreCollections = otherCollections
+  .filter((item) => !isMerchandisingCollectionSlug(item.slug))
+  .map((item) => {
   const card = cardsBySlug.get(item.slug);
   return {
     name: item.name,
