@@ -1015,3 +1015,37 @@ export async function getPublishedCustomerReviewScreenshots(): Promise<Array<{ s
     return [{ src, alt: row.alt }];
   });
 }
+
+export const HOMEPAGE_HERO_SLOT = 'homepage-hero';
+
+export async function getPublishedSiteImage(
+  slot: string,
+): Promise<{ src: string; alt: string; width: number | null; height: number | null } | null> {
+  const { data, error } = await supabase
+    .from('site_images')
+    .select('storage_path, alt, width, height')
+    .eq('slot', slot)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to load site image:', error.message);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const src = publicStorageUrl(SITE_ASSETS_BUCKET, data.storage_path);
+  if (!src) {
+    return null;
+  }
+
+  return {
+    src,
+    alt: data.alt,
+    width: data.width,
+    height: data.height,
+  };
+}

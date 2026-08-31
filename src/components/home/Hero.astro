@@ -1,7 +1,8 @@
 ---
-import { Image } from 'astro:assets';
-import heroImage from '../../assets/images/hero.jpg';
 import Button from '../ui/Button.astro';
+import { getPublishedSiteImage, HOMEPAGE_HERO_SLOT } from '../../lib/catalog';
+
+const hero = await getPublishedSiteImage(HOMEPAGE_HERO_SLOT);
 ---
 
 <section class="hero" aria-labelledby="hero-heading">
@@ -17,19 +18,21 @@ import Button from '../ui/Button.astro';
         <Button href="/guides/" variant="ghost">Read the guides</Button>
       </div>
     </div>
-    <div class="media hero__media">
-      <Image
-        src={heroImage}
-        alt="IWC replica watches from the Pilot, Portugieser, Portofino, and related collections"
-        width={1024}
-        height={575}
-        widths={[640, 800, 1024]}
-        sizes="(min-width: 64em) 54vw, 100vw"
-        quality={90}
-        loading="eager"
-        fetchpriority="high"
-      />
-    </div>
+    {
+      hero && (
+        <div class="hero__media">
+          <img
+            src={hero.src}
+            alt={hero.alt}
+            width={hero.width ?? 1024}
+            height={hero.height ?? 575}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </div>
+      )
+    }
   </div>
 </section>
 
@@ -64,13 +67,16 @@ import Button from '../ui/Button.astro';
   }
 
   .hero__media {
-    aspect-ratio: 8 / 5;
-    border: 1px solid var(--color-border);
-    background: #ffffff;
+    aspect-ratio: 1024 / 575;
+    overflow: hidden;
+    background: transparent;
   }
 
-  .hero__media :global(img) {
-    object-fit: contain;
+  .hero__media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     object-position: center center;
   }
 

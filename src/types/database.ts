@@ -1339,6 +1339,42 @@ export type Database = {
         }
         Relationships: []
       }
+      site_images: {
+        Row: {
+          alt: string
+          created_at: string
+          height: number | null
+          id: string
+          slot: string
+          status: Database["public"]["Enums"]["content_status"]
+          storage_path: string
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          alt: string
+          created_at?: string
+          height?: number | null
+          id?: string
+          slot: string
+          status?: Database["public"]["Enums"]["content_status"]
+          storage_path: string
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          alt?: string
+          created_at?: string
+          height?: number | null
+          id?: string
+          slot?: string
+          status?: Database["public"]["Enums"]["content_status"]
+          storage_path?: string
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
