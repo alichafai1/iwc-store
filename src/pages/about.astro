@@ -1,5 +1,13 @@
 ---
-import PlaceholderPage from '../components/layout/PlaceholderPage.astro';
+export const prerender = false;
+
+import AboutPage from '../components/about/AboutPage.astro';
+import { getPublishedSiteImage, getPublishedStoreCollectionCards, HOMEPAGE_HERO_SLOT } from '../lib/catalog';
+
+const [collections, hero] = await Promise.all([
+  getPublishedStoreCollectionCards(),
+  getPublishedSiteImage(HOMEPAGE_HERO_SLOT),
+]);
 ---
 
-<PlaceholderPage title="About" description="About." />
+<AboutPage collections={collections} hero={hero} />

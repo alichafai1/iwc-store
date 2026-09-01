@@ -22,6 +22,7 @@ const collections = (await getPublishedStoreCollectionCards()).filter((collectio
   isStorefrontModelCollectionSlug(collection.slug),
 );
 const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_SLUG);
+const homepageBestSellers = bestSellerProducts.slice(0, 4);
 ---
 
 <BaseLayout
@@ -29,6 +30,7 @@ const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_
   description="Explore the collections, new arrivals, guides, and editorial."
   jsonLd={[defaultJsonLd(), faqPageJsonLd(homepageFaqs)]}
 >
+  <div class="home">
   <Hero />
 
   <section class="section" aria-labelledby="collections-heading">
@@ -47,11 +49,16 @@ const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_
 
   <section class="section section--muted" id="best-sellers" aria-labelledby="best-sellers-heading">
     <Container>
-      <SectionHeader headingId="best-sellers-heading" title="Best Sellers" href="/collections/best-sellers/" />
+      <SectionHeader
+        headingId="best-sellers-heading"
+        title="Best Sellers"
+        href="/collections/best-sellers/"
+        linkLabel="View all"
+      />
       {
-        bestSellerProducts.length > 0 ? (
-          <div class="product-grid">
-            {bestSellerProducts.map((product) => <ProductCard product={product} />)}
+        homepageBestSellers.length > 0 ? (
+          <div class="product-grid product-grid--row">
+            {homepageBestSellers.map((product) => <ProductCard product={product} />)}
           </div>
         ) : (
           <p class="home-empty">No published products are listed yet.</p>
@@ -86,9 +93,14 @@ const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_
   <FAQSection items={homepageFaqs} title="IWC Replica Watch FAQs" />
 
   <TrustSection />
+  </div>
 </BaseLayout>
 
 <style>
+  .home :global(.section) {
+    padding-block: var(--space-6);
+  }
+
   .product-grid,
   .article-grid,
   .benefit-grid {
@@ -100,12 +112,20 @@ const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .product-grid--row :global(.product-card:nth-child(n + 3)) {
+    display: none;
+  }
+
   .home-empty {
     margin: 0;
     color: var(--color-muted);
   }
 
   @media (min-width: 48em) {
+    .home :global(.section) {
+      padding-block: var(--space-8);
+    }
+
     .benefit-grid,
     .article-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -113,8 +133,16 @@ const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_
   }
 
   @media (min-width: 64em) {
+    .home :global(.section) {
+      padding-block: var(--space-10);
+    }
+
     .product-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .product-grid--row :global(.product-card:nth-child(n + 3)) {
+      display: flex;
     }
 
     .benefit-grid {

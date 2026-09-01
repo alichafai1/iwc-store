@@ -8,6 +8,8 @@ interface Props {
 }
 
 const { rating, reviews, isPlaceholder = true } = Astro.props;
+const previewCount = 2;
+const hasMoreReviews = reviews.length > previewCount;
 const stars = Math.round(rating);
 const breakdown = [5, 4, 3, 2, 1].map((value) => ({
   value,
@@ -51,13 +53,13 @@ const reviewCountLabel = isPlaceholder ? `${reviews.length} placeholder reviews`
       </ul>
     </div>
 
-    <ul class="product-reviews__list">
+    <ul class="product-reviews__list" id="product-reviews-list">
       {
-        reviews.map((review) => {
+        reviews.map((review, index) => {
           const reviewStars = Math.round(review.rating);
 
           return (
-            <li class="product-reviews__item">
+            <li class="product-reviews__item" hidden={index >= previewCount ? true : undefined}>
               <h3 class="product-reviews__title">{review.title}</h3>
               <p class="product-reviews__meta">
                 <span class="product-reviews__stars" aria-label={`${review.rating} out of 5`}>
@@ -73,8 +75,45 @@ const reviewCountLabel = isPlaceholder ? `${reviews.length} placeholder reviews`
         })
       }
     </ul>
+    {
+      hasMoreReviews && (
+        <div class="product-reviews__actions">
+          <button
+            class="product-reviews__more"
+            type="button"
+            data-reviews-more
+            data-preview-count={String(previewCount)}
+            aria-expanded="false"
+            aria-controls="product-reviews-list"
+          >
+            See more reviews
+          </button>
+        </div>
+      )
+    }
   </div>
 </section>
+
+<script is:inline>
+  (() => {
+    document.querySelectorAll('[data-reviews-more]').forEach((button) => {
+      const listId = button.getAttribute('aria-controls');
+      const list = listId ? document.getElementById(listId) : null;
+      if (!list) return;
+
+      const previewCount = Number.parseInt(button.getAttribute('data-preview-count') || '2', 10);
+
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        list.querySelectorAll('.product-reviews__item').forEach((item, index) => {
+          item.hidden = expanded && index >= previewCount;
+        });
+        button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        button.textContent = expanded ? 'See more reviews' : 'Show fewer reviews';
+      });
+    });
+  })();
+</script>
 
 <style>
   .product-reviews h2 {
@@ -222,6 +261,40 @@ const reviewCountLabel = isPlaceholder ? `${reviews.length} placeholder reviews`
     font-size: var(--font-size-base);
     font-weight: 400;
     line-height: var(--line-height-body);
+  }
+
+  .product-reviews__actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: var(--space-5);
+  }
+
+  .product-reviews__more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.125rem;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .product-reviews__more:hover {
+    background: var(--color-muted);
+  }
+
+  .product-reviews__more:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
   }
 
   @media (min-width: 48em) {

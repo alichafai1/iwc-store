@@ -4,6 +4,7 @@ import type { CollectionPageData } from '../../types/collection';
 import { getCollectionImage } from '../../data/collection-media';
 import FAQSection from '../home/FAQSection.astro';
 import CollectionCarousel from '../home/CollectionCarousel.astro';
+import CustomerReviewsSection from '../home/CustomerReviewsSection.astro';
 import TrustSection from '../layout/TrustSection.astro';
 import Breadcrumb from '../ui/Breadcrumb.astro';
 import Container from '../ui/Container.astro';
@@ -162,6 +163,8 @@ if (faqs.length > 0) {
       </section>
     )
   }
+
+  <CustomerReviewsSection headingId="collection-customer-reviews-heading" />
 
   {
     historyParagraphs.length > 0 && (

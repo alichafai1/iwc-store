@@ -1,7 +1,10 @@
 ---
+import { Image } from 'astro:assets';
+import logoMark from '../../assets/brand/logo-header.png';
 import { headerCollectionLinks, headerNav } from '../../data/navigation';
-import { siteConfig } from '../../lib/site';
 import Icon from '../ui/Icon.astro';
+
+const logoAlt = 'IWC-Replica.com';
 ---
 
 <header class="site-header">
@@ -32,7 +35,19 @@ import Icon from '../ui/Icon.astro';
         <Icon name="menu" />
       </label>
 
-      <a class="site-header__logo" href="/">{siteConfig.name}</a>
+      <a class="site-header__logo" href="/">
+        <Image
+          src={logoMark}
+          alt={logoAlt}
+          width={978}
+          height={250}
+          format="png"
+          quality={100}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </a>
 
       <nav class="site-header__desktop" aria-label="Primary">
         <ul>
@@ -90,7 +105,18 @@ import Icon from '../ui/Icon.astro';
 
       <div class="site-header__drawer">
         <div class="site-header__drawer-top">
-          <p class="site-header__logo">{siteConfig.name}</p>
+          <a class="site-header__logo site-header__logo--drawer" href="/">
+            <Image
+              src={logoMark}
+              alt={logoAlt}
+              width={978}
+              height={250}
+              format="png"
+              quality={100}
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
           <label class="icon-btn" for="nav-open" aria-hidden="true">
             <Icon name="close" />
           </label>
@@ -210,8 +236,9 @@ import Icon from '../ui/Icon.astro';
 
   .site-header__inner {
     display: grid;
-    grid-template-columns: 2.75rem 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
+    column-gap: 0.45rem;
     min-height: var(--header-height);
   }
 
@@ -229,12 +256,31 @@ import Icon from '../ui/Icon.astro';
   }
 
   .site-header__logo {
-    justify-self: center;
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    letter-spacing: 0.16em;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding-block: 0.55rem;
     text-decoration: none;
-    text-transform: uppercase;
+  }
+
+  .site-header__logo :global(img) {
+    display: block;
+    width: auto;
+    height: 2.95rem;
+    max-width: min(17.25rem, calc(100vw - 8.25rem));
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .site-header__logo--drawer {
+    padding-block: 0;
+    max-width: calc(100% - 3rem);
+  }
+
+  .site-header__logo--drawer :global(img) {
+    height: 3.05rem;
+    max-width: 100%;
   }
 
   .site-header__desktop {
@@ -390,8 +436,9 @@ import Icon from '../ui/Icon.astro';
       display: none;
     }
 
-    .site-header__logo {
-      justify-self: start;
+    .site-header__logo :global(img) {
+      height: 3.4rem;
+      max-width: 18.5rem;
     }
 
     .site-header__desktop {

@@ -174,6 +174,34 @@ export function articleJsonLd(input: {
   return node;
 }
 
+export function aboutPageJsonLd(input: {
+  name: string;
+  description: string;
+  path: string;
+  breadcrumbId?: string;
+}): JsonLdNode {
+  const url = absoluteUrl(input.path);
+  const node: JsonLdNode = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    '@id': url,
+    name: input.name,
+    description: input.description,
+    url,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+  };
+
+  if (input.breadcrumbId) {
+    node.breadcrumb = { '@id': input.breadcrumbId };
+  }
+
+  return node;
+}
+
 export function collectionPageJsonLd(input: {
   name: string;
   description: string;

@@ -1,0 +1,520 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import {
+  aboutCollectionLinks,
+  aboutCta,
+  aboutDisclaimer,
+  aboutFaqs,
+  aboutPage,
+  aboutPillars,
+  aboutProcess,
+  aboutQuality,
+  aboutStory,
+  aboutCollections,
+} from '../../data/about';
+import { isStorefrontModelCollectionSlug } from '../../data/collections';
+import { faqAnswerParts } from '../../lib/faq-text';
+import {
+  aboutPageJsonLd,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  defaultJsonLd,
+  faqPageJsonLd,
+} from '../../lib/seo';
+import type { StoreCollectionCard } from '../../lib/catalog';
+import FAQSection from '../home/FAQSection.astro';
+import CollectionCarousel from '../home/CollectionCarousel.astro';
+import TrustSection from '../layout/TrustSection.astro';
+import BenefitCard from '../ui/BenefitCard.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Button from '../ui/Button.astro';
+import Container from '../ui/Container.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+interface Props {
+  collections: StoreCollectionCard[];
+  hero: { src: string; alt: string; width: number | null; height: number | null } | null;
+}
+
+const { collections, hero } = Astro.props;
+const modelCollections = collections.filter((collection) => isStorefrontModelCollectionSlug(collection.slug));
+const cover = modelCollections[0];
+const storyImage = cover
+  ? typeof cover.image === 'string'
+    ? { kind: 'remote' as const, src: cover.image, alt: cover.imageAlt, width: 800, height: 1000 }
+    : { kind: 'asset' as const, src: cover.image as ImageMetadata, alt: cover.imageAlt }
+  : null;
+
+const pagePath = aboutPage.path;
+const breadcrumbId = `${absoluteUrl(pagePath)}#breadcrumb`;
+const jsonLd = [
+  defaultJsonLd(),
+  aboutPageJsonLd({
+    name: aboutPage.heading,
+    description: aboutPage.metaDescription,
+    path: pagePath,
+    breadcrumbId,
+  }),
+  breadcrumbJsonLd(
+    [
+      { name: 'Home', path: '/' },
+      { name: 'About', path: pagePath },
+    ],
+    { id: breadcrumbId },
+  ),
+  faqPageJsonLd(aboutFaqs),
+];
+---
+
+<BaseLayout
+  title={aboutPage.metaTitle}
+  description={aboutPage.metaDescription}
+  canonicalPath={aboutPage.path}
+  ogImage={hero?.src}
+  jsonLd={jsonLd}
+>
+  <section class="about-hero">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
+      <p class="eyebrow">{aboutPage.eyebrow}</p>
+      <h1>{aboutPage.heading}</h1>
+      <p class="about-hero__lead">{aboutPage.lead}</p>
+    </Container>
+  </section>
+
+  <section class="about-story" aria-labelledby="about-story-heading">
+    <Container>
+      <div class:list={['about-story__layout', storyImage && 'about-story__layout--media']}>
+        <div class="about-story__copy">
+          <h2 id="about-story-heading">{aboutStory.heading}</h2>
+          {
+            aboutStory.paragraphs.map((paragraph) => (
+              <p>
+                {faqAnswerParts(paragraph).map((part) =>
+                  part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value,
+                )}
+              </p>
+            ))
+          }
+        </div>
+        {
+          storyImage && (
+            <div class="about-story__media">
+              {storyImage.kind === 'remote' ? (
+                <img
+                  src={storyImage.src}
+                  alt={storyImage.alt}
+                  width={storyImage.width}
+                  height={storyImage.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <Image
+                  src={storyImage.src}
+                  alt={storyImage.alt}
+                  width={800}
+                  height={1000}
+                  sizes="(min-width: 64em) 28rem, 100vw"
+                  loading="lazy"
+                />
+              )}
+            </div>
+          )
+        }
+      </div>
+    </Container>
+  </section>
+
+  <section class="section section--muted about-process" aria-labelledby="about-process-heading">
+    <Container>
+      <SectionHeader headingId="about-process-heading" title={aboutProcess.heading} />
+      <p class="about-process__intro">{aboutProcess.intro}</p>
+      <ol class="about-process__list">
+        {
+          aboutProcess.steps.map((step) => (
+            <li class="about-process__step">
+              <span class="about-process__number" aria-hidden="true">
+                {step.number}
+              </span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </Container>
+  </section>
+
+  <section class="section about-collections" aria-labelledby="about-collections-heading">
+    <Container>
+      <SectionHeader
+        headingId="about-collections-heading"
+        title={aboutCollections.heading}
+        href="/collections/"
+        linkLabel="View all"
+      />
+      <p class="about-collections__intro">{aboutCollections.intro}</p>
+      {
+        modelCollections.length > 0 && (
+          <CollectionCarousel
+            collections={modelCollections.map((collection) => ({
+              name: collection.name,
+              href: collection.href,
+              image: collection.image,
+              imageAlt: collection.imageAlt,
+            }))}
+          />
+        )
+      }
+      <ul class="about-collections__lines">
+        {
+          aboutCollectionLinks.map((collection) => (
+            <li>
+              <a href={collection.href}>{collection.name}</a>
+              <p>{collection.line}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <section class="section section--muted about-pillars" aria-labelledby="about-pillars-heading">
+    <Container>
+      <SectionHeader headingId="about-pillars-heading" title="Why shop here" />
+      <div class="about-pillars__grid">
+        {aboutPillars.map((pillar) => <BenefitCard icon={pillar.icon} title={pillar.title} text={pillar.text} />)}
+      </div>
+    </Container>
+  </section>
+
+  <section class="section about-quality" aria-labelledby="about-quality-heading">
+    <Container size="md">
+      <h2 id="about-quality-heading">{aboutQuality.heading}</h2>
+      {aboutQuality.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </Container>
+  </section>
+
+  <section class="about-disclaimer" aria-labelledby="about-disclaimer-heading">
+    <Container size="md">
+      <h2 id="about-disclaimer-heading">{aboutDisclaimer.heading}</h2>
+      {
+        aboutDisclaimer.paragraphs.map((paragraph) => (
+          <p>
+            {faqAnswerParts(paragraph).map((part) =>
+              part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value,
+            )}
+          </p>
+        ))
+      }
+    </Container>
+  </section>
+
+  <section class="about-cta" aria-labelledby="about-cta-heading">
+    <Container>
+      <div class="about-cta__inner">
+        <div>
+          <h2 id="about-cta-heading">{aboutCta.heading}</h2>
+          <p>{aboutCta.text}</p>
+        </div>
+        <div class="about-cta__actions">
+          <Button href={aboutCta.primary.href}>{aboutCta.primary.label}</Button>
+          <Button href={aboutCta.secondary.href} variant="ghost">
+            {aboutCta.secondary.label}
+          </Button>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <FAQSection items={aboutFaqs} title="About this store" headingId="about-faq-heading" />
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .about-hero {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .about-hero :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .about-hero h1 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-xl);
+  }
+
+  .about-hero__lead {
+    max-width: 46rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .about-story {
+    padding-block: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .about-story__layout {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .about-story h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-xl);
+  }
+
+  .about-story p {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    max-width: 42rem;
+  }
+
+  .about-story p:last-child {
+    margin-bottom: 0;
+  }
+
+  .about-story p :global(a),
+  .about-disclaimer p :global(a) {
+    color: var(--color-text);
+    text-underline-offset: 0.18em;
+  }
+
+  .about-story p :global(a:hover),
+  .about-disclaimer p :global(a:hover) {
+    color: var(--color-accent-dark);
+  }
+
+  .about-story__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--color-muted);
+  }
+
+  .about-story__media :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+  }
+
+  .about-process__intro,
+  .about-collections__intro {
+    max-width: 46rem;
+    margin: calc(var(--space-4) * -1) 0 var(--space-6);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .about-process__list {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .about-process__step {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .about-process__number {
+    display: block;
+    margin-bottom: var(--space-3);
+    color: var(--color-accent-dark);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .about-process__step h3 {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .about-process__step p {
+    margin: 0;
+    max-width: 36rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .about-collections__lines {
+    display: grid;
+    gap: var(--space-5);
+    margin: var(--space-8) 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-6);
+  }
+
+  .about-collections__lines a {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .about-collections__lines p {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .about-pillars__grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .about-quality h2,
+  .about-disclaimer h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-xl);
+  }
+
+  .about-quality p,
+  .about-disclaimer p {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .about-quality p:last-child,
+  .about-disclaimer p:last-child {
+    margin-bottom: 0;
+  }
+
+  .about-disclaimer {
+    padding-block: var(--space-8);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-muted);
+  }
+
+  .about-cta {
+    padding-block: var(--space-8);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .about-cta__inner {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .about-cta h2 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-xl);
+  }
+
+  .about-cta p {
+    margin: 0;
+    max-width: 36rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .about-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  @media (min-width: 48em) {
+    .about-hero {
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-10);
+    }
+
+    .about-hero h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .about-story,
+    .about-disclaimer,
+    .about-cta {
+      padding-block: var(--space-10);
+    }
+
+    .about-process__list,
+    .about-collections__lines,
+    .about-pillars__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .about-hero h1 {
+      font-size: var(--font-size-3xl);
+    }
+
+    .about-hero__lead {
+      font-size: var(--font-size-base);
+    }
+
+    .about-story {
+      padding-block: var(--space-12);
+    }
+
+    .about-story__layout--media {
+      grid-template-columns: minmax(0, 1fr) 22rem;
+      align-items: start;
+      gap: var(--space-10);
+    }
+
+    .about-story h2,
+    .about-quality h2,
+    .about-disclaimer h2,
+    .about-cta h2 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .about-process__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+
+    .about-process__step {
+      padding-top: 0;
+      border-top: 0;
+      padding-right: var(--space-4);
+      border-right: 1px solid var(--color-border);
+    }
+
+    .about-process__step:last-child {
+      border-right: 0;
+      padding-right: 0;
+    }
+
+    .about-pillars__grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .about-cta__inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+    }
+  }
+</style>
