@@ -5,18 +5,31 @@ interface Props {
   headingId?: string;
   href?: string;
   linkLabel?: string;
+  align?: 'start' | 'center';
+  linkVariant?: 'text' | 'button';
 }
 
-const { eyebrow, title, headingId, href, linkLabel = 'View all' } = Astro.props;
+const {
+  eyebrow,
+  title,
+  headingId,
+  href,
+  linkLabel = 'View all',
+  align = 'start',
+  linkVariant = 'text',
+} = Astro.props;
 ---
 
-<header class="section-header">
+<header
+  class:list={['section-header', align === 'center' && 'section-header--center']}
+  data-align={align}
+>
   {eyebrow && <p class="eyebrow">{eyebrow}</p>}
   <div class="section-header__row">
     <h2 id={headingId}>{title}</h2>
     {
       href && (
-        <a class="section-header__link" href={href}>
+        <a class:list={['section-header__link', linkVariant === 'button' && 'section-header__link--button']} href={href}>
           {linkLabel}
         </a>
       )
@@ -24,7 +37,7 @@ const { eyebrow, title, headingId, href, linkLabel = 'View all' } = Astro.props;
   </div>
 </header>
 
-<style>
+<style is:inline>
   .section-header {
     margin-bottom: var(--space-6);
   }
@@ -42,11 +55,28 @@ const { eyebrow, title, headingId, href, linkLabel = 'View all' } = Astro.props;
     gap: var(--space-3);
   }
 
+  .section-header--center .section-header__row,
+  .section-header[data-align='center'] .section-header__row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .section-header--center h2,
+  .section-header[data-align='center'] h2 {
+    text-align: center;
+  }
+
   .section-header__link {
     font-size: var(--font-size-xs);
     letter-spacing: var(--letter-spacing-nav);
     text-decoration: none;
     text-transform: uppercase;
+  }
+
+  .section-header__link--button {
+    display: none;
   }
 
   @media (min-width: 64em) {
@@ -56,6 +86,45 @@ const { eyebrow, title, headingId, href, linkLabel = 'View all' } = Astro.props;
 
     .section-header h2 {
       font-size: var(--font-size-2xl);
+    }
+
+    .section-header--center .section-header__row,
+    .section-header[data-align='center'] .section-header__row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .section-header--center h2,
+    .section-header[data-align='center'] h2 {
+      grid-column: 2;
+      text-align: center;
+    }
+
+    .section-header--center .section-header__link,
+    .section-header[data-align='center'] .section-header__link {
+      grid-column: 3;
+      justify-self: end;
+    }
+
+    .section-header__link--button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      min-height: 2.5rem;
+      padding: 0.65rem 1.35rem;
+      border-radius: var(--radius-lg);
+      background: var(--color-accent);
+      color: #fff;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    .section-header__link--button:hover {
+      background: var(--color-accent-dark);
+      color: #fff;
     }
   }
 </style>

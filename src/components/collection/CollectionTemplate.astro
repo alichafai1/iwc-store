@@ -334,6 +334,7 @@ if (faqs.length > 0) {
     aspect-ratio: 4 / 5;
     overflow: hidden;
     border: 1px solid var(--color-border);
+    border-radius: 8px;
     background: #f6f6f6;
   }
 
@@ -364,6 +365,14 @@ if (faqs.length > 0) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-5);
+  }
+
+  @media (max-width: 47.99em) {
+    .collection-grid {
+      gap: 0.65rem 0.4rem;
+      width: calc(100% + 2rem);
+      margin-inline: -1rem;
+    }
   }
 
   .collection-seo h2,

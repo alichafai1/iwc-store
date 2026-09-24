@@ -1,0 +1,127 @@
+---
+import AuthorBio from '../components/AuthorBio.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import FAQSection from '../components/FAQSection.astro';
+import KeyTakeaways from '../components/KeyTakeaways.astro';
+import RelatedArticles from '../components/RelatedArticles.astro';
+import SchemaMarkup from '../components/SchemaMarkup.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import { getAuthor, getAuthorByName } from '../data/authors';
+import { linkHref } from '../lib/content-articles';
+import { absoluteUrl } from '../lib/seo';
+import type { ContentCollectionName, ContentHeading, InternalLinkTarget } from '../types/content-article';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+
+type ArticleData = CollectionEntry<'guides'>['data'] | CollectionEntry<'blog'>['data'];
+
+interface Props {
+  collection: ContentCollectionName;
+  data: ArticleData;
+  headings: ContentHeading[];
+  readingMinutes: number;
+  relatedSlugs: string[];
+  clusterLinks?: InternalLinkTarget[];
+  isPillar?: boolean;
+}
+
+const {
+  collection,
+  data,
+  headings,
+  readingMinutes,
+  relatedSlugs,
+  clusterLinks = [],
+  isPillar = false,
+} = Astro.props;
+
+const path = `/${collection}/${data.slug}/`;
+const canonical = absoluteUrl(path);
+const published = data.date.toISOString();
+const modified = (data.lastModified ?? data.date).toISOString();
+const publishedLabel = data.date.toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+const authorProfile = getAuthorByName(data.author) ?? getAuthor(data.author);
+const authorName = authorProfile?.name ?? data.author;
+const authorHref = `/authors/${authorProfile?.slug ?? 'editorial-team'}/`;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: collection === 'guides' ? 'Guides' : 'Blog', url: `/${collection}/` },
+  { name: data.title, url: path },
+];
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  canonicalPath={path}
+  ogType="article"
+  ogImage={data.image}
+>
+  <SchemaMarkup
+    type={['Article', 'FAQ', 'Breadcrumb']}
+    data={{
+      article: {
+        headline: data.title,
+        description: data.description,
+        image: data.image,
+        imageAlt: data.imageAlt,
+        author: authorName,
+        datePublished: published,
+        dateModified: modified,
+        url: canonical,
+      },
+      faq: data.faq,
+      breadcrumbs,
+    }}
+  />
+
+  <article class:list={['content-article', isPillar && 'content-article--pillar']}>
+    <header class="content-article__hero">
+      <Breadcrumbs items={breadcrumbs} />
+      {isPillar && <p class="content-article__badge">Complete Guide</p>}
+      <p class="content-article__category">{data.category}</p>
+      <h1>{data.title}</h1>
+      <p class="content-article__dek">{data.description}</p>
+      <p class="content-article__meta">
+        <a href={authorHref}>{authorName}</a>
+        <time datetime={published}>{publishedLabel}</time>
+        <span>{readingMinutes} min read</span>
+      </p>
+      <img class="content-article__image" src={data.image} alt={data.imageAlt} width="1080" height="1080" />
+    </header>
+
+    <div class="content-article__layout">
+      <TableOfContents headings={headings} />
+      <div class="content-article__body">
+        <KeyTakeaways items={data.keyTakeaways} />
+        <div class="content-article__prose">
+          <slot />
+        </div>
+        {
+          clusterLinks.length > 0 && (
+            <section class="content-article__clusters" aria-labelledby="cluster-links-heading">
+              <h2 id="cluster-links-heading">Related reading</h2>
+              <ul>
+                {clusterLinks.map((link) => (
+                  <li>
+                    <a href={linkHref(link)}>{link.anchor}</a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+        <slot name="clusters" />
+        <FAQSection faq={data.faq} />
+        <AuthorBio author={data.author} />
+        <RelatedArticles slugs={relatedSlugs} />
+      </div>
+    </div>
+  </article>
+</BaseLayout>

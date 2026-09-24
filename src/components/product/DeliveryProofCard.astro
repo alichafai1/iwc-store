@@ -1,0 +1,102 @@
+---
+import type { DeliveryProof } from '../../types/delivery-proof';
+
+interface Props {
+  proof: DeliveryProof;
+}
+
+const { proof } = Astro.props;
+const hasImage = Boolean(proof.imageSrc);
+---
+
+<figure class:list={['delivery-proof-card', !hasImage && 'delivery-proof-card--placeholder']}>
+  <div class="delivery-proof-card__media">
+    {
+      hasImage ? (
+        <img
+          src={proof.imageSrc!}
+          alt={proof.imageAlt}
+          width="750"
+          height="1400"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div class="delivery-proof-card__slot" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3.5" y="5.5" width="17" height="13" rx="1.6"></rect>
+            <circle cx="9" cy="11" r="1.6"></circle>
+            <path d="m20.5 16.2-4.4-4.2-7.1 6.5"></path>
+          </svg>
+          <span>Arrival photo</span>
+        </div>
+      )
+    }
+  </div>
+  <figcaption>
+    <span>{proof.courierLabel}</span>
+    <span>{proof.regionLabel}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .delivery-proof-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg);
+  }
+
+  .delivery-proof-card__media {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    background: var(--product-media-bg);
+  }
+
+  .delivery-proof-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .delivery-proof-card__slot {
+    position: absolute;
+    inset: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    border: 1px dashed color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+    color: var(--color-accent-dark);
+  }
+
+  .delivery-proof-card__slot span {
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .delivery-proof-card figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .delivery-proof-card figcaption span:first-child {
+    color: var(--color-accent-dark);
+    font-weight: 500;
+  }
+</style>

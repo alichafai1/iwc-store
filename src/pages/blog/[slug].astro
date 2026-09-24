@@ -1,18 +1,17 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import ArticleTemplate from '../../components/editorial/ArticleTemplate.astro';
-import { getEditorialArticlePaths } from '../../lib/editorial';
-import type { ArticlePageData } from '../../types/article';
+import { getCollection } from 'astro:content';
+import ContentCollectionArticle from '../../components/ContentCollectionArticle.astro';
 
-export const getStaticPaths = (() => {
-  return getEditorialArticlePaths('blog');
+export const getStaticPaths = (async () => {
+  const entries = await getCollection('blog');
+  return entries.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
 }) satisfies GetStaticPaths;
 
-interface Props {
-  page: ArticlePageData;
-}
-
-const { page } = Astro.props;
+const { entry } = Astro.props;
 ---
 
-<ArticleTemplate page={page} />
+<ContentCollectionArticle collection="blog" entry={entry} />

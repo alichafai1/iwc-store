@@ -1,0 +1,178 @@
+---
+import type { QcVideoCardData } from '../../types/qc-video';
+
+interface Props {
+  video: QcVideoCardData;
+}
+
+const { video } = Astro.props;
+const playLabel = `Play quality-check video of ${video.productName}`;
+---
+
+<article class="qc-video-card" id={video.id}>
+  <div class="qc-video-card__media product-media">
+    <button
+      class="qc-video-card__play"
+      type="button"
+      data-qc-play
+      data-video-src={video.videoUrl}
+      data-video-poster={video.thumbnailUrl}
+      aria-label={playLabel}
+    >
+      <img
+        src={video.thumbnailUrl}
+        alt={`Quality-check video thumbnail of ${video.productName}`}
+        width="640"
+        height="480"
+        loading="lazy"
+        decoding="async"
+      />
+      <span class="qc-video-card__icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8.4 5.8v12.4L19.2 12 8.4 5.8Z"></path>
+        </svg>
+      </span>
+    </button>
+  </div>
+  <div class="qc-video-card__body">
+    <h3 class="qc-video-card__title">{video.productName}</h3>
+    {
+      (video.reference || video.durationLabel) && (
+        <p class="qc-video-card__meta">
+          {video.reference ? <span>{video.reference}</span> : null}
+          {video.reference && video.durationLabel ? <span aria-hidden="true"> · </span> : null}
+          {video.durationLabel ? <span>{video.durationLabel}</span> : null}
+        </p>
+      )
+    }
+    {
+      video.productHref ? (
+        <a class="qc-video-card__product" href={video.productHref}>
+          View Product
+        </a>
+      ) : null
+    }
+  </div>
+</article>
+
+<style>
+  .qc-video-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .qc-video-card__media {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+  }
+
+  .qc-video-card__play,
+  .qc-video-card__media :global(video) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0;
+    background: var(--product-media-bg);
+    cursor: pointer;
+  }
+
+  .qc-video-card__play :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .qc-video-card__media :global(video) {
+    object-fit: cover;
+    cursor: default;
+    background: #111111;
+  }
+
+  .qc-video-card__icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    background: rgb(17 17 17 / 82%);
+    color: #ffffff;
+    box-shadow: 0 0 0 2px var(--color-accent);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .qc-video-card__icon svg {
+    margin-left: 0.15rem;
+  }
+
+  .qc-video-card__play:hover .qc-video-card__icon,
+  .qc-video-card__play:focus-visible .qc-video-card__icon {
+    background: var(--color-accent);
+    color: #111111;
+  }
+
+  .qc-video-card__play:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .qc-video-card__body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-top: var(--space-4);
+  }
+
+  .qc-video-card__title {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .qc-video-card__meta {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+  }
+
+  .qc-video-card__product {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 2.15rem;
+    margin-top: auto;
+    padding: 0.4rem 1.1rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .qc-video-card__product:hover {
+    background: var(--color-accent-dark);
+    color: #fff;
+  }
+
+  .qc-video-card__product:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+</style>

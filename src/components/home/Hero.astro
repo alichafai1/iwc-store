@@ -1,53 +1,182 @@
 ---
+import { Image } from 'astro:assets';
+import heroImage from '../../assets/images/hero.jpg';
 import Button from '../ui/Button.astro';
-import { getPublishedSiteImage, HOMEPAGE_HERO_SLOT } from '../../lib/catalog';
+import { collectionImages } from '../../data/collection-media';
+import { isStorefrontModelCollectionSlug } from '../../data/collections';
+import { trustpilotUrl } from '../../data/trust-links';
+import { getPublishedCustomerReviewScreenshots, getPublishedStoreCollectionCards } from '../../lib/catalog';
+import { QC_VIDEOS_PATH } from '../../lib/qc-videos';
 
-const hero = await getPublishedSiteImage(HOMEPAGE_HERO_SLOT);
+const screenshots = await getPublishedCustomerReviewScreenshots();
+const collectionCovers = (await getPublishedStoreCollectionCards())
+  .filter((collection) => isStorefrontModelCollectionSlug(collection.slug))
+  .map((collection) => ({
+    src: typeof collection.image === 'string' ? collection.image : collection.image.src,
+    alt: collection.imageAlt || `${collection.name} collection`,
+  }))
+  .filter((item) => Boolean(item.src));
+
+const fallbackPhotos = [
+  {
+    src: collectionCovers[0]?.src ?? collectionImages.pilots.src,
+    alt: collectionCovers[0]?.alt ?? 'IWC Pilot replica watch',
+  },
+  {
+    src: collectionCovers[1]?.src ?? collectionImages.portofino.src,
+    alt: collectionCovers[1]?.alt ?? 'IWC Portofino replica watch',
+  },
+  {
+    src: collectionCovers[2]?.src ?? collectionImages.portuguese.src,
+    alt: collectionCovers[2]?.alt ?? 'IWC Portugieser replica watch',
+  },
+];
+
+const galleryPhotos =
+  screenshots.length >= 3
+    ? screenshots.slice(0, 3).map((item, index) => ({
+        src: item.src,
+        alt: item.alt,
+        position: '50% 42%',
+        layer: index,
+      }))
+    : fallbackPhotos.map((photo, index) => ({
+        ...photo,
+        position: '50% 42%',
+        layer: index,
+      }));
+
+const TrustpilotTag = trustpilotUrl ? 'a' : 'span';
 ---
 
 <section class="hero" aria-labelledby="hero-heading">
   <div class="container hero__inner">
     <div class="hero__copy">
-      <p class="eyebrow">Discover</p>
-      <h1 id="hero-heading">Our IWC replica watches.</h1>
-      <p class="hero__text">
-        Explore the Pilot, Portugieser, Portofino, Aquatimer, and Ingenieur collections. Each published listing shows the line, the finishing, and the Top 1:1 Clone grade.
-      </p>
-      <div class="hero__actions">
-        <Button href="/collections/">Discover the collections</Button>
-        <Button href="/guides/" variant="ghost">Read the guides</Button>
-      </div>
-    </div>
-    {
-      hero && (
-        <div class="hero__media">
-          <img
-            src={hero.src}
-            alt={hero.alt}
-            width={hero.width ?? 1024}
-            height={hero.height ?? 575}
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-          />
+      <div class="hero__copy-main">
+        <p class="eyebrow">Discover</p>
+        <h1 id="hero-heading">Our IWC replica watches.</h1>
+        <p class="hero__text">
+          Replica Pilot, Portugieser, and Portofino watches, listed with specs and Top 1:1 Clone prices.
+        </p>
+        <div class="hero__actions">
+          <Button href="/collections/">Discover the collections</Button>
+          <Button href="/guides/" variant="ghost">Read the guides</Button>
         </div>
-      )
-    }
+      </div>
+      <nav class="hero-proofs" aria-label="Watch proofs and reviews">
+        <p class="hero-proofs__kicker">Real reviews / Real videos / Real customers</p>
+        <TrustpilotTag
+          class:list={['hero-proof', 'hero-proof--trustpilot', !trustpilotUrl && 'hero-proof--pending']}
+          href={trustpilotUrl || undefined}
+          target={trustpilotUrl ? '_blank' : undefined}
+          rel={trustpilotUrl ? 'noopener noreferrer' : undefined}
+          title={trustpilotUrl ? 'Trustpilot' : 'Trustpilot profile coming soon'}
+        >
+          <span class="hero-proof__visual">
+            <img src="/brand/trustpilot.svg" alt="Trustpilot" width="320" height="79" />
+          </span>
+          <span class="hero-proof__title">Trusted by Watch Enthusiasts Worldwide</span>
+          <span class="hero-proof__text">See what our customers say about their experience.</span>
+          <span class="hero-proof__arrow" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14.25" stroke="currentColor" stroke-width="1.15"></circle>
+              <path d="M13.1 10.9 20.2 16l-7.1 5.1" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+        </TrustpilotTag>
+
+        <a class="hero-proof hero-proof--video" href={QC_VIDEOS_PATH}>
+          <span class="hero-proof__visual">
+            <img src="/images/hero-qc-film.svg" alt="" width="160" height="160" />
+          </span>
+          <span class="hero-proof__title">QC Videos</span>
+          <span class="hero-proof__text">See our quality checks in real time.</span>
+          <span class="hero-proof__arrow" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14.25" stroke="currentColor" stroke-width="1.15"></circle>
+              <path d="M13.1 10.9 20.2 16l-7.1 5.1" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+        </a>
+
+        <a class="hero-proof hero-proof--gallery" href="/#customer-gallery" data-scroll-to="#customer-gallery">
+          <span class="hero-proof__visual">
+            <span class="hero-photos">
+              {
+                galleryPhotos.map((photo) => (
+                  <img
+                    class={`hero-photos__card hero-photos__card--${photo.layer + 1}`}
+                    src={photo.src}
+                    alt={photo.alt}
+                    width="240"
+                    height="280"
+                    style={`object-position: ${photo.position}`}
+                  />
+                ))
+              }
+            </span>
+          </span>
+          <span class="hero-proof__title">Customer Gallery</span>
+          <span class="hero-proof__text">Real photos from our buyers.</span>
+          <span class="hero-proof__arrow" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14.25" stroke="currentColor" stroke-width="1.15"></circle>
+              <path d="M13.1 10.9 20.2 16l-7.1 5.1" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+        </a>
+      </nav>
+    </div>
+    <div class="hero__media">
+      <Image
+        src={heroImage}
+        alt="IWC replica watches including Portugieser, Portofino, and Da Vinci references"
+        widths={[640, 960, 1280, 1600]}
+        sizes="(min-width: 64em) 52vw, 100vw"
+        width={1024}
+        height={576}
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
   </div>
 </section>
 
-<style>
+<script is:inline>
+  (() => {
+    document.querySelectorAll('.hero-proof[data-scroll-to]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const href = link.getAttribute('data-scroll-to');
+        if (!href) return;
+        const target = document.querySelector(href);
+        if (!target) return;
+        event.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', href);
+      });
+    });
+  })();
+</script>
+
+<style is:global>
   .hero {
+    overflow-x: hidden;
     border-bottom: 1px solid var(--color-border);
   }
 
   .hero__inner {
     display: grid;
     gap: var(--space-6);
-    padding-block: var(--space-6);
+    padding-block: var(--space-8);
+  }
+
+  .hero__inner > * {
+    min-width: 0;
   }
 
   .hero__copy {
+    display: grid;
+    gap: var(--space-5);
     max-width: 34rem;
   }
 
@@ -66,33 +195,279 @@ const hero = await getPublishedSiteImage(HOMEPAGE_HERO_SLOT);
     gap: var(--space-3);
   }
 
-  .hero__media {
-    aspect-ratio: 1024 / 575;
+  .hero-proofs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-proof {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.22rem;
+    min-width: 0;
+    min-height: 100%;
+    padding: 0 0.35rem 0;
+    color: var(--color-text);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .hero-proof + .hero-proof::before {
+    content: "";
+    position: absolute;
+    top: 0.3rem;
+    bottom: 1.7rem;
+    left: 0;
+    width: 1px;
+    background: var(--color-accent);
+    opacity: 0.38;
+  }
+
+  .hero-proof:hover .hero-proof__visual,
+  .hero-proof:focus-visible .hero-proof__visual {
+    transform: translateY(-4px);
+  }
+
+  .hero-proof:hover .hero-proof__arrow,
+  .hero-proof:focus-visible .hero-proof__arrow {
+    transform: translateX(2px);
+  }
+
+  .hero-proof__visual {
+    display: grid;
+    place-items: center;
+    min-height: 2.6rem;
+    margin-bottom: 0;
+    transition: transform 180ms ease;
+  }
+
+  .hero-proof--trustpilot .hero-proof__visual img {
+    display: block;
+    width: auto;
+    height: 1.45rem;
+    max-width: 100%;
+  }
+
+  .hero-proof--video .hero-proof__visual img {
+    display: block;
+    width: 2.7rem;
+    height: 2.7rem;
+    filter: drop-shadow(0 6px 10px rgba(17, 17, 17, 0.16));
+  }
+
+  .hero-photos {
+    position: relative;
+    display: block;
+    width: 3.3rem;
+    height: 2.9rem;
+  }
+
+  .hero-photos__card {
+    position: absolute;
+    width: 2.1rem;
+    height: 2.5rem;
+    object-fit: cover;
+    background: #f3f0e8;
+    border: 1.5px solid #fff;
+    border-bottom-width: 0.38rem;
+    border-radius: 0.2rem;
+    box-shadow: 0 6px 14px rgba(17, 17, 17, 0.2);
+  }
+
+  .hero-photos__card--1 {
+    top: 0.08rem;
+    right: 0.02rem;
+    transform: rotate(14deg);
+    z-index: 1;
+  }
+
+  .hero-photos__card--2 {
+    top: 0.18rem;
+    right: 0.5rem;
+    transform: rotate(5deg);
+    z-index: 2;
+  }
+
+  .hero-photos__card--3 {
+    left: 0.08rem;
+    bottom: 0;
+    transform: rotate(-8deg);
+    z-index: 3;
+  }
+
+  .hero-proof__title {
+    max-width: 11.5rem;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    color: #1a1a1a;
+  }
+
+  .hero-proof__text {
+    max-width: 11.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.6rem;
+    line-height: 1.25;
+  }
+
+  .hero-proof__arrow {
+    display: grid;
+    place-items: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-top: auto;
+    padding-top: 0.1rem;
+    color: var(--color-accent);
+    transition: transform 180ms ease;
+  }
+
+  .hero-proof__arrow svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .hero-proofs__kicker {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    margin: 0 0 0.4rem;
+    color: var(--color-accent);
+    font-size: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.3;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .hero-proofs__kicker::before,
+  .hero-proofs__kicker::after {
+    content: "";
+    width: 1.5rem;
+    height: 1px;
+    background: var(--color-accent);
+    opacity: 0.7;
+  }
+
+  .hero .hero__media {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+    max-width: 100%;
     overflow: hidden;
+    border: 0;
     background: transparent;
   }
 
-  .hero__media img {
+  .hero .hero__media img {
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center center;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    object-fit: contain;
+    object-position: center;
+    background: transparent;
+    transform: scale(1);
+    transform-origin: center center;
   }
 
   @media (min-width: 64em) {
     .hero__inner {
-      grid-template-columns: minmax(18rem, 0.85fr) minmax(0, 1.15fr);
-      align-items: center;
-      gap: var(--space-10);
-      min-height: 36rem;
+      grid-template-columns: minmax(16rem, 0.76fr) minmax(0, 1.3fr);
+      align-items: stretch;
+      gap: 3rem;
+      min-height: 0;
       padding-block: var(--space-8);
+    }
+
+    .hero__copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-self: stretch;
+      gap: var(--space-5);
+      max-width: none;
+      min-height: 0;
+    }
+
+    .hero__copy-main {
+      max-width: 34rem;
+    }
+
+    .hero-proofs {
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .hero-proof__text {
+      display: none;
+    }
+
+    .hero-proof + .hero-proof::before {
+      bottom: 1.4rem;
+    }
+
+    .hero .hero__media {
+      align-self: center;
+      overflow: hidden;
+    }
+
+    .hero .hero__media img {
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      transform: scale(1.04);
     }
   }
 
-  @media (min-width: 80em) {
-    .hero__inner {
-      min-height: 40rem;
+  @media (max-width: 63.99em) {
+    .hero__copy {
+      display: contents;
+    }
+
+    .hero__copy-main {
+      order: 1;
+      max-width: 34rem;
+    }
+
+    .hero .hero__media {
+      order: 2;
+    }
+
+    .hero-proofs {
+      order: 3;
+    }
+  }
+
+  @media (max-width: 30em) {
+    .hero-proof {
+      padding-inline: 0.28rem;
+      gap: 0.28rem;
+    }
+
+    .hero-proof__title {
+      font-size: 0.72rem;
+    }
+
+    .hero-proof__text {
+      font-size: 0.58rem;
+    }
+
+    .hero-proofs__kicker {
+      letter-spacing: 0.1em;
+      font-size: 0.48rem;
     }
   }
 </style>

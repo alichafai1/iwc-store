@@ -1,0 +1,23 @@
+---
+import type { ContentFaqItem } from '../types/content-article';
+
+interface Props {
+  faq: ContentFaqItem[];
+}
+
+const { faq } = Astro.props;
+---
+
+{
+  faq.length > 0 && (
+    <section class="article-faq" aria-labelledby="article-faq-heading">
+      <h2 id="article-faq-heading">Frequently asked questions</h2>
+      {faq.map((item) => (
+        <div class="article-faq__item">
+          <h3>{item.question}</h3>
+          <p>{item.answer}</p>
+        </div>
+      ))}
+    </section>
+  )
+}

@@ -53,6 +53,7 @@ const slightZoom = /\/(da-vinci|ingenieur)\/?$/.test(href);
     display: flex;
     flex-direction: column;
     text-decoration: none;
+    transition: transform 0.28s ease;
   }
 
   .collection-card__media {
@@ -60,8 +61,11 @@ const slightZoom = /\/(da-vinci|ingenieur)\/?$/.test(href);
     aspect-ratio: 4 / 5;
     width: 100%;
     overflow: hidden;
+    isolation: isolate;
     border: 1px solid var(--color-border);
+    border-radius: 12px;
     background: var(--color-muted);
+    transition: border-color 0.28s ease, box-shadow 0.28s ease;
   }
 
   .collection-card__media--photo {
@@ -75,21 +79,63 @@ const slightZoom = /\/(da-vinci|ingenieur)\/?$/.test(href);
     height: 100%;
     object-fit: cover;
     object-position: center center;
+    transform-origin: center center;
+    transition: transform 0.4s ease;
   }
 
   .collection-card__media :global(.collection-card__photo--slight-zoom) {
     transform: scale(1.1);
-    transform-origin: center center;
+  }
+
+  .collection-card a:hover,
+  .collection-card a:focus-visible {
+    transform: translateY(-6px);
+  }
+
+  .collection-card a:hover .collection-card__media,
+  .collection-card a:focus-visible .collection-card__media {
+    border-color: #cfcfcf;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  }
+
+  .collection-card a:hover .collection-card__media :global(img),
+  .collection-card a:focus-visible .collection-card__media :global(img) {
+    transform: scale(1.08);
+  }
+
+  .collection-card a:hover .collection-card__media :global(.collection-card__photo--slight-zoom),
+  .collection-card a:focus-visible .collection-card__media :global(.collection-card__photo--slight-zoom) {
+    transform: scale(1.18);
   }
 
   .collection-card h3 {
-    display: flex;
-    align-items: flex-start;
-    min-height: 2.75em;
+    display: block;
+    width: 100%;
     margin: var(--space-3) 0 0;
+    text-align: center;
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
     font-weight: 500;
     letter-spacing: 0.04em;
+    transition: color 0.28s ease;
+  }
+
+  .collection-card a:hover h3,
+  .collection-card a:focus-visible h3 {
+    color: var(--color-accent-dark);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .collection-card a,
+    .collection-card__media,
+    .collection-card__media :global(img),
+    .collection-card h3 {
+      transition: none;
+    }
+
+    .collection-card a:hover,
+    .collection-card a:focus-visible {
+      transform: none;
+    }
   }
 </style>

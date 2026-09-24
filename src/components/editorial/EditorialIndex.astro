@@ -46,7 +46,7 @@ const listingHeading = content.kind === 'blog' ? 'Articles' : 'All guides';
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: content.title }]} />
       <h1>{content.title}</h1>
       <p>{content.intro}</p>
-      <p class="editorial-header__note">{content.note}</p>
+      {content.note ? <p class="editorial-header__note">{content.note}</p> : null}
     </Container>
   </header>
 
@@ -67,16 +67,24 @@ const listingHeading = content.kind === 'blog' ? 'Articles' : 'All guides';
   <section class="section editorial-listing" aria-labelledby="editorial-listing-heading">
     <Container>
       <h2 id="editorial-listing-heading" class="visually-hidden">{listingHeading}</h2>
-      <ul class="editorial-grid">
-        {
-          items.map((article) => (
-            <li>
-              <ArticleCard article={article} linkLabel={content.linkLabel} showDate={content.showDate} />
-            </li>
-          ))
-        }
-      </ul>
-      <Pagination basePath={content.basePath} page={page} totalPages={totalPages} />
+      {
+        items.length === 0 && !featured ? (
+          <p class="editorial-empty">
+            {content.kind === 'blog'
+              ? 'No articles have been published yet. New posts will appear here.'
+              : 'No guides have been published yet. New guides will appear here.'}
+          </p>
+        ) : (
+          <ul class="editorial-grid">
+            {items.map((article) => (
+              <li>
+                <ArticleCard article={article} linkLabel={content.linkLabel} showDate={content.showDate} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {totalPages > 1 ? <Pagination basePath={content.basePath} page={page} totalPages={totalPages} /> : null}
     </Container>
   </section>
 
@@ -122,6 +130,12 @@ const listingHeading = content.kind === 'blog' ? 'Articles' : 'All guides';
     display: grid;
     gap: var(--space-8) var(--space-5);
     list-style: none;
+  }
+
+  .editorial-empty {
+    margin: 0;
+    max-width: 38rem;
+    color: var(--color-text-muted);
   }
 
   @media (min-width: 48em) {

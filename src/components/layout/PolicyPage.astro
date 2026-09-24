@@ -1,0 +1,340 @@
+---
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Container from '../ui/Container.astro';
+import RichText from '../ui/RichText.astro';
+import TrustSection from './TrustSection.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPolicy, relatedPolicies } from '../../data/policies';
+import { absoluteUrl, breadcrumbJsonLd, defaultJsonLd } from '../../lib/seo';
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+const policy = getPolicy(id);
+const related = relatedPolicies(id);
+const jsonLd = [
+  defaultJsonLd(),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: policy.title,
+    description: policy.description,
+    url: absoluteUrl(policy.path),
+    dateModified: policy.updatedIso,
+  },
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: policy.title, path: policy.path },
+  ]),
+];
+---
+
+<BaseLayout
+  title={policy.title}
+  description={policy.description}
+  canonicalPath={policy.path}
+  jsonLd={jsonLd}
+>
+  <header class="policy-header">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: policy.title }]} />
+      <p class="eyebrow">Legal</p>
+      <h1>{policy.title}</h1>
+      <p class="policy-header__intro">
+        <RichText text={policy.intro} />
+      </p>
+      <p class="policy-header__updated">Last updated {policy.updated}</p>
+    </Container>
+  </header>
+
+  <section class="section policy-highlights" aria-label="Policy summary">
+    <Container>
+      <ul class="policy-highlights__list">
+        {
+          policy.highlights.map((item) => (
+            <li>
+              <p class="policy-highlights__value">{item.value}</p>
+              <p class="policy-highlights__label">{item.label}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <section class="section policy-body">
+    <Container>
+      <div class="policy-layout">
+        <nav class="policy-toc" aria-label="On this page">
+          <p class="policy-toc__title">On this page</p>
+          <ol>
+            {
+              policy.sections.map((section) => (
+                <li>
+                  <a href={`#${section.id}`}>{section.title}</a>
+                </li>
+              ))
+            }
+          </ol>
+        </nav>
+
+        <div class="policy-content">
+          {
+            policy.sections.map((section) => (
+              <section class="policy-section" id={section.id} aria-labelledby={`${section.id}-heading`}>
+                <h2 id={`${section.id}-heading`}>{section.title}</h2>
+                {section.blocks.map((block) =>
+                  block.type === 'p' ? (
+                    <p>
+                      <RichText text={block.text} />
+                    </p>
+                  ) : block.type === 'ul' ? (
+                    <ul>
+                      {block.items.map((item) => (
+                        <li>
+                          <RichText text={item} />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <ol>
+                      {block.items.map((item) => (
+                        <li>
+                          <RichText text={item} />
+                        </li>
+                      ))}
+                    </ol>
+                  ),
+                )}
+              </section>
+            ))
+          }
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <section class="section policy-related" aria-labelledby="policy-related-heading">
+    <Container>
+      <h2 id="policy-related-heading">Other policies</h2>
+      <ul>
+        {
+          related.map((item) => (
+            <li>
+              <a href={item.path}>{item.navLabel}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .policy-header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+  }
+
+  .policy-header h1 {
+    margin: 0 0 var(--space-4);
+    max-width: 20ch;
+  }
+
+  .policy-header__intro {
+    max-width: 42rem;
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .policy-header__intro :global(a),
+  .policy-content :global(a) {
+    color: var(--color-text);
+    text-underline-offset: 0.18em;
+  }
+
+  .policy-header__intro :global(a:hover),
+  .policy-content :global(a:hover) {
+    color: var(--color-accent-dark);
+  }
+
+  .policy-header__updated {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .policy-highlights {
+    padding-top: 0;
+    padding-bottom: var(--space-4);
+  }
+
+  .policy-highlights__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .policy-highlights__value {
+    margin: 0 0 var(--space-2);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+    line-height: var(--line-height-tight);
+  }
+
+  .policy-highlights__label {
+    margin: 0;
+    max-width: 18rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .policy-body {
+    padding-top: var(--space-6);
+  }
+
+  .policy-layout {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .policy-toc {
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .policy-toc__title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .policy-toc ol {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .policy-toc a {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+  }
+
+  .policy-toc a:hover {
+    color: var(--color-accent-dark);
+  }
+
+  .policy-section + .policy-section {
+    margin-top: var(--space-8);
+  }
+
+  .policy-section h2 {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    scroll-margin-top: calc(var(--announce-height) + var(--header-height) + 1rem);
+  }
+
+  .policy-section p,
+  .policy-section li {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-body);
+  }
+
+  .policy-section p {
+    margin: 0 0 var(--space-4);
+    max-width: 42rem;
+  }
+
+  .policy-section p:last-child {
+    margin-bottom: 0;
+  }
+
+  .policy-section ul,
+  .policy-section ol {
+    margin: 0 0 var(--space-4);
+    padding-left: 1.15rem;
+    max-width: 42rem;
+  }
+
+  .policy-section li + li {
+    margin-top: var(--space-2);
+  }
+
+  .policy-related {
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .policy-related h2 {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: var(--letter-spacing-nav);
+    text-transform: uppercase;
+  }
+
+  .policy-related ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .policy-related a {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+  }
+
+  .policy-related a:hover {
+    color: var(--color-accent-dark);
+  }
+
+  @media (min-width: 48em) {
+    .policy-highlights__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .policy-header h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .policy-layout {
+      grid-template-columns: 14rem minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-10);
+    }
+
+    .policy-toc {
+      position: sticky;
+      top: 6rem;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+  }
+</style>

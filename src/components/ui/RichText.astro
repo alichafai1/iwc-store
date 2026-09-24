@@ -1,0 +1,13 @@
+---
+import { faqAnswerParts } from '../../lib/faq-text';
+
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+
+{
+  faqAnswerParts(text).map((part) => (part.type === 'link' ? <a href={part.href}>{part.label}</a> : part.value))
+}

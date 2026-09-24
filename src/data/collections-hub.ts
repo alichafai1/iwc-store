@@ -127,13 +127,13 @@ export interface CollectionHubCopy {
 }
 
 export const collectionsHub = {
-  heading: 'IWC Watch Collections',
+  heading: 'IWC Replica Watch Collections',
   path: '/collections/',
-  metaTitle: 'IWC Watch Collections',
+  metaTitle: 'IWC Replica Watch Collections',
   metaDescription:
     'Shop replica IWC watches by collection. Browse IWC replica, IWC replica watch, and 1:1 watches across Pilot, Portugieser, Portofino, Ingenieur, Da Vinci, Big Pilot, and Aquatimer.',
   intro:
-    'This catalog sells replica IWC watches, grouped by the collections people already search: Pilot, Big Pilot, Portugieser, Portofino, Aquatimer, Ingenieur, and Da Vinci, plus Mark Series, Spitfire, Top Gun, Best Sellers, and New Arrivals. An IWC replica or replica IWC watch on this site is a published listing with photos and a Top 1:1 Clone price when that grade is set—not a genuine IWC Schaffhausen boutique watch. The same catalog answers searches for an IWC replica watch, replica watch IWC, IWC watch replicas, IWC watches replica, IWC copy watches, IWC clone watches, IWC first copy, IWC lookalike, IWC premium, or replika IWC. Open one collection at a time and read the specs before you compare 1:1 watches across families.',
+    'Shop replica IWC watches by collection: Pilot, Big Pilot, Portugieser, Portofino, Aquatimer, Ingenieur, and Da Vinci. Each listing is a published IWC replica with photos and a Top 1:1 Clone price—not a genuine IWC boutique watch.',
   shopHeading: 'Shop by Collection',
 } as const;
 

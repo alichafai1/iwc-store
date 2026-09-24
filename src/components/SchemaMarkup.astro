@@ -1,0 +1,95 @@
+---
+import { siteConfig } from '../lib/site';
+import { absoluteUrl } from '../lib/seo';
+import type { ContentBreadcrumbItem, ContentFaqItem } from '../types/content-article';
+
+type SchemaKind = 'Article' | 'FAQ' | 'Breadcrumb';
+
+interface ArticleSchemaData {
+  headline: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  author: string;
+  datePublished: string;
+  dateModified: string;
+  url: string;
+}
+
+interface Props {
+  type?: SchemaKind | SchemaKind[];
+  data: {
+    article?: ArticleSchemaData;
+    faq?: ContentFaqItem[];
+    breadcrumbs?: ContentBreadcrumbItem[];
+  };
+}
+
+const { type = ['Article', 'FAQ', 'Breadcrumb'], data } = Astro.props;
+const kinds = Array.isArray(type) ? type : [type];
+const graph: Record<string, unknown>[] = [];
+
+if (kinds.includes('Article') && data.article) {
+  const article = data.article;
+  graph.push({
+    '@type': 'Article',
+    headline: article.headline,
+    description: article.description,
+    image: {
+      '@type': 'ImageObject',
+      url: article.image.startsWith('http') ? article.image : absoluteUrl(article.image),
+      caption: article.imageAlt,
+    },
+    author: {
+      '@type': 'Organization',
+      name: article.author,
+      url: absoluteUrl('/authors/editorial-team/'),
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    datePublished: article.datePublished,
+    dateModified: article.dateModified,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': article.url,
+    },
+    url: article.url,
+  });
+}
+
+if (kinds.includes('FAQ') && data.faq?.length) {
+  graph.push({
+    '@type': 'FAQPage',
+    mainEntity: data.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  });
+}
+
+if (kinds.includes('Breadcrumb') && data.breadcrumbs?.length) {
+  graph.push({
+    '@type': 'BreadcrumbList',
+    itemListElement: data.breadcrumbs.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url.startsWith('http') ? item.url : absoluteUrl(item.url),
+    })),
+  });
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': graph,
+};
+---
+
+{graph.length > 0 && <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />}

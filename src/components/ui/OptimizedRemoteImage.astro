@@ -8,13 +8,14 @@ import {
 interface Props {
   src: string;
   alt: string;
-  widths: readonly number[];
-  sizes: string;
+  widths?: readonly number[];
+  sizes?: string;
   width: number;
   height: number;
   loading?: 'lazy' | 'eager';
   fetchpriority?: 'high' | 'low' | 'auto';
   class?: string;
+  transform?: boolean;
 }
 
 const {
@@ -27,13 +28,14 @@ const {
   loading = 'lazy',
   fetchpriority,
   class: className,
+  transform = true,
 } = Astro.props;
 
-const optimize = isSupabaseStorageUrl(src);
+const optimize = transform && isSupabaseStorageUrl(src);
 const displaySrc = optimize
   ? (transformedStorageUrl(src, { width, height: height || width }) ?? src)
   : src;
-const srcset = optimize ? storageImageSrcSet(src, widths) : undefined;
+const srcset = optimize && widths ? storageImageSrcSet(src, widths) : undefined;
 ---
 
 <img

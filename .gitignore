@@ -24,6 +24,9 @@ pnpm-debug.log*
 # Cursor local MCP config (may include project refs)
 .cursor/mcp.json
 
+# Local QC video media (large MP4s; keep src/data/qc-videos.ts in git)
+public/qc-videos-media/
+
 # Vercel
 .vercel/
 

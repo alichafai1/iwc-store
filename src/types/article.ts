@@ -11,9 +11,10 @@ export interface Article {
   excerpt: string;
   category: ArticleCategory;
   href: string;
-  image: ImageMetadata;
+  image: ImageMetadata | string;
   imageAlt: string;
   kind: EditorialKind;
+  author?: string;
   publishedAt?: string;
   featured?: boolean;
   demo?: boolean;
@@ -25,7 +26,7 @@ export interface EditorialPageContent {
   intro: string;
   metaTitle: string;
   metaDescription: string;
-  note: string;
+  note?: string;
   linkLabel: string;
   showDate: boolean;
   basePath: string;

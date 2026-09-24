@@ -27,7 +27,7 @@ function resolveSiteUrl(): string {
     return vercelProduction;
   }
 
-  return 'https://example.com';
+  return 'https://iwc-replica.to';
 }
 
 export const siteConfig = {

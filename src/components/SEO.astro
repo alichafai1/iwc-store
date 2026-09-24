@@ -1,0 +1,31 @@
+---
+import { absoluteUrl } from '../lib/seo';
+import type { OpenGraphType } from '../types/seo';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  image?: string;
+  type?: OpenGraphType;
+}
+
+const { title, description, canonical, image, type = 'website' } = Astro.props;
+const canonicalHref = canonical.startsWith('http') ? canonical : absoluteUrl(canonical);
+const imageHref = image ? (image.startsWith('http') ? image : absoluteUrl(image)) : undefined;
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalHref} />
+
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalHref} />
+<meta property="og:type" content={type} />
+{imageHref && <meta property="og:image" content={imageHref} />}
+
+<meta name="twitter:card" content={imageHref ? 'summary_large_image' : 'summary'} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+{imageHref && <meta name="twitter:image" content={imageHref} />}

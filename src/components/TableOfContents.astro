@@ -1,0 +1,59 @@
+---
+import type { ContentHeading } from '../types/content-article';
+
+interface TocNode {
+  id: string;
+  text: string;
+  children: { id: string; text: string }[];
+}
+
+interface Props {
+  headings: ContentHeading[];
+}
+
+const { headings } = Astro.props;
+
+const nodes: TocNode[] = [];
+
+for (const heading of headings) {
+  if (heading.depth === 2) {
+    nodes.push({ id: heading.slug, text: heading.text, children: [] });
+    continue;
+  }
+
+  if (heading.depth === 3) {
+    const parent = nodes.at(-1);
+    if (parent) {
+      parent.children.push({ id: heading.slug, text: heading.text });
+    } else {
+      nodes.push({ id: heading.slug, text: heading.text, children: [] });
+    }
+  }
+}
+---
+
+{
+  nodes.length > 0 && (
+    <aside class="article-toc" aria-labelledby="article-toc-heading">
+      <h2 id="article-toc-heading">On this page</h2>
+      <nav>
+        <ol>
+          {nodes.map((node) => (
+            <li>
+              <a href={`#${node.id}`}>{node.text}</a>
+              {node.children.length > 0 && (
+                <ol>
+                  {node.children.map((child) => (
+                    <li>
+                      <a href={`#${child.id}`}>{child.text}</a>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </aside>
+  )
+}

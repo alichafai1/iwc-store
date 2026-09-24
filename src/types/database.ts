@@ -860,6 +860,164 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          line_total: number
+          order_id: string
+          product_slug: string
+          product_title: string
+          quality: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          line_total: number
+          order_id: string
+          product_slug: string
+          product_title: string
+          quality: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          line_total?: number
+          order_id?: string
+          product_slug?: string
+          product_title?: string
+          quality?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          billing_address: string | null
+          billing_apartment: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_first_name: string | null
+          billing_last_name: string | null
+          billing_postal_code: string | null
+          billing_same_as_shipping: boolean
+          billing_state: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_first_name: string
+          customer_last_name: string
+          customer_phone: string
+          discount_amount: number
+          discount_label: string | null
+          email_offers: boolean
+          id: string
+          order_number: string
+          payment_method: Database["public"]["Enums"]["order_payment_method"]
+          payment_status: Database["public"]["Enums"]["order_payment_status"]
+          shipping_address: string
+          shipping_apartment: string | null
+          shipping_city: string
+          shipping_cost: number
+          shipping_country: string
+          shipping_label: string
+          shipping_option_id: string
+          shipping_postal_code: string
+          shipping_state: string | null
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_apartment?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_first_name?: string | null
+          billing_last_name?: string | null
+          billing_postal_code?: string | null
+          billing_same_as_shipping?: boolean
+          billing_state?: string | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_first_name: string
+          customer_last_name: string
+          customer_phone: string
+          discount_amount?: number
+          discount_label?: string | null
+          email_offers?: boolean
+          id?: string
+          order_number: string
+          payment_method: Database["public"]["Enums"]["order_payment_method"]
+          payment_status?: Database["public"]["Enums"]["order_payment_status"]
+          shipping_address: string
+          shipping_apartment?: string | null
+          shipping_city: string
+          shipping_cost?: number
+          shipping_country: string
+          shipping_label: string
+          shipping_option_id: string
+          shipping_postal_code: string
+          shipping_state?: string | null
+          subtotal: number
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          billing_address?: string | null
+          billing_apartment?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_first_name?: string | null
+          billing_last_name?: string | null
+          billing_postal_code?: string | null
+          billing_same_as_shipping?: boolean
+          billing_state?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_first_name?: string
+          customer_last_name?: string
+          customer_phone?: string
+          discount_amount?: number
+          discount_label?: string | null
+          email_offers?: boolean
+          id?: string
+          order_number?: string
+          payment_method?: Database["public"]["Enums"]["order_payment_method"]
+          payment_status?: Database["public"]["Enums"]["order_payment_status"]
+          shipping_address?: string
+          shipping_apartment?: string | null
+          shipping_city?: string
+          shipping_cost?: number
+          shipping_country?: string
+          shipping_label?: string
+          shipping_option_id?: string
+          shipping_postal_code?: string
+          shipping_state?: string | null
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_collections: {
         Row: {
           collection_id: string
@@ -1406,6 +1564,8 @@ export type Database = {
       ai_product_run_status: "pending" | "processing" | "completed" | "failed"
       article_type: "blog" | "guide"
       content_status: "draft" | "review" | "published" | "archived"
+      order_payment_method: "bank-transfer" | "revolut-wise" | "crypto"
+      order_payment_status: "pending" | "paid" | "cancelled"
       scrape_job_status: "pending" | "running" | "completed" | "failed"
       scrape_status: "pending" | "scraped" | "failed" | "processed"
     }
@@ -1545,6 +1705,8 @@ export const Constants = {
       ai_product_run_status: ["pending", "processing", "completed", "failed"],
       article_type: ["blog", "guide"],
       content_status: ["draft", "review", "published", "archived"],
+      order_payment_method: ["bank-transfer", "revolut-wise", "crypto"],
+      order_payment_status: ["pending", "paid", "cancelled"],
       scrape_job_status: ["pending", "running", "completed", "failed"],
       scrape_status: ["pending", "scraped", "failed", "processed"],
     },

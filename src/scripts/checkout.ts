@@ -3,15 +3,17 @@ import {
   cartCompareAtTotal,
   cartLineId,
   cartSubtotal,
+  clearCart,
   formatMoney,
   readCart,
   removeCartLine,
   updateCartQuantity,
   type CartLine,
 } from '../lib/cart';
-import { checkoutShippingOptions } from '../data/checkout';
+import { checkoutPaymentOptions, checkoutShippingOptions } from '../data/checkout';
 import { defaultCountryCode } from '../data/countries';
 import { validateCheckoutForm, type CheckoutAddress, type CheckoutFormValues } from '../lib/checkout/validate';
+import { cartLinesToOrderItems, isOfflinePaymentMethod } from '../lib/orders';
 
 const FIELD_ERROR_IDS: Record<string, string> = {
   email: 'checkout-email-error',
@@ -29,6 +31,20 @@ const FIELD_ERROR_IDS: Record<string, string> = {
   'billing.city': 'billing-city-error',
   'billing.postalCode': 'billing-postalCode-error',
 };
+
+function paymentDiscountFromForm(form: HTMLFormElement, subtotal: number) {
+  const selected = form.querySelector<HTMLInputElement>('input[name="paymentOptionId"]:checked');
+  const option = checkoutPaymentOptions.find((item) => item.id === selected?.value);
+  const percent = option?.discountPercent ?? 0;
+  if (percent <= 0) {
+    return { amount: 0, label: '' };
+  }
+
+  return {
+    amount: Math.round(subtotal * (percent / 100) * 100) / 100,
+    label: `${option?.label.split(' (')[0]} ${percent}% off`,
+  };
+}
 
 function shippingCostFromForm(form: HTMLFormElement) {
   const selected = form.querySelector<HTMLInputElement>('input[name="shippingOptionId"]:checked');
@@ -175,10 +191,10 @@ function renderItems(root: HTMLElement, items: CartLine[]) {
   });
 }
 
-function syncTotals(root: HTMLElement, items: CartLine[], shippingCost: number) {
+function syncTotals(root: HTMLElement, items: CartLine[], shippingCost: number, paymentDiscount = { amount: 0, label: '' }) {
   const subtotal = cartSubtotal(items);
-  const total = Math.round((subtotal + shippingCost) * 100) / 100;
-  const savings = Math.round((cartCompareAtTotal(items) - subtotal) * 100) / 100;
+  const total = Math.round((subtotal - paymentDiscount.amount + shippingCost) * 100) / 100;
+  const savings = Math.round((cartCompareAtTotal(items) - subtotal + paymentDiscount.amount) * 100) / 100;
 
   root.querySelectorAll('[data-checkout-subtotal]').forEach((node) => {
     node.textContent = formatMoney(subtotal);
@@ -186,6 +202,19 @@ function syncTotals(root: HTMLElement, items: CartLine[], shippingCost: number) 
   root.querySelectorAll('[data-checkout-total]').forEach((node) => {
     node.textContent = formatMoney(total);
   });
+
+  const discountRow = root.querySelector<HTMLElement>('[data-checkout-discount-row]');
+  const discountLabel = root.querySelector('[data-checkout-discount-label]');
+  const discountValue = root.querySelector('[data-checkout-discount]');
+  if (discountRow && discountLabel && discountValue) {
+    if (paymentDiscount.amount > 0) {
+      discountRow.hidden = false;
+      discountLabel.textContent = paymentDiscount.label;
+      discountValue.textContent = `-${formatMoney(paymentDiscount.amount)}`;
+    } else {
+      discountRow.hidden = true;
+    }
+  }
 
   const shipping = root.querySelector('[data-checkout-shipping]');
   if (shipping) {
@@ -227,6 +256,8 @@ function bindCheckout(root: HTMLElement) {
   function render() {
     const items = readCart();
     const shippingCost = form ? shippingCostFromForm(form) : 0;
+    const subtotal = cartSubtotal(items);
+    const paymentDiscount = form ? paymentDiscountFromForm(form, subtotal) : { amount: 0, label: '' };
 
     loading?.setAttribute('hidden', '');
     if (items.length === 0) {
@@ -238,7 +269,7 @@ function bindCheckout(root: HTMLElement) {
     empty?.setAttribute('hidden', '');
     main?.removeAttribute('hidden');
     renderItems(root, items);
-    syncTotals(root, items, shippingCost);
+    syncTotals(root, items, shippingCost, paymentDiscount);
   }
 
   toggle?.addEventListener('click', () => {
@@ -260,7 +291,7 @@ function bindCheckout(root: HTMLElement) {
         billingExtra.hidden = input.value !== 'different';
       }
 
-      if (input.name === 'shippingOptionId') {
+      if (input.name === 'shippingOptionId' || input.name === 'paymentOptionId') {
         render();
       }
     });
@@ -284,7 +315,7 @@ function bindCheckout(root: HTMLElement) {
     discountError.textContent = "That code isn't valid for this order.";
   });
 
-  form?.addEventListener('submit', (event) => {
+  form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!form) {
       return;
@@ -294,9 +325,12 @@ function bindCheckout(root: HTMLElement) {
     const errors = validateCheckoutForm(values);
     showErrors(root, errors);
 
+    const submit = root.querySelector<HTMLButtonElement>('[data-checkout-submit]');
+
     if (Object.keys(errors).length > 0) {
       if (notice) {
         notice.hidden = true;
+        notice.textContent = '';
       }
       const firstInvalid = form.querySelector<HTMLElement>('[aria-invalid="true"]');
       firstInvalid?.focus();
@@ -304,8 +338,71 @@ function bindCheckout(root: HTMLElement) {
       return;
     }
 
+    if (!isOfflinePaymentMethod(values.paymentOptionId)) {
+      if (notice) {
+        notice.hidden = false;
+        notice.textContent =
+          'Pay direct by card is not connected yet. Choose Bank Transfer, Revolut / Wise, or Crypto to place your order.';
+      }
+      return;
+    }
+
+    const items = readCart();
+    if (items.length === 0) {
+      if (notice) {
+        notice.hidden = false;
+        notice.textContent = 'Your cart is empty.';
+      }
+      return;
+    }
+
+    if (submit) {
+      submit.disabled = true;
+    }
     if (notice) {
       notice.hidden = false;
+      notice.textContent = 'Placing your order…';
+    }
+
+    try {
+      const response = await fetch('/api/orders/', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer: values,
+          items: cartLinesToOrderItems(items),
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; orderNumber?: string; error?: string; fieldErrors?: Record<string, string> }
+        | null;
+
+      if (!response.ok || !payload?.ok || !payload.orderNumber) {
+        if (payload?.fieldErrors) {
+          showErrors(root, payload.fieldErrors);
+        }
+        if (notice) {
+          notice.hidden = false;
+          notice.textContent = payload?.error || 'Could not place your order. Please try again.';
+        }
+        return;
+      }
+
+      clearCart();
+      window.location.assign(`/thank-you/?order=${encodeURIComponent(payload.orderNumber)}`);
+    } catch {
+      if (notice) {
+        notice.hidden = false;
+        notice.textContent = 'Could not place your order. Please check your connection and try again.';
+      }
+    } finally {
+      if (submit) {
+        submit.disabled = false;
+      }
     }
   });
 

@@ -10,18 +10,25 @@ interface Props {
 }
 
 const { article, linkLabel, showDate = false } = Astro.props;
+const remoteImage = typeof article.image === 'string' ? article.image : undefined;
 ---
 
 <article class="featured-editorial">
   <a class="media featured-editorial__media" href={article.href}>
-    <Image
-      src={article.image}
-      alt={article.imageAlt}
-      width={1600}
-      height={1000}
-      sizes="(min-width: 64em) 55vw, 100vw"
-      loading="eager"
-    />
+    {
+      remoteImage ? (
+        <img src={remoteImage} alt={article.imageAlt} width="1080" height="1080" loading="eager" />
+      ) : typeof article.image !== 'string' ? (
+        <Image
+          src={article.image}
+          alt={article.imageAlt}
+          width={1080}
+          height={1080}
+          sizes="(min-width: 64em) 55vw, 100vw"
+          loading="eager"
+        />
+      ) : null
+    }
   </a>
   <div class="featured-editorial__body">
     <p class="featured-editorial__category">{article.category}</p>
@@ -47,8 +54,15 @@ const { article, linkLabel, showDate = false } = Astro.props;
   }
 
   .featured-editorial__media {
-    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
     border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .featured-editorial__media img {
+    object-fit: cover;
+    object-position: center;
   }
 
   .featured-editorial__body {

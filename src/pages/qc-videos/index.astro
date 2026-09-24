@@ -1,0 +1,266 @@
+---
+export const prerender = false;
+
+import QCVideoCard from '../../components/product/QCVideoCard.astro';
+import TrustSection from '../../components/layout/TrustSection.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Button from '../../components/ui/Button.astro';
+import Container from '../../components/ui/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CONTACT_PATH, contactDetails } from '../../data/contact';
+import { getQcVideosForPage, qcVideoDescription, QC_VIDEOS_PATH } from '../../lib/qc-videos';
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  collectionPageJsonLd,
+  defaultJsonLd,
+  videoObjectJsonLd,
+} from '../../lib/seo';
+
+const videos = await getQcVideosForPage();
+const title = 'QC Videos';
+const description =
+  'Watch quality-check videos before you order. Each clip shows finishing, details, and overall presentation from our inspection process.';
+const jsonLd = [
+  defaultJsonLd(),
+  collectionPageJsonLd({
+    name: title,
+    description,
+    path: QC_VIDEOS_PATH,
+    image: videos[0]?.thumbnailUrl,
+  }),
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: title, path: QC_VIDEOS_PATH },
+  ]),
+  ...videos.map((video) =>
+    videoObjectJsonLd({
+      name: `${video.productName} quality-check video`,
+      description: qcVideoDescription(video),
+      thumbnailUrl: video.thumbnailUrl,
+      contentUrl: video.videoUrl,
+      uploadDate: video.uploadDate,
+      duration: video.durationIso ?? undefined,
+      url: absoluteUrl(`${QC_VIDEOS_PATH}#${video.id}`),
+    }),
+  ),
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalPath={QC_VIDEOS_PATH}
+  ogImage={videos[0]?.thumbnailUrl}
+  jsonLd={jsonLd}
+>
+  <header class="qc-videos-header">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: title }]} />
+      <h1>QC Videos</h1>
+      <p>
+        These quality-check videos are recorded during inspection so you can see finishing, details,
+        and overall presentation before you order.
+      </p>
+    </Container>
+  </header>
+
+  <section class="section qc-videos-grid" aria-labelledby="qc-videos-heading">
+    <Container>
+      <h2 id="qc-videos-heading" class="visually-hidden">Quality-check video library</h2>
+      {
+        videos.length > 0 ? (
+          <ul class="qc-videos-grid__list">
+            {videos.map((video) => (
+              <li>
+                <QCVideoCard video={video} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="qc-videos-empty">Quality-check videos will appear here once they are published.</p>
+        )
+      }
+    </Container>
+  </section>
+
+  <section class="section qc-contact" aria-labelledby="qc-contact-heading">
+    <Container>
+      <div class="qc-contact__inner">
+        <div>
+          <h2 id="qc-contact-heading">Can’t find the watch you’re looking for?</h2>
+          <p>Contact us and tell us which IWC model you want.</p>
+        </div>
+        <div class="qc-contact__actions">
+          <Button href={CONTACT_PATH} variant="accent">Contact Us</Button>
+          <a
+            class="qc-contact__whatsapp"
+            href={contactDetails.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat on WhatsApp"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest('[data-qc-play]');
+      if (!(button instanceof HTMLButtonElement)) return;
+
+      const src = button.getAttribute('data-video-src');
+      const poster = button.getAttribute('data-video-poster');
+      if (!src) return;
+
+      const video = document.createElement('video');
+      video.controls = true;
+      video.preload = 'none';
+      video.playsInline = true;
+      video.setAttribute('controlslist', 'nodownload');
+      if (poster) video.poster = poster;
+      video.src = src;
+      button.replaceWith(video);
+      video.focus();
+      video.play().catch(() => {});
+    });
+  })();
+</script>
+
+<style>
+  .qc-videos-header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .qc-videos-header :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+  }
+
+  .qc-videos-header h1 {
+    margin: 0 0 var(--space-5);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: var(--line-height-tight);
+  }
+
+  .qc-videos-header p {
+    max-width: 46rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .qc-videos-grid {
+    padding-top: var(--space-8);
+  }
+
+  .qc-videos-grid__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .qc-videos-empty {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .qc-contact {
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .qc-contact__inner {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-5);
+  }
+
+  .qc-contact h2 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-xl);
+  }
+
+  .qc-contact p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .qc-contact__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .qc-contact__whatsapp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid #25d366;
+    border-radius: var(--radius-button);
+    background: #25d366;
+    color: #ffffff;
+  }
+
+  .qc-contact__whatsapp svg {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+
+  .qc-contact__whatsapp:hover,
+  .qc-contact__whatsapp:focus-visible {
+    background: #1ebe5d;
+    color: #ffffff;
+  }
+
+  @media (min-width: 48em) {
+    .qc-videos-header {
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-10);
+    }
+
+    .qc-videos-header h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .qc-videos-grid__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-8) var(--space-6);
+    }
+  }
+
+  @media (min-width: 64em) {
+    .qc-videos-header h1 {
+      font-size: var(--font-size-3xl);
+    }
+
+    .qc-videos-grid__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

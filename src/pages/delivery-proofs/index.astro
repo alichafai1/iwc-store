@@ -1,0 +1,473 @@
+---
+export const prerender = true;
+
+import DeliveryProofCard from '../../components/product/DeliveryProofCard.astro';
+import FAQSection from '../../components/home/FAQSection.astro';
+import TrustSection from '../../components/layout/TrustSection.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Button from '../../components/ui/Button.astro';
+import Container from '../../components/ui/Container.astro';
+import RichText from '../../components/ui/RichText.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  DELIVERY_PROOFS_PATH,
+  deliveryCloseCopy,
+  deliveryGalleryLead,
+  deliveryJourney,
+  deliveryJourneyLead,
+  deliveryProofFaqs,
+  deliveryProofHighlights,
+  deliveryProofIntro,
+  deliveryProofRelatedLinks,
+  deliveryProofs,
+  deliveryRegions,
+  deliveryRegionsLead,
+  deliveryRegionsNote,
+} from '../../data/delivery-proofs';
+import {
+  breadcrumbJsonLd,
+  collectionPageJsonLd,
+  defaultJsonLd,
+  faqPageJsonLd,
+} from '../../lib/seo';
+
+const title = 'Delivery Proofs';
+const description =
+  'How an IWC replica leaves inspection, travels with tracking, and arrives. QC video first, plain carton after you approve, then the usual 9–12 day worldwide window.';
+const jsonLd = [
+  defaultJsonLd(),
+  collectionPageJsonLd({
+    name: title,
+    description,
+    path: DELIVERY_PROOFS_PATH,
+  }),
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: title, path: DELIVERY_PROOFS_PATH },
+  ]),
+  faqPageJsonLd(deliveryProofFaqs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath={DELIVERY_PROOFS_PATH} jsonLd={jsonLd}>
+  <header class="proofs-header">
+    <Container>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: title }]} />
+      <h1>Delivery Proofs</h1>
+      <p>
+        <RichText text={deliveryProofIntro} />
+      </p>
+    </Container>
+  </header>
+
+  <section class="section proofs-highlights" aria-label="Dispatch facts">
+    <Container>
+      <ul class="proofs-highlights__list">
+        {
+          deliveryProofHighlights.map((item) => (
+            <li>
+              <p class="proofs-highlights__value">{item.value}</p>
+              <p class="proofs-highlights__label">{item.label}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <section class="section proofs-gallery" aria-labelledby="proofs-gallery-heading">
+    <Container>
+      <h2 id="proofs-gallery-heading">Recent arrivals</h2>
+      <p class="proofs-lead">
+        <RichText text={deliveryGalleryLead} />
+      </p>
+      <ul class="proofs-gallery__list">
+        {
+          deliveryProofs.map((proof) => (
+            <li>
+              <DeliveryProofCard proof={proof} />
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </section>
+
+  <section class="section proofs-journey" aria-labelledby="proofs-journey-heading">
+    <Container>
+      <h2 id="proofs-journey-heading">From bench to door</h2>
+      <p class="proofs-lead">
+        <RichText text={deliveryJourneyLead} />
+      </p>
+      <ol class="proofs-journey__list">
+        {
+          deliveryJourney.map((step) => (
+            <li>
+              <span aria-hidden="true">{step.n}</span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>
+                  <RichText text={step.text} />
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </Container>
+  </section>
+
+  <section class="section proofs-regions" aria-labelledby="proofs-regions-heading">
+    <Container>
+      <h2 id="proofs-regions-heading">Where parcels go</h2>
+      <p class="proofs-lead">
+        <RichText text={deliveryRegionsLead} />
+      </p>
+      <ul class="proofs-regions__list">
+        {
+          deliveryRegions.map((region) => (
+            <li>
+              <h3>{region.title}</h3>
+              <p>{region.places}</p>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="proofs-regions__note">
+        <RichText text={deliveryRegionsNote} />
+      </p>
+    </Container>
+  </section>
+
+  <FAQSection items={deliveryProofFaqs} title="Dispatch questions" headingId="proofs-faq-heading" />
+
+  <section class="section proofs-close" aria-labelledby="proofs-close-heading">
+    <Container>
+      <h2 id="proofs-close-heading">See the watch, then see it leave</h2>
+      <p>
+        <RichText text={deliveryCloseCopy} />
+      </p>
+      <div class="proofs-close__actions">
+        <Button href="/qc-videos/" variant="accent">QC Videos</Button>
+        <Button href="/shop/" variant="ghost">Shop collections</Button>
+      </div>
+    </Container>
+  </section>
+
+  <section class="section proofs-related" aria-labelledby="proofs-related-heading">
+    <Container>
+      <h2 id="proofs-related-heading">Keep reading</h2>
+      <div class="proofs-related__grid">
+        {
+          deliveryProofRelatedLinks.map((group) => (
+            <nav aria-labelledby={`proofs-related-${group.title.toLowerCase().replace(/\s+/g, '-')}`}>
+              <h3 id={`proofs-related-${group.title.toLowerCase().replace(/\s+/g, '-')}`}>{group.title}</h3>
+              <ul>
+                {group.items.map((item) => (
+                  <li>
+                    <a href={item.href}>{item.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))
+        }
+      </div>
+    </Container>
+  </section>
+
+  <TrustSection />
+</BaseLayout>
+
+<style>
+  .proofs-header {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .proofs-header :global(.breadcrumb) {
+    margin-bottom: var(--space-5);
+    text-align: center;
+  }
+
+  .proofs-header :global(.breadcrumb ol) {
+    justify-content: center;
+  }
+
+  .proofs-header h1 {
+    margin: 0 auto var(--space-5);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: var(--line-height-tight);
+  }
+
+  .proofs-header p,
+  .proofs-lead,
+  .proofs-close p,
+  .proofs-regions__note {
+    max-width: 46rem;
+    margin: 0 auto;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .proofs-header p :global(a),
+  .proofs-lead :global(a),
+  .proofs-journey__list p :global(a),
+  .proofs-close p :global(a),
+  .proofs-regions__note :global(a) {
+    color: var(--color-text);
+    text-underline-offset: 0.18em;
+  }
+
+  .proofs-header p :global(a:hover),
+  .proofs-lead :global(a:hover),
+  .proofs-journey__list p :global(a:hover),
+  .proofs-close p :global(a:hover),
+  .proofs-regions__note :global(a:hover) {
+    color: var(--color-accent-dark);
+  }
+
+  .proofs-lead {
+    margin-bottom: var(--space-8);
+    text-align: center;
+  }
+
+  .proofs-highlights {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-4);
+  }
+
+  .proofs-highlights__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: center;
+  }
+
+  .proofs-highlights__value {
+    margin: 0 0 var(--space-2);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: var(--line-height-tight);
+  }
+
+  .proofs-highlights__label {
+    margin: 0 auto;
+    max-width: 16.5rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    line-height: 1.45;
+  }
+
+  .proofs-gallery h2,
+  .proofs-journey h2,
+  .proofs-regions h2,
+  .proofs-close h2,
+  .proofs-related h2 {
+    margin: 0 auto var(--space-4);
+    font-size: var(--font-size-xl);
+    text-align: center;
+  }
+
+  .proofs-gallery__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .proofs-journey__list {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .proofs-journey__list li {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .proofs-journey__list span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    line-height: 1;
+  }
+
+  .proofs-journey h3 {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  .proofs-journey__list p {
+    margin: 0;
+    max-width: 40rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .proofs-regions__list {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0 0 var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+
+  .proofs-regions h3 {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .proofs-regions__list p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .proofs-regions__note {
+    margin-top: var(--space-2);
+    text-align: center;
+  }
+
+  .proofs-regions__note :global(a) {
+    color: var(--color-text);
+    text-underline-offset: 0.18em;
+  }
+
+  .proofs-close {
+    text-align: center;
+  }
+
+  .proofs-close h2 {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .proofs-close p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .proofs-close__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+
+  .proofs-related__grid {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .proofs-related h3 {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .proofs-related ul {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .proofs-related a {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+  }
+
+  .proofs-related a:hover {
+    color: var(--color-accent-dark);
+  }
+
+  @media (min-width: 48em) {
+    .proofs-header {
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-10);
+    }
+
+    .proofs-header h1 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .proofs-gallery__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .proofs-regions__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+
+    .proofs-related__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .proofs-header h1 {
+      font-size: var(--font-size-3xl);
+    }
+
+    .proofs-highlights__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .proofs-gallery h2,
+    .proofs-journey h2,
+    .proofs-regions h2,
+    .proofs-close h2,
+    .proofs-related h2 {
+      font-size: var(--font-size-2xl);
+    }
+
+    .proofs-gallery__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proofs-journey__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-8) var(--space-6);
+    }
+  }
+</style>

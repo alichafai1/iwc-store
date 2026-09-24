@@ -127,6 +127,10 @@ export function removeCartLine(id: string) {
   writeCart(readCart().filter((item) => cartLineId(item) !== id));
 }
 
+export function clearCart() {
+  writeCart([]);
+}
+
 export function cartSubtotal(items: CartLine[]) {
   return Math.round(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
 }

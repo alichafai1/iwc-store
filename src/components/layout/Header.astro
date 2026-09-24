@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import logoMark from '../../assets/brand/logo-header.png';
+import { contactDetails } from '../../data/contact';
 import { headerCollectionLinks, headerNav } from '../../data/navigation';
 import Icon from '../ui/Icon.astro';
 
@@ -15,7 +16,7 @@ const logoAlt = 'IWC-Replica.com';
         <li>QC Photos Before Dispatch</li>
         <li>1-Year Movement Warranty</li>
       </ul>
-      <a class="site-header__whatsapp" href="/contact/">
+      <a class="site-header__whatsapp" href={contactDetails.whatsappUrl} target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path
             fill="currentColor"

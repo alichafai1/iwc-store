@@ -3,7 +3,7 @@ import EditorialIndex from '../../components/editorial/EditorialIndex.astro';
 import { getEditorialPageContent, paginateEditorial } from '../../lib/editorial';
 
 const content = getEditorialPageContent('blog');
-const listing = paginateEditorial('blog', 1);
+const listing = await paginateEditorial('blog', 1);
 ---
 
 <EditorialIndex

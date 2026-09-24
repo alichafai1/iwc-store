@@ -2,6 +2,7 @@
 import type { Product, ProductPageData } from '../../types/product';
 import FAQSection from '../home/FAQSection.astro';
 import CustomerReviewsSection from '../home/CustomerReviewsSection.astro';
+import HowItWorks from '../home/HowItWorks.astro';
 import TrustSection from '../layout/TrustSection.astro';
 import Breadcrumb from '../ui/Breadcrumb.astro';
 import Container from '../ui/Container.astro';
@@ -14,6 +15,8 @@ import { mediaUrl } from '../../lib/media';
 import ProductGallery from './ProductGallery.astro';
 import ProductPurchase from './ProductPurchase.astro';
 import ProductReviews from './ProductReviews.astro';
+import ProductUsefulLinks from './ProductUsefulLinks.astro';
+import { getPublishedPresentationBoxOffer, PRESENTATION_BOX_SLUG } from '../../lib/catalog';
 
 interface Props {
   page: ProductPageData;
@@ -31,6 +34,8 @@ const reviewCountLabel = isCatalog ? `${reviews.length} reviews` : `${reviews.le
 const ratingLabel = isCatalog
   ? `Rating ${product.rating} out of 5`
   : `Placeholder rating ${product.rating} out of 5`;
+const boxOffer =
+  product.slug === PRESENTATION_BOX_SLUG ? null : await getPublishedPresentationBoxOffer();
 ---
 
 <BaseLayout
@@ -71,7 +76,9 @@ const ratingLabel = isCatalog
       />
 
       <div class="product-hero__grid">
-        <ProductGallery images={images} productTitle={product.title} />
+        <div class="product-hero__media">
+          <ProductGallery images={images} productTitle={product.title} />
+        </div>
 
         <div class="product-hero__info">
           <p class="eyebrow">{product.collection}</p>
@@ -94,7 +101,12 @@ const ratingLabel = isCatalog
             slug={product.slug}
             imageSrc={mediaUrl(images[0]?.src)}
             imageAlt={images[0]?.alt || product.title}
+            boxOffer={boxOffer}
           />
+        </div>
+
+        <div class="product-hero__links">
+          <ProductUsefulLinks />
         </div>
       </div>
     </Container>
@@ -143,11 +155,13 @@ const ratingLabel = isCatalog
     </Container>
   </section>
 
+  <HowItWorks />
+
   <ProductReviews rating={product.rating} reviews={reviews} isPlaceholder={!isCatalog} />
 
   <CustomerReviewsSection headingId="product-customer-reviews-heading" />
 
-  <FAQSection items={faqs} headingId="product-faq-heading" />
+  <FAQSection items={faqs} headingId="product-faq" />
 
   <section class="section product-related" aria-labelledby="related-heading">
     <Container>
@@ -178,6 +192,17 @@ const ratingLabel = isCatalog
   .product-hero__grid {
     display: grid;
     gap: var(--space-6);
+  }
+
+  .product-hero__info,
+  .product-hero__media,
+  .product-hero__links {
+    min-width: 0;
+  }
+
+  .product-hero__media {
+    display: grid;
+    align-content: start;
   }
 
   .product-hero h1 {
@@ -284,6 +309,14 @@ const ratingLabel = isCatalog
     gap: var(--space-5);
   }
 
+  @media (max-width: 47.99em) {
+    .product-related__grid {
+      gap: 0.65rem 0.4rem;
+      width: calc(100% + 2rem);
+      margin-inline: -1rem;
+    }
+  }
+
   @media (min-width: 48em) {
     .product-hero {
       padding-top: var(--space-8);
@@ -297,8 +330,25 @@ const ratingLabel = isCatalog
   @media (min-width: 64em) {
     .product-hero__grid {
       grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-      gap: var(--space-10);
+      grid-template-rows: max-content 1fr;
+      column-gap: var(--space-10);
+      row-gap: var(--space-3);
       align-items: start;
+    }
+
+    .product-hero__media {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .product-hero__links {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .product-hero__info {
+      grid-column: 2;
+      grid-row: 1 / span 2;
     }
 
     .product-details__grid {

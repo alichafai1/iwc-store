@@ -7,9 +7,10 @@ import Container from '../../components/ui/Container.astro';
 import TrustSection from '../../components/layout/TrustSection.astro';
 import { getAuthors } from '../../data/authors';
 import { getArticlesByAuthor } from '../../lib/editorial';
-import { breadcrumbJsonLd, defaultJsonLd } from '../../lib/seo';
+import { absoluteUrl, breadcrumbJsonLd, defaultJsonLd } from '../../lib/seo';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import type { Author } from '../../types/author';
+import type { JsonLdNode } from '../../types/seo';
 
 export const getStaticPaths = (() => {
   return getAuthors().map((author) => ({
@@ -23,22 +24,48 @@ interface Props {
 }
 
 const { author } = Astro.props;
-const articles = getArticlesByAuthor(author.slug);
+const articles = await getArticlesByAuthor(author.slug);
 const path = `/authors/${author.slug}/`;
+const isEditorialTeam = author.slug === 'editorial-team';
+const pageDescription = isEditorialTeam
+  ? 'The IWC-Replica.to Editorial Team reviews replica watches hands-on, comparing movements, materials, and finishing before publication.'
+  : author.bio;
+const jsonLd: JsonLdNode[] = [
+  defaultJsonLd(),
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: author.name, path },
+  ]),
+];
+
+if (isEditorialTeam) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'IWC-Replica.to Editorial Team',
+    url: absoluteUrl(path),
+    description: pageDescription,
+  });
+}
+
+const guideLinks = [
+  {
+    href: '/guides/iwc-replica-watches-guide/',
+    label: 'IWC Replica Watches: The Complete Guide',
+  },
+  { href: '/guides/iwc-superclone-guide/', label: 'IWC Superclone Guide' },
+  {
+    href: '/guides/iwc-knockoff-vs-replica/',
+    label: 'IWC Knockoff vs Replica vs Superclone',
+  },
+  { href: '/guides/iwc-big-pilot-replica/', label: 'IWC Big Pilot Replica Guide' },
+  { href: '/guides/iwc-top-gun-replica/', label: 'IWC Top Gun Replica Guide' },
+];
+
+const blogLinks = [{ href: '/blog/iwc-big-pilot-history/', label: 'IWC Big Pilot History' }];
 ---
 
-<BaseLayout
-  title={author.name}
-  description={author.bio}
-  canonicalPath={path}
-  jsonLd={[
-    defaultJsonLd(),
-    breadcrumbJsonLd([
-      { name: 'Home', path: '/' },
-      { name: author.name, path },
-    ]),
-  ]}
->
+<BaseLayout title={author.name} description={pageDescription} canonicalPath={path} jsonLd={jsonLd}>
   <header class="author-page">
     <Container size="md">
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: author.name }]} />
@@ -47,7 +74,7 @@ const path = `/authors/${author.slug}/`;
           <Image src={author.image} alt={author.imageAlt} width={160} height={160} loading="eager" />
         </div>
         <div>
-          <h1>{author.name}</h1>
+          <h1>{isEditorialTeam ? 'Editorial Team' : author.name}</h1>
           {author.role ? <p class="author-page__role">{author.role}</p> : null}
           <p>{author.bio}</p>
         </div>
@@ -55,22 +82,113 @@ const path = `/authors/${author.slug}/`;
     </Container>
   </header>
 
+  {
+    isEditorialTeam ? (
+      <section class="section author-page__profile" aria-labelledby="editorial-about-heading">
+        <Container size="md">
+          <div class="content-article__prose">
+            <h2 id="editorial-about-heading">About the team</h2>
+            <p>
+              The IWC-Replica.to Editorial Team is a small group of watch enthusiasts, collectors, and replica
+              industry reviewers. We started this site because most replica content online is written by people who
+              have never held the watches they write about. We wanted to change that.
+            </p>
+
+            <h2>What We Do</h2>
+            <p>
+              Every guide, review, and comparison on IWC-Replica.to is based on hands-on inspection. We do not
+              republish manufacturer claims. We do not copy from other sites. We do not accept paid placements.
+            </p>
+            <p>For each watch we cover, we:</p>
+            <ul>
+              <li>Inspect the actual product, not stock photos</li>
+              <li>Measure weight, case dimensions, and dial finish</li>
+              <li>Verify movement type (Swiss ETA clone vs Asian automatic)</li>
+              <li>Test water resistance within rated limits</li>
+              <li>Photograph the QC sample before writing</li>
+            </ul>
+
+            <h2>Our Experience</h2>
+            <p>Between us, the team has:</p>
+            <ul>
+              <li>Reviewed 200+ replica watches across IWC, Rolex, AP, and Patek lines</li>
+              <li>Compared superclones to genuine references side by side</li>
+              <li>Worked with local watchmakers to disassemble and service replica movements</li>
+              <li>Published 100+ guides on replica quality, authentication, and sourcing</li>
+            </ul>
+
+            <h2>Editorial Standards</h2>
+            <p>We follow five rules for every article:</p>
+            <ol>
+              <li>Hands-on first. We do not write about watches we have not inspected.</li>
+              <li>Answer-first structure. Every section starts with a direct answer.</li>
+              <li>No paid placements. Sellers cannot pay for coverage.</li>
+              <li>No affiliate bias. When we recommend a seller, we disclose the relationship.</li>
+              <li>Update regularly. Guides are refreshed every 45-60 days.</li>
+            </ol>
+
+            <h2>What We Do Not Do</h2>
+            <ul>
+              <li>We do not claim replica watches are genuine.</li>
+              <li>We do not promote counterfeits sold as authentic.</li>
+              <li>We do not hide the limits of replicas (no resale value, no official warranty).</li>
+              <li>We do not recommend sellers who fail our QC test.</li>
+            </ul>
+
+            <h2>Corrections and Contact</h2>
+            <p>
+              If you spot an error in any of our guides, contact us at{' '}
+              <a href="mailto:editorial@iwc-replica.to">editorial@iwc-replica.to</a>. We correct mistakes publicly
+              and note the update date in the article.
+            </p>
+            <p>
+              For general questions, use our <a href="/contact/">contact page</a>. For our legal position on
+              replicas, read our <a href="/disclaimer/">disclaimer</a>.
+            </p>
+
+            <h2>Our Articles</h2>
+            <p>Browse all guides written by the Editorial Team:</p>
+            <ul>
+              {guideLinks.map((link) => (
+                <li>
+                  <a href={link.href}>{link.label}</a>
+                </li>
+              ))}
+            </ul>
+            <p>Browse all blog posts:</p>
+            <ul>
+              {blogLinks.map((link) => (
+                <li>
+                  <a href={link.href}>{link.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Container>
+      </section>
+    ) : null
+  }
+
   <section class="section" aria-labelledby="author-articles-heading">
     <Container>
       <h2 id="author-articles-heading">Articles</h2>
-      <ul class="author-page__grid">
-        {
-          articles.map((article) => (
-            <li>
-              <ArticleCard
-                article={article}
-                linkLabel={article.kind === 'guide' ? 'Read Guide' : 'Read More'}
-                showDate={article.kind === 'blog'}
-              />
-            </li>
-          ))
-        }
-      </ul>
+      {
+        articles.length > 0 ? (
+          <ul class="author-page__grid">
+            {articles.map((article) => (
+              <li>
+                <ArticleCard
+                  article={article}
+                  linkLabel={article.kind === 'guide' ? 'Read Guide' : 'Read More'}
+                  showDate={article.kind === 'blog'}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="author-page__empty">No articles have been published for this author yet.</p>
+        )
+      }
     </Container>
   </section>
 
@@ -96,8 +214,16 @@ const path = `/authors/${author.slug}/`;
   .author-page__media {
     width: 5.5rem;
     height: 5.5rem;
+    overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: 50%;
+  }
+
+  .author-page__media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
   }
 
   .author-page h1 {
@@ -111,10 +237,19 @@ const path = `/authors/${author.slug}/`;
     color: var(--color-text-muted);
   }
 
+  .author-page__profile {
+    padding-bottom: 0;
+  }
+
   .author-page__grid {
     display: grid;
     gap: var(--space-6) var(--space-5);
     list-style: none;
+  }
+
+  .author-page__empty {
+    margin: 0;
+    color: var(--color-text-muted);
   }
 
   @media (min-width: 48em) {

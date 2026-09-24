@@ -1,0 +1,12 @@
+---
+import { resolveContentHref } from '../lib/content-articles';
+
+interface Props {
+  to: string;
+}
+
+const { to } = Astro.props;
+const href = await resolveContentHref(to);
+---
+
+<a href={href}><slot /></a>

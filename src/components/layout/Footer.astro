@@ -1,8 +1,10 @@
 ---
 import { footerNav } from '../../data/navigation';
+import { CONTACT_PATH } from '../../data/contact';
 import { siteConfig } from '../../lib/site';
 
 const year = new Date().getFullYear();
+const showContactCta = !Astro.url.pathname.replace(/\/+$/, '').endsWith('/contact');
 
 const sections = [
   { title: 'Shop', links: footerNav.shop },
@@ -13,11 +15,29 @@ const sections = [
 ---
 
 <footer class="site-footer" data-footer>
+  {
+    showContactCta ? (
+      <div class="footer-cta">
+        <div class="container footer-cta__inner">
+          <p>Have a reference in mind?</p>
+          <a class="footer-cta__button" href={CONTACT_PATH}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M5 5.8h14A1.8 1.8 0 0 1 20.8 7.6v8.1A1.8 1.8 0 0 1 19 17.5H9.4L5 20.2V5.8Z"
+              ></path>
+            </svg>
+            Contact us
+          </a>
+        </div>
+      </div>
+    ) : null
+  }
   <div class="container site-footer__inner">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
         <a class="site-footer__logo" href="/">{siteConfig.name}</a>
-        <p>A focused house of collections, presented with clarity.</p>
+        <p>A focused house of IWC collections, presented with clarity.</p>
       </div>
 
       <div class="site-footer__columns">
@@ -156,7 +176,65 @@ const sections = [
   .site-footer {
     overflow-x: clip;
     border-top: 1px solid var(--color-border);
-    background: var(--color-bg);
+    background: var(--color-muted);
+    padding-block: 0;
+  }
+
+  .footer-cta {
+    background: var(--color-muted);
+    color: var(--color-text);
+  }
+
+  .footer-cta__inner {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 2.1rem;
+  }
+
+  .footer-cta p {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 2.4vw, 1.85rem);
+    font-weight: 400;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .site-footer .footer-cta__button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: var(--radius-button);
+    background: var(--color-accent);
+    color: #fff;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .footer-cta__button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .site-footer .footer-cta__button:hover,
+  .site-footer .footer-cta__button:focus-visible {
+    background: var(--color-accent-dark);
+    color: #fff;
+  }
+
+  .site-footer__inner {
     padding-block: var(--space-8);
   }
 
@@ -254,6 +332,10 @@ const sections = [
   }
 
   @media (max-width: 47.99em) {
+    .footer-cta p {
+      white-space: normal;
+    }
+
     .site-footer__columns {
       display: grid;
       width: 100%;
@@ -351,6 +433,11 @@ const sections = [
   }
 
   @media (min-width: 48em) {
+    .footer-cta__inner {
+      gap: var(--space-8);
+      padding-block: 2.35rem;
+    }
+
     .site-footer__grid {
       grid-template-columns: 13rem 1fr;
       align-items: start;

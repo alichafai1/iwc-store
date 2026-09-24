@@ -79,6 +79,93 @@ function setStatus(root: Element, message: string) {
   }
 }
 
+function getBoxLine(root: Element): CartLine | null {
+  const card = root.querySelector<HTMLElement>('[data-box-offer]');
+  if (!card) {
+    return null;
+  }
+
+  const price = Number(card.dataset.boxPrice);
+  const slug = card.dataset.boxSlug?.trim() ?? '';
+  const title = card.dataset.boxTitle?.trim() ?? '';
+  const quality = card.dataset.boxQuality?.trim() || DEFAULT_QUALITY;
+
+  if (!slug || !title || !Number.isFinite(price)) {
+    return null;
+  }
+
+  return {
+    slug,
+    title,
+    quality,
+    price,
+    quantity: 1,
+    image: card.dataset.boxImage || undefined,
+    imageAlt: card.dataset.boxImageAlt || undefined,
+  };
+}
+
+function setBoxButtonState(button: HTMLButtonElement, state: 'idle' | 'pending' | 'success' | 'error') {
+  const idleLabel = button.getAttribute('data-idle-label') ?? 'Add Box';
+  button.setAttribute('data-box-state', state);
+  button.setAttribute('aria-busy', state === 'pending' ? 'true' : 'false');
+
+  if (state === 'pending') {
+    button.textContent = 'Adding...';
+    button.setAttribute('aria-label', 'Adding original box to cart');
+  } else if (state === 'success') {
+    button.textContent = 'Added ✓';
+    button.setAttribute('aria-label', 'Original box added to cart');
+  } else if (state === 'error') {
+    button.textContent = 'Couldn’t add';
+    button.setAttribute('aria-label', 'Could not add original box to cart');
+  } else {
+    button.textContent = idleLabel;
+    button.setAttribute('aria-label', 'Add original box to cart');
+  }
+}
+
+async function addBoxOffer(root: Element, button: HTMLButtonElement) {
+  if (button.disabled || button.getAttribute('data-box-busy') === 'true') {
+    return;
+  }
+
+  const line = getBoxLine(root);
+  if (!line) {
+    return;
+  }
+
+  button.setAttribute('data-box-busy', 'true');
+  button.disabled = true;
+  setBoxButtonState(button, 'pending');
+  setStatus(root, 'Adding original box to cart');
+  await waitForPaint();
+
+  const started = Date.now();
+
+  try {
+    persistCartLine(line);
+
+    const elapsed = Date.now() - started;
+    if (elapsed < ADD_MIN_PENDING_MS && !prefersReducedMotion()) {
+      await wait(ADD_MIN_PENDING_MS - elapsed);
+    }
+
+    setBoxButtonState(button, 'success');
+    setStatus(root, 'Original box added to cart');
+    await wait(prefersReducedMotion() ? 400 : ADD_SUCCESS_MS);
+  } catch {
+    setBoxButtonState(button, 'error');
+    setStatus(root, 'Could not add original box to cart. Please try again.');
+    await wait(prefersReducedMotion() ? 500 : ERROR_MS);
+  } finally {
+    setBoxButtonState(button, 'idle');
+    button.disabled = false;
+    button.removeAttribute('data-box-busy');
+    window.setTimeout(() => setStatus(root, ''), 250);
+  }
+}
+
 function setActionButtons(
   root: Element,
   action: 'add' | 'buy',
@@ -249,6 +336,14 @@ function bindPurchase(root: Element) {
       if (action === 'add' || action === 'buy') {
         void runCartAction(root, action);
       }
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-add-box]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      void addBoxOffer(root, button);
     });
   });
 

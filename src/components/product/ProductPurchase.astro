@@ -1,7 +1,8 @@
 ---
+import type { PresentationBoxOffer } from '../../lib/catalog';
 import type { ProductQuality } from '../../types/product';
 import { DEFAULT_QUALITY } from '../../lib/qualities';
-import { transformedStorageUrl } from '../../lib/storage-image';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 import PaymentMarks from '../ui/PaymentMarks.astro';
 
 interface Props {
@@ -12,13 +13,24 @@ interface Props {
   slug: string;
   imageSrc?: string;
   imageAlt: string;
+  boxOffer?: PresentationBoxOffer | null;
 }
 
-const { price, compareAtPrice, qualities, title, slug, imageSrc, imageAlt } = Astro.props;
+const { price, compareAtPrice, qualities, title, slug, imageSrc, imageAlt, boxOffer } = Astro.props;
 const money = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
 });
+const boxMoney = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
+const boxPriceLabel = boxOffer
+  ? boxOffer.minPrice === boxOffer.maxPrice
+    ? boxMoney.format(boxOffer.minPrice)
+    : `${boxMoney.format(boxOffer.minPrice)} - ${boxMoney.format(boxOffer.maxPrice)}`
+  : '';
 const quality =
   qualities.find((item) => item.label === DEFAULT_QUALITY) ?? qualities[0] ?? {
     id: DEFAULT_QUALITY,
@@ -29,9 +41,7 @@ const quality =
 const onSale = Boolean(compareAtPrice && compareAtPrice > price);
 const savePercent = onSale && compareAtPrice ? Math.round((1 - price / compareAtPrice) * 100) : null;
 const selectedQuality = quality.label;
-const stickyThumbSrc = imageSrc
-  ? (transformedStorageUrl(imageSrc, { width: 96, height: 96 }) ?? imageSrc)
-  : undefined;
+const stickyThumbSrc = imageSrc;
 ---
 
 <div
@@ -76,6 +86,53 @@ const stickyThumbSrc = imageSrc
         </label>
       </div>
     </fieldset>
+
+    {
+      boxOffer ? (
+        <article
+          class="box-offer"
+          data-box-offer
+          data-box-slug={boxOffer.slug}
+          data-box-title={boxOffer.title}
+          data-box-quality={boxOffer.quality}
+          data-box-price={String(boxOffer.price)}
+          data-box-image={boxOffer.image}
+          data-box-image-alt={boxOffer.imageAlt}
+        >
+          <div class="box-offer__media">
+            <a class="box-offer__image-link" href={boxOffer.href} aria-label="View original box">
+              <OptimizedRemoteImage
+                src={boxOffer.image}
+                alt=""
+                widths={[240, 360, 480, 640]}
+                sizes="(min-width: 64em) 16vw, 40vw"
+                width={480}
+                height={480}
+                loading="lazy"
+              />
+            </a>
+          </div>
+          <div class="box-offer__body">
+            <h2 class="box-offer__title">Add Original Box</h2>
+            <p class="box-offer__price">{boxPriceLabel}</p>
+            <div class="box-offer__actions">
+              <button
+                class="box-offer__add"
+                type="button"
+                data-add-box
+                data-idle-label="Add Box"
+                aria-label="Add original box to cart"
+              >
+                Add Box
+              </button>
+              <a class="box-offer__view" href={boxOffer.href}>
+                View Boxes
+              </a>
+            </div>
+          </div>
+        </article>
+      ) : null
+    }
 
     <div class="product-purchase__qty-block">
       <p class="product-purchase__label" id="quantity-label">Quantity</p>
@@ -428,10 +485,140 @@ const stickyThumbSrc = imageSrc
     filter: brightness(0.88);
   }
 
+  .box-offer {
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid #eadfce;
+    border-radius: 14px;
+    background: #ffffff;
+  }
+
+  .box-offer__media {
+    position: relative;
+    flex: 0 0 auto;
+    aspect-ratio: 1;
+    width: 12.25rem;
+    background: #ffffff;
+  }
+
+  .box-offer__image-link {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  .box-offer__image-link :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .box-offer__add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 1.9rem;
+    padding: 0 0.8rem;
+    border: 0;
+    border-radius: var(--radius-button);
+    background: #111111;
+    color: #ffffff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .box-offer__body {
+    display: grid;
+    flex: 1 1 auto;
+    align-content: center;
+    gap: 0.55rem;
+    min-width: 0;
+    padding: 1.1rem 0.95rem;
+  }
+
+  .box-offer__title {
+    margin: 0;
+    color: #111111;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+
+  .box-offer__price {
+    margin: 0;
+    color: var(--color-accent);
+    font-size: 1.15rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+
+  .box-offer__actions {
+    display: grid;
+    width: fit-content;
+    min-width: 7.75rem;
+    max-width: 100%;
+    gap: 0.35rem;
+  }
+
+  .box-offer__view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 1.9rem;
+    padding: 0 0.8rem;
+    border: 1px solid #111111;
+    border-radius: var(--radius-button);
+    background: #ffffff;
+    color: #111111;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .box-offer__add:hover:not(:disabled) {
+      background: var(--color-accent);
+      color: #111111;
+    }
+
+    .box-offer__view:hover {
+      background: #111111;
+      color: #ffffff;
+    }
+  }
+
+  .box-offer__add:active:not(:disabled),
+  .box-offer__view:active {
+    transform: scale(0.97);
+  }
+
+  .box-offer__add:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+
   .product-purchase__cart:focus-visible,
   .product-purchase__buy:focus-visible,
   .product-purchase__stepper button:focus-visible,
-  .purchase-sticky__qty button:focus-visible {
+  .purchase-sticky__qty button:focus-visible,
+  .box-offer__add:focus-visible,
+  .box-offer__view:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
@@ -664,7 +851,9 @@ const stickyThumbSrc = imageSrc
     .product-purchase__cart:hover:not(:disabled),
     .product-purchase__buy:hover:not(:disabled),
     .product-purchase__cart:active:not(:disabled),
-    .product-purchase__buy:active:not(:disabled) {
+    .product-purchase__buy:active:not(:disabled),
+    .box-offer__add:active:not(:disabled),
+    .box-offer__view:active {
       transform: none;
       box-shadow: none;
     }

@@ -14,7 +14,7 @@ const items = await getPublishedCustomerReviewScreenshots();
 
 {
   items.length > 0 && (
-    <section class="section" aria-labelledby={headingId}>
+    <section class="section customer-gallery" id="customer-gallery" aria-labelledby={headingId}>
       <Container size="xl">
         <SectionHeader headingId={headingId} title="Happy Customer Reviews" />
         <Gallery items={items} />
@@ -22,3 +22,9 @@ const items = await getPublishedCustomerReviewScreenshots();
     </section>
   )
 }
+
+<style>
+  .customer-gallery {
+    scroll-margin-top: 5.5rem;
+  }
+</style>

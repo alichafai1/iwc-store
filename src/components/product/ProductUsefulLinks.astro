@@ -1,0 +1,148 @@
+---
+const links = [
+  { label: 'FAQ', href: '#product-faq', icon: 'faq' as const },
+  { label: 'QC Videos', href: '/qc-videos/', icon: 'video' as const },
+  { label: 'Reviews', href: '#product-reviews', icon: 'reviews' as const },
+  { label: 'Delivery Proofs', href: '/delivery-proofs/', icon: 'truck' as const },
+];
+---
+
+<nav class="useful-links" aria-label="Useful links">
+  <p class="useful-links__heading">Useful Links</p>
+  <p class="useful-links__note">Check the proofs and reviews before you buy — then order with confidence.</p>
+  <ul class="useful-links__list">
+    {
+      links.map((link) => (
+        <li>
+          <a
+            class="useful-links__chip"
+            href={link.href}
+            data-scroll-to={link.href.startsWith('#') ? link.href : undefined}
+          >
+            {link.icon === 'faq' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M9.6 9.4a2.4 2.4 0 1 1 3.3 2.2c-.8.4-1.2.9-1.2 1.8"></path>
+                <path d="M12 17.1h.01"></path>
+              </svg>
+            ) : null}
+            {link.icon === 'video' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3.5" y="6.5" width="12.5" height="11" rx="1.6"></rect>
+                <path d="m16 10.2 4.5-2.4v8.4L16 13.8"></path>
+              </svg>
+            ) : null}
+            {link.icon === 'reviews' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 6.5h10.5A2.5 2.5 0 0 1 18 9v5.2a2.5 2.5 0 0 1-2.5 2.5H9.2L5 20.2V6.5Z"></path>
+                <path d="M8.2 10.2h7.2"></path>
+                <path d="M8.2 13.2h4.6"></path>
+              </svg>
+            ) : null}
+            {link.icon === 'truck' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3.5 7.5h10.2v9H8"></path>
+                <path d="M13.7 11h4.1l2.7 3.2v2.3h-2.6"></path>
+                <circle cx="6.6" cy="16.7" r="1.7"></circle>
+                <circle cx="16.7" cy="16.7" r="1.7"></circle>
+              </svg>
+            ) : null}
+            <span>{link.label}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<script is:inline>
+  (() => {
+    document.querySelectorAll('[data-scroll-to]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const href = link.getAttribute('data-scroll-to');
+        if (!href) return;
+        const target = document.querySelector(href);
+        if (!target) return;
+        event.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', href);
+      });
+    });
+  })();
+</script>
+
+<style>
+  .useful-links {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-top: 0.35rem;
+    text-align: center;
+  }
+
+  .useful-links__heading {
+    margin: 0 0 0.35rem;
+    color: #111111;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .useful-links__list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .useful-links__note {
+    max-width: 32rem;
+    margin: 0 auto 0.8rem;
+    color: #6b6b6b;
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.45;
+  }
+
+  .useful-links__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.45rem;
+    padding: 0.4rem 0.95rem 0.4rem 0.8rem;
+    border: 1.5px solid #111111;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #111111;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+    text-decoration: none;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .useful-links__chip svg {
+    flex-shrink: 0;
+  }
+
+  .useful-links__chip:hover {
+    background: #111111;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .useful-links__chip:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+</style>

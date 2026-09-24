@@ -1,0 +1,30 @@
+---
+import { Image } from 'astro:assets';
+import { getAuthor, getAuthorByName, getAuthors } from '../data/authors';
+
+interface Props {
+  author: string;
+}
+
+const { author } = Astro.props;
+const profile = getAuthorByName(author) ?? getAuthor(author) ?? getAuthors()[0];
+const href = profile ? `/authors/${profile.slug}/` : '/authors/editorial-team/';
+---
+
+{
+  profile && (
+    <aside class="author-bio">
+      <a class="author-bio__avatar" href={href}>
+        <Image src={profile.image} alt={profile.imageAlt} width={80} height={80} />
+      </a>
+      <div>
+        <p class="author-bio__name">
+          <a href={href}>{profile.name}</a>
+        </p>
+        {profile.role && <p class="author-bio__role">{profile.role}</p>}
+        <p>{profile.bio}</p>
+        <a href={href}>View Editorial Team</a>
+      </div>
+    </aside>
+  )
+}

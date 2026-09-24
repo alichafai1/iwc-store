@@ -1,0 +1,23 @@
+---
+import ArticleLayout from './ArticleLayout.astro';
+import type { ContentCollectionName, ContentHeading, InternalLinkTarget } from '../types/content-article';
+import type { CollectionEntry } from 'astro:content';
+
+type ArticleData = CollectionEntry<'guides'>['data'] | CollectionEntry<'blog'>['data'];
+
+interface Props {
+  collection: ContentCollectionName;
+  data: ArticleData;
+  headings: ContentHeading[];
+  readingMinutes: number;
+  relatedSlugs: string[];
+  clusterLinks?: InternalLinkTarget[];
+}
+
+const props = Astro.props;
+---
+
+<ArticleLayout {...props} isPillar>
+  <slot />
+  <slot name="clusters" slot="clusters" />
+</ArticleLayout>

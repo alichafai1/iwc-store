@@ -9,7 +9,6 @@ import PaymentMarks from '../ui/PaymentMarks.astro';
 import CheckoutAddressFields from './CheckoutAddressFields.astro';
 
 const shipping = checkoutShippingOptions[0];
-const payment = checkoutPaymentOptions[0];
 ---
 
 <div class="checkout" data-checkout>
@@ -70,6 +69,10 @@ const payment = checkoutPaymentOptions[0];
                 <div>
                   <dt>Subtotal</dt>
                   <dd data-checkout-subtotal>{formatMoney(0)}</dd>
+                </div>
+                <div data-checkout-discount-row hidden>
+                  <dt data-checkout-discount-label>Payment discount</dt>
+                  <dd data-checkout-discount>-{formatMoney(0)}</dd>
                 </div>
                 <div>
                   <dt>Shipping</dt>
@@ -214,23 +217,81 @@ const payment = checkoutPaymentOptions[0];
           <div class="checkout__card-body">
             <div class="checkout__choices">
               {
-                payment ? (
-                  <label class="checkout__choice is-checked">
-                    <span class="checkout__choice-row">
-                      <input class="checkout__radio" type="radio" name="paymentOptionId" id={`payment-option-${payment.id}`} value={payment.id} checked data-checkout-input />
-                      <span class="checkout__radio-ui" aria-hidden="true"><span class="checkout__radio-dot"></span></span>
-                      <span class="checkout__choice-copy">
-                        <span class="checkout__choice-label">{payment.label}</span>
+                checkoutPaymentOptions.map((option) => {
+                  const checked = option.id === 'flypay';
+                  return (
+                    <label
+                      class:list={[
+                        'checkout__choice',
+                        option.showCardMarks ? 'checkout__choice--card' : 'checkout__choice--alt',
+                        checked && 'is-checked',
+                      ]}
+                    >
+                      <span class="checkout__choice-row">
+                        <input
+                          class="checkout__radio"
+                          type="radio"
+                          name="paymentOptionId"
+                          id={`payment-option-${option.id}`}
+                          value={option.id}
+                          checked={checked}
+                          data-checkout-input
+                        />
+                        <span class="checkout__radio-ui" aria-hidden="true">
+                          <span class="checkout__radio-dot"></span>
+                        </span>
+                        <span class="checkout__choice-copy">
+                          <span class="checkout__choice-label">{option.label}</span>
+                        </span>
+                        {
+                          option.badges?.length ? (
+                            <span class="checkout__pay-badges checkout__pay-badges--desktop">
+                              {option.badges.map((badge) => (
+                                <span class={`checkout__pay-badge checkout__pay-badge--${badge.tone}`}>{badge.label}</span>
+                              ))}
+                            </span>
+                          ) : null
+                        }
+                        {
+                          option.showCardMarks ? (
+                            <span class="checkout__choice-trailing checkout__pay-icons--desktop">
+                              <PaymentMarks compact />
+                            </span>
+                          ) : null
+                        }
                       </span>
-                      <span class="checkout__choice-trailing checkout__pay-icons--desktop">
-                        <PaymentMarks compact />
-                      </span>
-                    </span>
-                    <span class="checkout__choice-footer">
-                      <PaymentMarks compact />
-                    </span>
-                  </label>
-                ) : null
+                      {
+                        option.showCardMarks ? (
+                          <span class="checkout__choice-footer">
+                            <PaymentMarks compact />
+                          </span>
+                        ) : option.badges?.length ? (
+                          <span class="checkout__choice-footer">
+                            <span class="checkout__pay-badges">
+                              {option.badges.map((badge) => (
+                                <span class={`checkout__pay-badge checkout__pay-badge--${badge.tone}`}>{badge.label}</span>
+                              ))}
+                            </span>
+                          </span>
+                        ) : null
+                      }
+                      {
+                        option.intro || option.details?.length ? (
+                          <span class="checkout__pay-details">
+                            {option.intro ? <span class="checkout__pay-intro">{option.intro}</span> : null}
+                            {option.details?.length ? (
+                              <ul>
+                                {option.details.map((item) => (
+                                  <li>{item}</li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </span>
+                        ) : null
+                      }
+                    </label>
+                  );
+                })
               }
             </div>
           </div>
@@ -268,10 +329,8 @@ const payment = checkoutPaymentOptions[0];
         </section>
 
         <div class="checkout__submit-block">
-          <div class="checkout__notice" data-checkout-notice hidden role="status">
-            Your details look good. Online payment is not connected to this store yet, so the order can't be completed here.
-          </div>
-          <button class="checkout__pay" type="submit">
+          <div class="checkout__notice" data-checkout-notice hidden role="status"></div>
+          <button class="checkout__pay" type="submit" data-checkout-submit>
             Pay Now &middot; <span data-checkout-total>{formatMoney(0)}</span>
           </button>
           <div class="checkout__secure">

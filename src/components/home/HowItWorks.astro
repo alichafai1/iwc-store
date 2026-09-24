@@ -1,0 +1,140 @@
+---
+const steps = [
+  {
+    n: '1',
+    title: 'Order & Payment',
+    text: 'Place your order and select your preferred payment method at checkout. Once your order is confirmed, you’ll receive a detailed confirmation with all the necessary information.',
+  },
+  {
+    n: '2',
+    title: 'QC & Craftsmanship',
+    text: '~ 3 days of processing time. Movement accuracy testing, function check on every complication, and a full craftsmanship review. We record a detailed QC video for your approval.',
+  },
+  {
+    n: '3',
+    title: 'Secure Shipping',
+    text: 'After your approval, packed securely and shipped discreetly within 24–48 hours. Full tracking provided. Worldwide delivery in 9–12 days.',
+  },
+];
+---
+
+<section class="how-it-works" aria-labelledby="how-it-works-heading">
+  <div class="container">
+    <p class="eyebrow how-it-works__eyebrow">How it works</p>
+    <h2 id="how-it-works-heading">Your Seamless Purchasing Journey</h2>
+    <div class="how-it-works__timeline">
+      <div class="how-it-works__line" aria-hidden="true"></div>
+      <ol class="how-it-works__steps">
+        {
+          steps.map((step) => (
+            <li class="how-it-works__step">
+              <span class="how-it-works__marker">{step.n}</span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style is:inline>
+  .how-it-works {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-10);
+    background: transparent;
+    text-align: center;
+  }
+
+  .how-it-works__eyebrow {
+    margin-bottom: var(--space-3);
+    color: var(--color-accent);
+  }
+
+  .how-it-works h2 {
+    margin: 0 auto var(--space-8);
+    max-width: 40rem;
+    font-size: var(--font-size-xl);
+  }
+
+  .how-it-works__timeline {
+    position: relative;
+  }
+
+  .how-it-works__steps {
+    display: grid;
+    gap: var(--space-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .how-it-works__line {
+    display: none;
+  }
+
+  .how-it-works__step {
+    position: relative;
+    z-index: 1;
+  }
+
+  .how-it-works__marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin: 0 auto var(--space-4);
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .how-it-works h3 {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .how-it-works__step p {
+    margin: 0 auto;
+    max-width: 20rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  @media (min-width: 64em) {
+    .how-it-works {
+      padding-top: 5rem;
+      padding-bottom: var(--space-12);
+    }
+
+    .how-it-works h2 {
+      margin-bottom: var(--space-10);
+    }
+
+    .how-it-works__steps {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+
+    .how-it-works__line {
+      display: block;
+      position: absolute;
+      top: 1.625rem;
+      right: 16.666%;
+      left: 16.666%;
+      z-index: 0;
+      height: 1px;
+      background: color-mix(in srgb, var(--color-accent) 55%, #ffffff);
+      pointer-events: none;
+    }
+  }
+</style>

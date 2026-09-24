@@ -20,7 +20,7 @@ const ratingLabel = isPlaceholder ? `Placeholder rating ${rating} out of 5` : `R
 const reviewCountLabel = isPlaceholder ? `${reviews.length} placeholder reviews` : `${reviews.length} reviews`;
 ---
 
-<section class="section product-reviews" aria-labelledby="reviews-heading">
+<section class="section product-reviews" id="product-reviews" aria-labelledby="reviews-heading">
   <div class="container">
     <h2 id="reviews-heading">Customer Reviews</h2>
     {isPlaceholder ? (

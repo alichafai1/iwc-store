@@ -340,9 +340,11 @@ Write commercially focused original content explaining:
 * case/dial/strap information
 * why the model may appeal to a buyer
 
-Use a large number of relevant keywords naturally throughout this section.
+Keep this short: two paragraphs, about 400–750 characters in total.
+Do not add extra SEO paragraphs that repeat replica/clone/fake synonyms.
+Specs already live in the specifications table — do not recap every spec twice.
 
-Do not make the description unnecessarily long merely to include keywords.
+Use a few relevant keywords naturally. Do not lengthen the description to include keywords.
 
 Quality and commercial usefulness remain mandatory.
 

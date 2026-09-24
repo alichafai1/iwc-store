@@ -390,6 +390,14 @@ const featured = shopFeaturedBlocks.flatMap((block) => {
     list-style: none;
   }
 
+  @media (max-width: 47.99em) {
+    .shop-grid {
+      gap: 0.65rem 0.4rem;
+      width: calc(100% + 2rem);
+      margin-inline: -1rem;
+    }
+  }
+
   .shop-empty {
     max-width: 32rem;
   }

@@ -9,6 +9,7 @@ export const headerNav: NavLink[] = [
   { href: '/guides/', label: 'Guides' },
   { href: '/blog/', label: 'Blog' },
   { href: '/about/', label: 'About' },
+  { href: '/contact/', label: 'Contact' },
 ];
 
 export const headerCollectionLinks: NavLink[] = [
@@ -32,13 +33,19 @@ export const footerNav: FooterNav = {
   customerCare: [
     { href: '/contact/', label: 'Contact' },
     { href: '/about/', label: 'About' },
+    { href: '/authors/editorial-team/', label: 'Editorial Team' },
+    { href: '/qc-videos/', label: 'QC Videos' },
+    { href: '/delivery-proofs/', label: 'Delivery Proofs' },
     { href: '/shipping-policy/', label: 'Shipping' },
     { href: '/returns-refunds/', label: 'Returns' },
+    { href: '/warranty-policy/', label: 'Warranty' },
   ],
   legal: [
-    { href: '/shipping-policy/', label: 'Shipping Policy' },
-    { href: '/returns-refunds/', label: 'Returns & Refunds' },
+    { href: '/returns-refunds/', label: 'Return & Refund' },
     { href: '/privacy-policy/', label: 'Privacy Policy' },
-    { href: '/terms/', label: 'Terms' },
+    { href: '/shipping-policy/', label: 'Shipping Policy' },
+    { href: '/terms/', label: 'Terms of Use' },
+    { href: '/warranty-policy/', label: 'Warranty Policy' },
+    { href: '/disclaimer/', label: 'Disclaimer' },
   ],
 };

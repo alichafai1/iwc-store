@@ -380,6 +380,136 @@
   justify-content: center;
 }
 
+.checkout__choice--alt {
+  padding: 0;
+  overflow: hidden;
+}
+
+.checkout__choice--alt .checkout__choice-row {
+  padding: 1rem 1rem 0.85rem;
+  flex-wrap: nowrap;
+}
+
+.checkout__choice--alt .checkout__choice-footer {
+  margin: 0 1rem 1rem 2.85rem;
+  padding: 0;
+}
+
+.checkout__choice--alt.is-checked .checkout__choice-footer {
+  margin-bottom: 0.75rem;
+}
+
+.checkout__choice--alt.is-checked {
+  border-color: #171717;
+  background: #ffffff;
+  box-shadow: inset 3px 0 0 #111111;
+}
+
+.checkout__choice--alt.is-checked .checkout__radio-ui {
+  border-color: #111111;
+}
+
+.checkout__choice--alt.is-checked .checkout__radio-dot {
+  background: #111111;
+}
+
+.checkout__pay-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.35rem;
+}
+
+.checkout__pay-badges--desktop {
+  display: none;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.checkout__pay-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.35rem;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: none;
+}
+
+.checkout__pay-badge--blue {
+  background: #2563eb;
+}
+
+.checkout__pay-badge--navy {
+  background: #1d4ed8;
+}
+
+.checkout__pay-badge--mint {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.checkout__pay-badge--black {
+  background: #111111;
+}
+
+.checkout__pay-badge--wise {
+  background: #22c55e;
+}
+
+.checkout__pay-badge--usdt {
+  background: #0f9d8e;
+}
+
+.checkout__pay-badge--btc {
+  background: #f97316;
+}
+
+.checkout__pay-details {
+  display: none;
+  margin: 0 1rem 1rem;
+  padding: 0.95rem 1rem;
+  border-radius: 0.75rem;
+  background: #f5f5f5;
+  color: #525252;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.checkout__choice.is-checked .checkout__pay-details {
+  display: block;
+}
+
+.checkout__pay-intro {
+  display: block;
+  margin-bottom: 0.65rem;
+}
+
+.checkout__pay-details ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checkout__pay-details li {
+  position: relative;
+  padding-left: 1.15rem;
+}
+
+.checkout__pay-details li::before {
+  position: absolute;
+  left: 0;
+  content: "✓";
+  color: #16a34a;
+  font-weight: 700;
+}
+
 .checkout__badge {
   display: inline-flex;
   align-items: center;
@@ -447,6 +577,11 @@
 .checkout__pay:hover {
   border-color: var(--checkout-gold-hover);
   background: var(--checkout-gold-hover);
+}
+
+.checkout__pay:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .checkout__pay:focus-visible {
@@ -791,6 +926,10 @@
   font-weight: 500;
 }
 
+.checkout__totals [data-checkout-discount-row] dd {
+  color: #15803d;
+}
+
 .checkout__total {
   align-items: baseline;
   padding-top: 1rem;
@@ -936,6 +1075,10 @@
 
   .checkout__pay-icons--desktop {
     display: block;
+  }
+
+  .checkout__pay-badges--desktop {
+    display: flex;
   }
 
   .checkout__discount {

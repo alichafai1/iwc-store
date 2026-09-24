@@ -87,7 +87,7 @@ if (featuredProducts.length > 0) {
 
   <section class="section hub-carousel" aria-labelledby="shop-collections-heading">
     <Container>
-      <SectionHeader headingId="shop-collections-heading" title={collectionsHub.shopHeading} />
+      <SectionHeader headingId="shop-collections-heading" title={collectionsHub.shopHeading} align="center" />
       <CollectionCarousel
         collections={sections.map((section) => ({
           name: section.name,
@@ -107,7 +107,7 @@ if (featuredProducts.length > 0) {
 
       return (
         <section
-          class:list={['hub-collection', index % 2 === 1 && 'hub-collection--alt']}
+          class="hub-collection"
           aria-labelledby={headingId}
           id={section.slug}
         >
@@ -217,10 +217,7 @@ if (featuredProducts.length > 0) {
   .hub-collection {
     padding-block: var(--space-8);
     border-bottom: 1px solid var(--color-border);
-  }
-
-  .hub-collection--alt {
-    background: var(--color-muted);
+    background: var(--color-bg);
   }
 
   .hub-collection__layout {
@@ -232,7 +229,6 @@ if (featuredProducts.length > 0) {
     display: grid;
     align-content: start;
     gap: var(--space-5);
-    max-width: 16rem;
   }
 
   .hub-collection__cover {
@@ -291,6 +287,8 @@ if (featuredProducts.length > 0) {
     aspect-ratio: 4 / 5;
     width: 100%;
     overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     background: #f6f6f6;
   }
 
@@ -355,6 +353,14 @@ if (featuredProducts.length > 0) {
   }
 
 
+  @media (max-width: 47.99em) {
+    .hub-collection__grid {
+      gap: 0.65rem 0.4rem;
+      width: calc(100% + 2rem);
+      margin-inline: -1rem;
+    }
+  }
+
   @media (min-width: 48em) {
     .hub-hero {
       padding-top: var(--space-8);
@@ -384,7 +390,7 @@ if (featuredProducts.length > 0) {
     }
 
     .hub-collection__layout {
-      grid-template-columns: 16rem minmax(0, 1fr);
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
       align-items: start;
       gap: var(--space-10);
     }

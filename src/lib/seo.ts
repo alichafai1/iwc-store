@@ -270,12 +270,44 @@ export function faqPageJsonLd(items: FaqItem[]): JsonLdNode {
   };
 }
 
+export function videoObjectJsonLd(input: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  contentUrl: string;
+  uploadDate: string;
+  duration?: string;
+  url?: string;
+}): JsonLdNode {
+  const node: JsonLdNode = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: input.name,
+    description: input.description,
+    thumbnailUrl: input.thumbnailUrl,
+    contentUrl: input.contentUrl,
+    uploadDate: input.uploadDate,
+  };
+
+  if (input.duration) {
+    node.duration = input.duration;
+  }
+
+  if (input.url) {
+    node.url = input.url;
+  }
+
+  return node;
+}
+
 export const sitemapExcludedPaths = ['/cart/', '/checkout/', '/robots.txt'] as const;
 
 export function sitemapCollectionPages(): string[] {
   return [
     absoluteUrl('/shop/'),
     absoluteUrl('/collections/'),
+    absoluteUrl('/qc-videos/'),
+    absoluteUrl('/delivery-proofs/'),
     ...storeCollections.map((collection) => absoluteUrl(`/collections/${collection.slug}/`)),
   ];
 }

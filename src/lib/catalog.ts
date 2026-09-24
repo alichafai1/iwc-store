@@ -510,6 +510,80 @@ export async function getPublishedProductsForCollection(slug: string): Promise<P
     .filter((product) => Boolean(product.image));
 }
 
+export const PRESENTATION_BOX_SLUG = 'iwc-box-and-papers-wbox-4';
+
+export type PresentationBoxOffer = {
+  slug: string;
+  title: string;
+  href: string;
+  image: string;
+  imageAlt: string;
+  quality: string;
+  price: number;
+  minPrice: number;
+  maxPrice: number;
+};
+
+export async function getPublishedPresentationBoxOffer(): Promise<PresentationBoxOffer | null> {
+  const { data: product, error } = await supabase
+    .from('products')
+    .select('id, slug, title, status, primary_collection_id')
+    .eq('slug', PRESENTATION_BOX_SLUG)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to load presentation box offer:', error.message);
+    return null;
+  }
+
+  if (!product) {
+    return null;
+  }
+
+  const [imagesResult, qualitiesResult, joinsResult] = await Promise.all([
+    supabase.from('product_images').select('*').eq('product_id', product.id).order('position'),
+    supabase.from('product_qualities').select('*').eq('product_id', product.id),
+    supabase.from('product_collections').select('collection_id').eq('product_id', product.id),
+  ]);
+
+  const childError =
+    imagesResult.error?.message || qualitiesResult.error?.message || joinsResult.error?.message;
+
+  if (childError) {
+    console.error('Failed to load presentation box details:', childError);
+    return null;
+  }
+
+  const collectionIds = (joinsResult.data ?? []).map((join) => join.collection_id);
+  if (!isStorefrontProduct(product, imagesResult.data, collectionIds)) {
+    return null;
+  }
+
+  const qualities = qualityChoices(qualitiesResult.data);
+  const start = qualities.find((item) => item.label === DEFAULT_QUALITY) ?? qualities[0];
+  const image = sortProductImages(imagesResult.data)[0];
+  const imageUrl = publicStorageUrl(PRODUCT_IMAGE_BUCKET, image?.storage_path);
+
+  if (!start || !imageUrl) {
+    return null;
+  }
+
+  const prices = qualities.map((item) => item.price);
+
+  return {
+    slug: product.slug,
+    title: product.title,
+    href: `/products/${product.slug}/`,
+    image: imageUrl,
+    imageAlt: image?.alt_text || product.title,
+    quality: start.label,
+    price: start.price,
+    minPrice: Math.min(...prices),
+    maxPrice: Math.max(...prices),
+  };
+}
+
 export async function getPublishedProductPage(slug: string): Promise<{
   page: ProductPageData;
   relatedProducts: Product[];
@@ -800,6 +874,7 @@ export async function getCollectionHubSections(limit = 6): Promise<CollectionHub
       ...collection,
       products: (productLists[index] ?? []).slice(0, limit),
     }))
+    .filter((section) => section.products.length > 0)
     .sort((left, right) => Number(right.products.length > 0) - Number(left.products.length > 0));
 }
 
@@ -994,6 +1069,14 @@ export async function getPublishedCollectionPage(slug: string): Promise<Collecti
   };
 }
 
+function customerReviewScreenshotSrc(storagePath: string): string | null {
+  if (storagePath.startsWith('/') || storagePath.startsWith('https://') || storagePath.startsWith('http://')) {
+    return storagePath;
+  }
+
+  return publicStorageUrl(SITE_ASSETS_BUCKET, storagePath);
+}
+
 export async function getPublishedCustomerReviewScreenshots(): Promise<Array<{ src: string; alt: string }>> {
   const { data, error } = await supabase
     .from('customer_review_screenshots')
@@ -1007,7 +1090,7 @@ export async function getPublishedCustomerReviewScreenshots(): Promise<Array<{ s
   }
 
   return (data ?? []).flatMap((row) => {
-    const src = publicStorageUrl(SITE_ASSETS_BUCKET, row.storage_path);
+    const src = customerReviewScreenshotSrc(row.storage_path);
     if (!src) {
       return [];
     }

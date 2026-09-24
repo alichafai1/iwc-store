@@ -52,22 +52,93 @@ const { collections } = Astro.props;
 
 <script is:inline>
   (() => {
+    const STEP_MS = 3000;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     document.querySelectorAll('.collection-carousel').forEach((carousel) => {
+      if (carousel.dataset.autoScrollReady === 'true') return;
+      carousel.dataset.autoScrollReady = 'true';
+
       const track = carousel.querySelector('[data-collection-track]');
       if (!track) return;
 
-      const scrollByCard = (direction) => {
+      const cardStep = () => {
         const item = track.querySelector('.collection-carousel__item');
-        if (!item) return;
+        if (!item) return 0;
         const gap = Number.parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
-        track.scrollBy({ left: direction * (item.getBoundingClientRect().width + gap), behavior: 'smooth' });
+        return item.getBoundingClientRect().width + gap;
+      };
+
+      const canScroll = () => track.scrollWidth > track.clientWidth + 2;
+
+      const atEnd = () => track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+
+      const scrollByCard = (direction) => {
+        if (!canScroll()) return;
+        if (direction > 0 && atEnd()) {
+          track.scrollTo({ left: 0, behavior: 'auto' });
+          return;
+        }
+        if (direction < 0 && track.scrollLeft <= 4) {
+          track.scrollTo({ left: track.scrollWidth, behavior: 'auto' });
+          return;
+        }
+        track.scrollBy({ left: direction * cardStep(), behavior: 'smooth' });
+      };
+
+      let timer = 0;
+      let paused = false;
+
+      const stop = () => {
+        window.clearInterval(timer);
+        timer = 0;
+      };
+
+      const start = () => {
+        stop();
+        if (reduceMotion || paused || document.hidden || !canScroll()) return;
+        timer = window.setInterval(() => {
+          scrollByCard(1);
+        }, STEP_MS);
       };
 
       carousel.querySelectorAll('[data-collection-scroll]').forEach((button) => {
         button.addEventListener('click', () => {
           scrollByCard(Number(button.getAttribute('data-collection-scroll')));
+          start();
         });
       });
+
+      carousel.addEventListener('mouseenter', () => {
+        paused = true;
+        stop();
+      });
+      carousel.addEventListener('mouseleave', () => {
+        paused = false;
+        start();
+      });
+      carousel.addEventListener('focusin', () => {
+        paused = true;
+        stop();
+      });
+      carousel.addEventListener('focusout', (event) => {
+        if (carousel.contains(event.relatedTarget)) return;
+        paused = false;
+        start();
+      });
+      track.addEventListener('pointerdown', () => {
+        paused = true;
+        stop();
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          stop();
+          return;
+        }
+        if (!paused) start();
+      });
+
+      start();
     });
   })();
 </script>
@@ -82,8 +153,8 @@ const { collections } = Astro.props;
   .collection-carousel__track {
     display: flex;
     gap: var(--collection-gap);
-    margin: 0;
-    padding: 0;
+    margin: 0 -0.25rem 0;
+    padding: 0.85rem 0.25rem 1.15rem;
     list-style: none;
     overflow-x: auto;
     overscroll-behavior-x: contain;
