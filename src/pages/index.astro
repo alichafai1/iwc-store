@@ -12,18 +12,22 @@ import Container from '../components/ui/Container.astro';
 import TrustSection from '../components/layout/TrustSection.astro';
 import ProductCard from '../components/ui/ProductCard.astro';
 import SectionHeader from '../components/ui/SectionHeader.astro';
-import { BEST_SELLERS_SLUG, isStorefrontModelCollectionSlug } from '../data/collections';
+import { BEST_SELLERS_SLUG } from '../data/collections';
 import { homepageFaqs } from '../data/faq';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getPublishedProductsForCollection, getPublishedStoreCollectionCards } from '../lib/catalog';
+import {
+  getPublishedCustomerReviewScreenshots,
+  getPublishedModelCollectionCards,
+  getPublishedProductsForCollection,
+} from '../lib/catalog';
 import { listHomepageArticles } from '../lib/editorial-listings';
 import { defaultJsonLd, faqPageJsonLd } from '../lib/seo';
 
-const collections = (await getPublishedStoreCollectionCards()).filter((collection) =>
-  isStorefrontModelCollectionSlug(collection.slug),
-);
-const bestSellerProducts = await getPublishedProductsForCollection(BEST_SELLERS_SLUG);
-const homepageBestSellers = bestSellerProducts.slice(0, 8);
+const [collections, homepageBestSellers, reviewScreenshots] = await Promise.all([
+  getPublishedModelCollectionCards(),
+  getPublishedProductsForCollection(BEST_SELLERS_SLUG, { limit: 8 }),
+  getPublishedCustomerReviewScreenshots(),
+]);
 const homepageArticles = listHomepageArticles();
 ---
 
@@ -33,7 +37,7 @@ const homepageArticles = listHomepageArticles();
   jsonLd={[defaultJsonLd(), faqPageJsonLd(homepageFaqs)]}
 >
   <div class="home">
-  <Hero />
+  <Hero collections={collections} reviewScreenshots={reviewScreenshots} />
 
   <BuyWithProof />
 
@@ -72,7 +76,7 @@ const homepageArticles = listHomepageArticles();
 
   <HowItWorks />
 
-  <CustomerReviewsSection />
+  <CustomerReviewsSection items={reviewScreenshots} />
 
   {
     homepageArticles.length > 0 ? (

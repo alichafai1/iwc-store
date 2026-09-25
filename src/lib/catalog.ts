@@ -5,6 +5,7 @@ import { DEFAULT_QUALITY, sortProductQualities, startingQuality } from './qualit
 import {
   isMerchandisingCollectionSlug,
   isModelCollectionSlug,
+  isStorefrontModelCollectionSlug,
   sortCollectionsByStoreOrder,
   storeCollections,
 } from '../data/collections';
@@ -414,7 +415,15 @@ export async function getPublishedCatalogPages(): Promise<
   });
 }
 
-export async function getPublishedProductsForCollection(slug: string): Promise<Product[]> {
+export async function getPublishedProductsForCollection(
+  slug: string,
+  options: { limit?: number } = {},
+): Promise<Product[]> {
+  const limit =
+    typeof options.limit === 'number' && Number.isFinite(options.limit) && options.limit > 0
+      ? Math.trunc(options.limit)
+      : undefined;
+
   const { data: collection, error: collectionError } = await supabase
     .from('collections')
     .select('id, name, slug')
@@ -447,10 +456,14 @@ export async function getPublishedProductsForCollection(slug: string): Promise<P
     return [];
   }
 
+  // Oversample slightly when limiting so filtered/missing-image products still fill the slot.
+  const candidateIds =
+    limit === undefined ? orderedIds : orderedIds.slice(0, Math.min(orderedIds.length, Math.max(limit * 3, limit + 8)));
+
   const { data: products, error } = await supabase
     .from('products')
     .select('*, collections:primary_collection_id(name, slug)')
-    .in('id', orderedIds)
+    .in('id', candidateIds)
     .eq('status', 'published');
 
   if (error) {
@@ -488,7 +501,7 @@ export async function getPublishedProductsForCollection(slug: string): Promise<P
   const byId = new Map(rows.map((row) => [row.id, row]));
   const seenSlugs = new Set<string>();
 
-  return orderedIds
+  const productsForCards = candidateIds
     .map((id) => byId.get(id))
     .filter((row): row is ProductRow & { collections: CollectionName | null } => Boolean(row))
     .filter((row) => {
@@ -508,6 +521,8 @@ export async function getPublishedProductsForCollection(slug: string): Promise<P
       ),
     )
     .filter((product) => Boolean(product.image));
+
+  return limit === undefined ? productsForCards : productsForCards.slice(0, limit);
 }
 
 export const PRESENTATION_BOX_SLUG = 'iwc-box-and-papers-wbox-4';
@@ -751,7 +766,7 @@ export async function getPublishedStoreCollectionCards(): Promise<StoreCollectio
 
   await Promise.all(
     merch.map(async (collection) => {
-      const products = await getPublishedProductsForCollection(collection.slug);
+      const products = await getPublishedProductsForCollection(collection.slug, { limit: 1 });
       const cover = products.find((product) => product.image)?.image;
       if (typeof cover === 'string' && cover) {
         covers.set(collection.slug, cover);
@@ -766,6 +781,21 @@ export async function getPublishedStoreCollectionCards(): Promise<StoreCollectio
     image: collectionCardImage(collection, covers.get(collection.slug)),
     imageAlt: collection.image_alt?.trim() || `${collection.name} collection`,
   }));
+}
+
+/** Homepage/model carousels: collection rows + cover URLs only (no product catalog loads). */
+export async function getPublishedModelCollectionCards(): Promise<StoreCollectionCard[]> {
+  const collections = await getPublishedStoreCollections();
+
+  return collections
+    .filter((collection) => isStorefrontModelCollectionSlug(collection.slug))
+    .map((collection) => ({
+      name: collection.name,
+      slug: collection.slug,
+      href: `/collections/${collection.slug}/`,
+      image: collectionCardImage(collection),
+      imageAlt: collection.image_alt?.trim() || `${collection.name} collection`,
+    }));
 }
 
 export interface CollectionHubSection extends StoreCollectionCard {

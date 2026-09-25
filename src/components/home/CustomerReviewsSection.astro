@@ -6,10 +6,11 @@ import { getPublishedCustomerReviewScreenshots } from '../../lib/catalog';
 
 interface Props {
   headingId?: string;
+  items?: Array<{ src: string; alt: string }>;
 }
 
-const { headingId = 'customer-reviews-heading' } = Astro.props;
-const items = await getPublishedCustomerReviewScreenshots();
+const { headingId = 'customer-reviews-heading', items: itemsProp } = Astro.props;
+const items = itemsProp ?? (await getPublishedCustomerReviewScreenshots());
 ---
 
 {

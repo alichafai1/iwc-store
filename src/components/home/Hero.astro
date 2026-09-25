@@ -3,14 +3,18 @@ import { Image } from 'astro:assets';
 import heroImage from '../../assets/images/hero.jpg';
 import Button from '../ui/Button.astro';
 import { collectionImages } from '../../data/collection-media';
-import { isStorefrontModelCollectionSlug } from '../../data/collections';
 import { trustpilotUrl } from '../../data/trust-links';
-import { getPublishedCustomerReviewScreenshots, getPublishedStoreCollectionCards } from '../../lib/catalog';
+import type { StoreCollectionCard } from '../../lib/catalog';
 import { QC_VIDEOS_PATH } from '../../lib/qc-videos';
 
-const screenshots = await getPublishedCustomerReviewScreenshots();
-const collectionCovers = (await getPublishedStoreCollectionCards())
-  .filter((collection) => isStorefrontModelCollectionSlug(collection.slug))
+interface Props {
+  collections: StoreCollectionCard[];
+  reviewScreenshots: Array<{ src: string; alt: string }>;
+}
+
+const { collections, reviewScreenshots: screenshots } = Astro.props;
+
+const collectionCovers = collections
   .map((collection) => ({
     src: typeof collection.image === 'string' ? collection.image : collection.image.src,
     alt: collection.imageAlt || `${collection.name} collection`,
