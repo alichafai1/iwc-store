@@ -2,10 +2,12 @@
 import { Image } from 'astro:assets';
 import heroImage from '../../assets/images/hero.jpg';
 import Button from '../ui/Button.astro';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 import { collectionImages } from '../../data/collection-media';
 import { trustpilotUrl } from '../../data/trust-links';
 import type { StoreCollectionCard } from '../../lib/catalog';
 import { QC_VIDEOS_PATH } from '../../lib/qc-videos';
+import { HERO_PROOF_IMAGE, isSupabaseStorageUrl } from '../../lib/storage-image';
 
 interface Props {
   collections: StoreCollectionCard[];
@@ -107,16 +109,31 @@ const TrustpilotTag = trustpilotUrl ? 'a' : 'span';
           <span class="hero-proof__visual">
             <span class="hero-photos">
               {
-                galleryPhotos.map((photo) => (
-                  <img
-                    class={`hero-photos__card hero-photos__card--${photo.layer + 1}`}
-                    src={photo.src}
-                    alt={photo.alt}
-                    width="240"
-                    height="280"
-                    style={`object-position: ${photo.position}`}
-                  />
-                ))
+                galleryPhotos.map((photo) =>
+                  isSupabaseStorageUrl(photo.src) ? (
+                    <OptimizedRemoteImage
+                      class={`hero-photos__card hero-photos__card--${photo.layer + 1}`}
+                      src={photo.src}
+                      alt={photo.alt}
+                      widths={HERO_PROOF_IMAGE.widths}
+                      sizes={HERO_PROOF_IMAGE.sizes}
+                      width={HERO_PROOF_IMAGE.width}
+                      height={HERO_PROOF_IMAGE.height}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <img
+                      class={`hero-photos__card hero-photos__card--${photo.layer + 1}`}
+                      src={photo.src}
+                      alt={photo.alt}
+                      width="240"
+                      height="280"
+                      style={`object-position: ${photo.position}`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ),
+                )
               }
             </span>
           </span>
@@ -282,6 +299,13 @@ const TrustpilotTag = trustpilotUrl ? 'a' : 'span';
     border-bottom-width: 0.38rem;
     border-radius: 0.2rem;
     box-shadow: 0 6px 14px rgba(17, 17, 17, 0.2);
+    overflow: hidden;
+  }
+
+  .hero-photos__card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .hero-photos__card--1 {

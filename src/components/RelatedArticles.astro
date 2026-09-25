@@ -1,5 +1,8 @@
 ---
 import { getRelatedArticleCards } from '../lib/content-articles';
+import { isRemoteMedia } from '../lib/media';
+import { ARTICLE_CARD_IMAGE } from '../lib/storage-image';
+import OptimizedRemoteImage from './ui/OptimizedRemoteImage.astro';
 
 interface Props {
   slugs: string[];
@@ -17,7 +20,19 @@ const articles = await getRelatedArticleCards(slugs);
         {articles.map((article) => (
           <article class="related-articles__card">
             <a href={article.href}>
-              <img src={article.image} alt={article.imageAlt} width="1080" height="1080" loading="lazy" />
+              {isRemoteMedia(article.image) ? (
+                <OptimizedRemoteImage
+                  src={article.image}
+                  alt={article.imageAlt}
+                  widths={ARTICLE_CARD_IMAGE.widths}
+                  sizes="(min-width: 64em) 30vw, 100vw"
+                  width={ARTICLE_CARD_IMAGE.width}
+                  height={ARTICLE_CARD_IMAGE.height}
+                  loading="lazy"
+                />
+              ) : (
+                <img src={article.image} alt={article.imageAlt} width="1080" height="1080" loading="lazy" decoding="async" />
+              )}
               <h3>{article.title}</h3>
               <p>{article.description}</p>
             </a>

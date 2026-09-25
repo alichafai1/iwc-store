@@ -31,9 +31,10 @@ const canNavigate = images.length > 1;
               <OptimizedRemoteImage
                 src={image.src}
                 alt={image.alt}
+                widths={PRODUCT_GALLERY_IMAGE.widths}
+                sizes={PRODUCT_GALLERY_IMAGE.sizes}
                 width={PRODUCT_GALLERY_IMAGE.width}
                 height={PRODUCT_GALLERY_IMAGE.height}
-                transform={false}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchpriority={index === 0 ? 'high' : undefined}
               />
@@ -86,9 +87,10 @@ const canNavigate = images.length > 1;
                 <OptimizedRemoteImage
                   src={image.src}
                   alt=""
+                  widths={PRODUCT_GALLERY_THUMB.widths}
+                  sizes={PRODUCT_GALLERY_THUMB.sizes}
                   width={PRODUCT_GALLERY_THUMB.width}
                   height={PRODUCT_GALLERY_THUMB.height}
-                  transform={false}
                   loading="lazy"
                 />
               ) : (

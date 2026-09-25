@@ -1,5 +1,7 @@
 ---
 import type { DeliveryProof } from '../../types/delivery-proof';
+import { DELIVERY_PROOF_IMAGE } from '../../lib/storage-image';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 
 interface Props {
   proof: DeliveryProof;
@@ -13,13 +15,14 @@ const hasImage = Boolean(proof.imageSrc);
   <div class="delivery-proof-card__media">
     {
       hasImage ? (
-        <img
+        <OptimizedRemoteImage
           src={proof.imageSrc!}
           alt={proof.imageAlt}
-          width="750"
-          height="1400"
+          widths={DELIVERY_PROOF_IMAGE.widths}
+          sizes={DELIVERY_PROOF_IMAGE.sizes}
+          width={DELIVERY_PROOF_IMAGE.width}
+          height={DELIVERY_PROOF_IMAGE.height}
           loading="lazy"
-          decoding="async"
         />
       ) : (
         <div class="delivery-proof-card__slot" aria-hidden="true">
@@ -57,6 +60,7 @@ const hasImage = Boolean(proof.imageSrc);
     background: var(--product-media-bg);
   }
 
+  .delivery-proof-card :global(picture),
   .delivery-proof-card img {
     width: 100%;
     height: 100%;

@@ -1,7 +1,10 @@
 ---
 import { Image } from 'astro:assets';
 import { formatDate } from '../../lib/format';
+import { isRemoteMedia } from '../../lib/media';
+import { ARTICLE_CARD_IMAGE } from '../../lib/storage-image';
 import type { Article } from '../../types/article';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 
 interface Props {
   article: Article;
@@ -16,8 +19,19 @@ const remoteImage = typeof article.image === 'string' ? article.image : undefine
 <article class="featured-editorial">
   <a class="media featured-editorial__media" href={article.href}>
     {
-      remoteImage ? (
-        <img src={remoteImage} alt={article.imageAlt} width="1080" height="1080" loading="eager" />
+      remoteImage && isRemoteMedia(remoteImage) ? (
+        <OptimizedRemoteImage
+          src={remoteImage}
+          alt={article.imageAlt}
+          widths={ARTICLE_CARD_IMAGE.widths}
+          sizes="(min-width: 64em) 55vw, 100vw"
+          width={ARTICLE_CARD_IMAGE.width}
+          height={ARTICLE_CARD_IMAGE.height}
+          loading="eager"
+          fetchpriority="high"
+        />
+      ) : remoteImage ? (
+        <img src={remoteImage} alt={article.imageAlt} width="1080" height="1080" loading="eager" decoding="async" />
       ) : typeof article.image !== 'string' ? (
         <Image
           src={article.image}
@@ -60,7 +74,10 @@ const remoteImage = typeof article.image === 'string' ? article.image : undefine
     border-radius: var(--radius-lg);
   }
 
-  .featured-editorial__media img {
+  .featured-editorial__media img,
+  .featured-editorial__media :global(picture) {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     object-position: center;
   }

@@ -295,6 +295,12 @@ textarea {
   background: var(--color-muted);
 }
 
+.media picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .media img {
   width: 100%;
   height: 100%;
@@ -462,9 +468,17 @@ textarea {
   aspect-ratio: 1 / 1;
   height: auto;
   margin-bottom: 3rem;
+  overflow: hidden;
   object-fit: cover;
   object-position: center;
   border-radius: var(--radius-lg);
+}
+
+.content-article__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .content-article__layout {
@@ -763,6 +777,7 @@ textarea {
   text-decoration: none;
 }
 
+.related-articles__card picture,
 .related-articles__card img {
   display: block;
   width: 100%;
@@ -771,6 +786,13 @@ textarea {
   object-fit: cover;
   object-position: center;
   border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.related-articles__card picture img {
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: 0;
 }
 
 .related-articles__card h3 {

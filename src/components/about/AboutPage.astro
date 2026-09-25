@@ -23,6 +23,7 @@ import {
   faqPageJsonLd,
 } from '../../lib/seo';
 import type { StoreCollectionCard } from '../../lib/catalog';
+import { ABOUT_STORY_IMAGE } from '../../lib/storage-image';
 import FAQSection from '../home/FAQSection.astro';
 import CollectionCarousel from '../home/CollectionCarousel.astro';
 import TrustSection from '../layout/TrustSection.astro';
@@ -30,6 +31,7 @@ import BenefitCard from '../ui/BenefitCard.astro';
 import Breadcrumb from '../ui/Breadcrumb.astro';
 import Button from '../ui/Button.astro';
 import Container from '../ui/Container.astro';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 import SectionHeader from '../ui/SectionHeader.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
@@ -103,13 +105,14 @@ const jsonLd = [
           storyImage && (
             <div class="about-story__media">
               {storyImage.kind === 'remote' ? (
-                <img
+                <OptimizedRemoteImage
                   src={storyImage.src}
                   alt={storyImage.alt}
-                  width={storyImage.width}
-                  height={storyImage.height}
+                  widths={ABOUT_STORY_IMAGE.widths}
+                  sizes={ABOUT_STORY_IMAGE.sizes}
+                  width={ABOUT_STORY_IMAGE.width}
+                  height={ABOUT_STORY_IMAGE.height}
                   loading="lazy"
-                  decoding="async"
                 />
               ) : (
                 <Image
@@ -301,6 +304,7 @@ const jsonLd = [
     background: var(--color-muted);
   }
 
+  .about-story__media :global(picture),
   .about-story__media :global(img) {
     position: absolute;
     inset: 0;

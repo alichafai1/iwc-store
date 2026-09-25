@@ -1,6 +1,9 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import { isRemoteMedia } from '../../lib/media';
+import { COLLECTION_CARD_IMAGE } from '../../lib/storage-image';
+import OptimizedRemoteImage from './OptimizedRemoteImage.astro';
 
 interface Props {
   name: string;
@@ -11,32 +14,38 @@ interface Props {
 
 const { name, href, image, imageAlt = `${name} collection` } = Astro.props;
 const slightZoom = /\/(da-vinci|ingenieur)\/?$/.test(href);
+const remoteImage = isRemoteMedia(image) ? image : undefined;
+const photoClass = ['collection-card__photo', slightZoom ? 'collection-card__photo--slight-zoom' : '']
+  .filter(Boolean)
+  .join(' ');
 ---
 
 <article class="collection-card">
   <a href={href}>
-    <div class:list={['media', 'collection-card__media', typeof image === 'string' && 'collection-card__media--photo']}>
+    <div class:list={['media', 'collection-card__media', remoteImage && 'collection-card__media--photo']}>
       {
-        typeof image === 'string' ? (
-          <img
-            class:list={['collection-card__photo', slightZoom && 'collection-card__photo--slight-zoom']}
-            src={image}
+        remoteImage ? (
+          <OptimizedRemoteImage
+            class={photoClass}
+            src={remoteImage}
             alt={imageAlt}
-            width="800"
-            height="1000"
+            widths={COLLECTION_CARD_IMAGE.widths}
+            sizes={COLLECTION_CARD_IMAGE.sizes}
+            width={COLLECTION_CARD_IMAGE.width}
+            height={COLLECTION_CARD_IMAGE.height}
             loading="lazy"
           />
-        ) : (
+        ) : typeof image !== 'string' ? (
           <Image
             class="collection-card__fallback"
             src={image}
             alt={imageAlt}
             width={800}
             height={1000}
-            sizes="(min-width: 64em) 25vw, 50vw"
+            sizes={COLLECTION_CARD_IMAGE.sizes}
             loading="lazy"
           />
-        )
+        ) : null
       }
     </div>
     <h3>{name}</h3>
@@ -72,6 +81,7 @@ const slightZoom = /\/(da-vinci|ingenieur)\/?$/.test(href);
     background: #f6f6f6;
   }
 
+  .collection-card__media :global(picture),
   .collection-card__media :global(img) {
     position: absolute;
     inset: 0;
@@ -99,7 +109,9 @@ const slightZoom = /\/(da-vinci|ingenieur)\/?$/.test(href);
   }
 
   .collection-card a:hover .collection-card__media :global(img),
-  .collection-card a:focus-visible .collection-card__media :global(img) {
+  .collection-card a:hover .collection-card__media :global(picture),
+  .collection-card a:focus-visible .collection-card__media :global(img),
+  .collection-card a:focus-visible .collection-card__media :global(picture) {
     transform: scale(1.08);
   }
 

@@ -15,9 +15,11 @@ import Breadcrumb from '../ui/Breadcrumb.astro';
 import Container from '../ui/Container.astro';
 import ProductCard from '../ui/ProductCard.astro';
 import SectionHeader from '../ui/SectionHeader.astro';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { faqAnswerParts } from '../../lib/faq-text';
-import { mediaUrl } from '../../lib/media';
+import { isRemoteMedia, mediaUrl } from '../../lib/media';
+import { COLLECTION_COVER_THUMB } from '../../lib/storage-image';
 import {
   absoluteUrl,
   breadcrumbJsonLd,
@@ -194,8 +196,18 @@ const featured = shopFeaturedBlocks.flatMap((block) => {
           <article class:list={['shop-featured__block', 'shop-featured__block--with-cover']}>
             <a class="shop-featured__cover" href={block.href} tabindex="-1" aria-hidden="true">
               {
-                typeof block.image === 'string' ? (
-                  <img src={block.image} alt="" width="800" height="1000" loading="lazy" />
+                typeof block.image === 'string' && isRemoteMedia(block.image) ? (
+                  <OptimizedRemoteImage
+                    src={block.image}
+                    alt=""
+                    widths={COLLECTION_COVER_THUMB.widths}
+                    sizes={COLLECTION_COVER_THUMB.sizes}
+                    width={COLLECTION_COVER_THUMB.width}
+                    height={COLLECTION_COVER_THUMB.height}
+                    loading="lazy"
+                  />
+                ) : typeof block.image === 'string' ? (
+                  <img src={block.image} alt="" width="320" height="400" loading="lazy" decoding="async" />
                 ) : (
                   <Image src={block.image} alt="" width={320} height={400} sizes="10rem" loading="lazy" />
                 )
@@ -436,6 +448,7 @@ const featured = shopFeaturedBlocks.flatMap((block) => {
     background: #f6f6f6;
   }
 
+  .shop-featured__cover :global(picture),
   .shop-featured__cover :global(img) {
     display: block;
     width: 100%;

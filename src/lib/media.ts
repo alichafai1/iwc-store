@@ -9,6 +9,6 @@ export function mediaUrl(src: ProductMedia | ImageMetadata | string | null | und
   return typeof src === 'string' ? src : src.src;
 }
 
-export function isRemoteMedia(src: ProductMedia): src is string {
-  return typeof src === 'string';
+export function isRemoteMedia(src: ProductMedia | string | null | undefined): src is string {
+  return typeof src === 'string' && src.length > 0;
 }

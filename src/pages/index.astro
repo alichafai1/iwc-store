@@ -20,6 +20,8 @@ import { defaultJsonLd, faqPageJsonLd } from '../lib/seo';
 
 const { collections, homepageBestSellers, reviewScreenshots } = await getHomepageCatalogData();
 const homepageArticles = listHomepageArticles();
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300');
 ---
 
 <BaseLayout

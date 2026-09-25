@@ -1,5 +1,7 @@
 ---
 import type { QcVideoCardData } from '../../types/qc-video';
+import { QC_VIDEO_THUMB } from '../../lib/storage-image';
+import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 
 interface Props {
   video: QcVideoCardData;
@@ -7,6 +9,7 @@ interface Props {
 
 const { video } = Astro.props;
 const playLabel = `Play quality-check video of ${video.productName}`;
+const thumbAlt = `Quality-check video thumbnail of ${video.productName}`;
 ---
 
 <article class="qc-video-card" id={video.id}>
@@ -19,13 +22,14 @@ const playLabel = `Play quality-check video of ${video.productName}`;
       data-video-poster={video.thumbnailUrl}
       aria-label={playLabel}
     >
-      <img
+      <OptimizedRemoteImage
         src={video.thumbnailUrl}
-        alt={`Quality-check video thumbnail of ${video.productName}`}
-        width="640"
-        height="480"
+        alt={thumbAlt}
+        widths={QC_VIDEO_THUMB.widths}
+        sizes={QC_VIDEO_THUMB.sizes}
+        width={QC_VIDEO_THUMB.width}
+        height={QC_VIDEO_THUMB.height}
         loading="lazy"
-        decoding="async"
       />
       <span class="qc-video-card__icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -80,6 +84,7 @@ const playLabel = `Play quality-check video of ${video.productName}`;
     cursor: pointer;
   }
 
+  .qc-video-card__play :global(picture),
   .qc-video-card__play :global(img) {
     width: 100%;
     height: 100%;

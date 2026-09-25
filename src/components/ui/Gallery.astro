@@ -1,5 +1,7 @@
 ---
 import type { MediaItem } from '../../types/media';
+import { REVIEW_GALLERY_IMAGE } from '../../lib/storage-image';
+import OptimizedRemoteImage from './OptimizedRemoteImage.astro';
 
 interface Props {
   items: MediaItem[];
@@ -17,13 +19,15 @@ const copies = [false, true] as const;
           {items.map((item) => (
             <li>
               <figure class="gallery__frame">
-                <img
+                <OptimizedRemoteImage
                   src={item.src}
                   alt={duplicate ? '' : item.alt}
-                  width="710"
-                  height="1024"
+                  widths={REVIEW_GALLERY_IMAGE.widths}
+                  sizes={REVIEW_GALLERY_IMAGE.sizes}
+                  width={REVIEW_GALLERY_IMAGE.width}
+                  height={REVIEW_GALLERY_IMAGE.height}
+                  resize={REVIEW_GALLERY_IMAGE.resize}
                   loading="lazy"
-                  decoding="async"
                 />
               </figure>
             </li>
@@ -93,7 +97,8 @@ const copies = [false, true] as const;
     background: transparent;
   }
 
-  .gallery__frame img {
+  .gallery__frame :global(picture),
+  .gallery__frame :global(img) {
     position: absolute;
     inset: 0;
     display: block;

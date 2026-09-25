@@ -6,9 +6,12 @@ import KeyTakeaways from '../components/KeyTakeaways.astro';
 import RelatedArticles from '../components/RelatedArticles.astro';
 import SchemaMarkup from '../components/SchemaMarkup.astro';
 import TableOfContents from '../components/TableOfContents.astro';
+import OptimizedRemoteImage from '../components/ui/OptimizedRemoteImage.astro';
 import { getAuthor, getAuthorByName } from '../data/authors';
 import { linkHref } from '../lib/content-articles';
+import { isRemoteMedia } from '../lib/media';
 import { absoluteUrl } from '../lib/seo';
+import { ARTICLE_HERO_IMAGE } from '../lib/storage-image';
 import type { ContentCollectionName, ContentHeading, InternalLinkTarget } from '../types/content-article';
 import type { CollectionEntry } from 'astro:content';
 import BaseLayout from './BaseLayout.astro';
@@ -93,7 +96,23 @@ const breadcrumbs = [
         <time datetime={published}>{publishedLabel}</time>
         <span>{readingMinutes} min read</span>
       </p>
-      <img class="content-article__image" src={data.image} alt={data.imageAlt} width="1080" height="1080" />
+      {
+        isRemoteMedia(data.image) ? (
+          <OptimizedRemoteImage
+            class="content-article__image"
+            src={data.image}
+            alt={data.imageAlt}
+            widths={ARTICLE_HERO_IMAGE.widths}
+            sizes={ARTICLE_HERO_IMAGE.sizes}
+            width={ARTICLE_HERO_IMAGE.width}
+            height={ARTICLE_HERO_IMAGE.height}
+            loading="eager"
+            fetchpriority="high"
+          />
+        ) : (
+          <img class="content-article__image" src={data.image} alt={data.imageAlt} width="1080" height="1080" loading="eager" decoding="async" />
+        )
+      }
     </header>
 
     <div class="content-article__layout">

@@ -3,6 +3,7 @@ import {
   isSupabaseStorageUrl,
   storageImageSrcSet,
   transformedStorageUrl,
+  type StorageImageFormat,
 } from '../../lib/storage-image';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
   fetchpriority?: 'high' | 'low' | 'auto';
   class?: string;
   transform?: boolean;
+  quality?: number;
+  resize?: 'cover' | 'contain' | 'fill';
 }
 
 const {
@@ -29,26 +32,84 @@ const {
   fetchpriority,
   class: className,
   transform = true,
+  quality,
+  resize = 'cover',
 } = Astro.props;
 
 const optimize = transform && isSupabaseStorageUrl(src);
-const displaySrc = optimize
-  ? (transformedStorageUrl(src, { width, height: height || width }) ?? src)
-  : src;
-const srcset = optimize && widths ? storageImageSrcSet(src, widths) : undefined;
+const heightRatio = height > 0 && width > 0 ? height / width : 1;
+const responsiveWidths = widths && widths.length > 0 ? widths : ([width] as const);
+
+function buildSrcSet(format?: StorageImageFormat) {
+  if (!optimize) {
+    return undefined;
+  }
+
+  return storageImageSrcSet(src, responsiveWidths, {
+    heightRatio,
+    quality,
+    format,
+    resize,
+  });
+}
+
+const jpegSrc =
+  optimize
+    ? (transformedStorageUrl(src, {
+        width,
+        height: height || width,
+        quality,
+        format: 'origin',
+        resize,
+      }) ?? src)
+    : src;
+const jpegSrcSet = buildSrcSet('origin');
+const webpSrcSet = buildSrcSet('webp');
+const avifSrcSet = buildSrcSet('avif');
 ---
 
-<img
-  class={className}
-  src={displaySrc}
-  srcset={srcset}
-  sizes={srcset ? sizes : undefined}
-  alt={alt}
-  width={width}
-  height={height}
-  loading={loading}
-  decoding="async"
-  fetchpriority={fetchpriority}
-  data-original={optimize ? src : undefined}
-  onerror="if (this.dataset.original && this.src !== this.dataset.original) { this.onerror = null; this.removeAttribute('srcset'); this.src = this.dataset.original; }"
-/>
+{
+  optimize ? (
+    <picture class="optimized-remote-image">
+      {avifSrcSet ? <source type="image/avif" srcset={avifSrcSet} sizes={sizes} /> : null}
+      {webpSrcSet ? <source type="image/webp" srcset={webpSrcSet} sizes={sizes} /> : null}
+      <img
+        class={className}
+        src={jpegSrc}
+        srcset={jpegSrcSet}
+        sizes={jpegSrcSet ? sizes : undefined}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={loading}
+        decoding="async"
+        fetchpriority={fetchpriority}
+      />
+    </picture>
+  ) : (
+    <img
+      class={className}
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={loading}
+      decoding="async"
+      fetchpriority={fetchpriority}
+    />
+  )
+}
+
+<style>
+  .optimized-remote-image {
+    display: block;
+    max-width: 100%;
+  }
+
+  .optimized-remote-image > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+</style>

@@ -2,6 +2,7 @@
 import type { PresentationBoxOffer } from '../../lib/catalog';
 import type { ProductQuality } from '../../types/product';
 import { DEFAULT_QUALITY } from '../../lib/qualities';
+import { BOX_OFFER_IMAGE, PRODUCT_STICKY_THUMB } from '../../lib/storage-image';
 import OptimizedRemoteImage from '../ui/OptimizedRemoteImage.astro';
 import PaymentMarks from '../ui/PaymentMarks.astro';
 
@@ -104,10 +105,10 @@ const stickyThumbSrc = imageSrc;
               <OptimizedRemoteImage
                 src={boxOffer.image}
                 alt=""
-                widths={[240, 360, 480, 640]}
-                sizes="(min-width: 64em) 16vw, 40vw"
-                width={480}
-                height={480}
+                widths={BOX_OFFER_IMAGE.widths}
+                sizes={BOX_OFFER_IMAGE.sizes}
+                width={BOX_OFFER_IMAGE.width}
+                height={BOX_OFFER_IMAGE.height}
                 loading="lazy"
               />
             </a>
@@ -186,7 +187,16 @@ const stickyThumbSrc = imageSrc;
       <div class="purchase-sticky__product">
         {
           stickyThumbSrc ? (
-            <img class="purchase-sticky__thumb" src={stickyThumbSrc} alt="" width="48" height="48" loading="lazy" decoding="async" />
+            <OptimizedRemoteImage
+              class="purchase-sticky__thumb"
+              src={stickyThumbSrc}
+              alt=""
+              widths={PRODUCT_STICKY_THUMB.widths}
+              sizes={PRODUCT_STICKY_THUMB.sizes}
+              width={PRODUCT_STICKY_THUMB.width}
+              height={PRODUCT_STICKY_THUMB.height}
+              loading="lazy"
+            />
           ) : null
         }
         <div class="purchase-sticky__meta">
@@ -746,6 +756,7 @@ const stickyThumbSrc = imageSrc;
       min-width: 0;
     }
 
+    .purchase-sticky__product :global(picture.purchase-sticky__thumb),
     .purchase-sticky__thumb {
       width: 2.75rem;
       height: 2.75rem;
@@ -753,6 +764,14 @@ const stickyThumbSrc = imageSrc;
       object-fit: contain;
       object-position: center center;
       background: var(--product-media-bg);
+      overflow: hidden;
+    }
+
+    .purchase-sticky__product :global(picture.purchase-sticky__thumb img) {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
     }
 
     .purchase-sticky__meta {

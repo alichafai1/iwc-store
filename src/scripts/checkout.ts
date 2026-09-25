@@ -14,6 +14,7 @@ import { checkoutPaymentOptions, checkoutShippingOptions } from '../data/checkou
 import { defaultCountryCode } from '../data/countries';
 import { validateCheckoutForm, type CheckoutAddress, type CheckoutFormValues } from '../lib/checkout/validate';
 import { cartLinesToOrderItems, isOfflinePaymentMethod } from '../lib/orders';
+import { CHECKOUT_THUMB_IMAGE, transformedStorageUrl } from '../lib/storage-image';
 
 const FIELD_ERROR_IDS: Record<string, string> = {
   email: 'checkout-email-error',
@@ -143,7 +144,14 @@ function renderItems(root: HTMLElement, items: CartLine[]) {
 
     if (thumb) {
       if (item.image) {
-        thumb.src = item.image;
+        thumb.src =
+          transformedStorageUrl(item.image, {
+            width: CHECKOUT_THUMB_IMAGE.width,
+            height: CHECKOUT_THUMB_IMAGE.height,
+            quality: CHECKOUT_THUMB_IMAGE.quality,
+            format: 'webp',
+            resize: 'cover',
+          }) ?? item.image;
         thumb.alt = item.imageAlt || item.title;
       } else {
         thumb.remove();
