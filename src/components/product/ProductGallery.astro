@@ -12,44 +12,64 @@ interface Props {
 
 const { images, productTitle } = Astro.props;
 const canNavigate = images.length > 1;
+const hasImages = images.length > 0;
 ---
 
 <div class="product-gallery" data-product-gallery>
-  <div class="product-gallery__stage">
+  <div class="product-gallery__stage" data-gallery-stage>
     {
-      images.length === 0 ? (
-        <div class="product-gallery__frame product-media is-active product-gallery__frame--empty">
-          <span class="product-gallery__empty" aria-hidden="true" />
+      !hasImages ? (
+        <div class="product-gallery__viewport">
+          <div class="product-gallery__frame product-media product-gallery__frame--empty">
+            <span class="product-gallery__empty" aria-hidden="true" />
+          </div>
         </div>
       ) : (
-        images.map((image, index) => (
+        <div class="product-gallery__viewport" data-gallery-viewport>
           <div
-            class:list={['product-gallery__frame', 'product-media', index === 0 && 'is-active']}
-            data-product-slide={index}
+            class="product-gallery__track"
+            data-gallery-track
+            style={`width: ${images.length * 100}%;`}
           >
-            {isRemoteMedia(image.src) ? (
-              <OptimizedRemoteImage
-                src={image.src}
-                alt={image.alt}
-                widths={PRODUCT_GALLERY_IMAGE.widths}
-                sizes={PRODUCT_GALLERY_IMAGE.sizes}
-                width={PRODUCT_GALLERY_IMAGE.width}
-                height={PRODUCT_GALLERY_IMAGE.height}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchpriority={index === 0 ? 'high' : undefined}
-              />
-            ) : (
-              <Image
-                src={image.src}
-                alt={image.alt}
-                width={900}
-                height={900}
-                sizes="(min-width: 64em) 42vw, 100vw"
-                loading={index === 0 ? 'eager' : 'lazy'}
-              />
-            )}
+            {images.map((image, index) => (
+              <div
+                class:list={['product-gallery__slide', 'product-media', index === 0 && 'is-active']}
+                data-product-slide={index}
+                style={`width: ${100 / images.length}%;`}
+              >
+                <button
+                  class="product-gallery__open"
+                  type="button"
+                  data-gallery-open
+                  data-gallery-index={index}
+                  aria-label={`View ${image.alt || productTitle} fullscreen`}
+                >
+                  {isRemoteMedia(image.src) ? (
+                    <OptimizedRemoteImage
+                      src={image.src}
+                      alt={image.alt}
+                      widths={PRODUCT_GALLERY_IMAGE.widths}
+                      sizes={PRODUCT_GALLERY_IMAGE.sizes}
+                      width={PRODUCT_GALLERY_IMAGE.width}
+                      height={PRODUCT_GALLERY_IMAGE.height}
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      fetchpriority={index === 0 ? 'high' : undefined}
+                    />
+                  ) : (
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      width={900}
+                      height={900}
+                      sizes="(min-width: 64em) 42vw, 100vw"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                    />
+                  )}
+                </button>
+              </div>
+            ))}
           </div>
-        ))
+        </div>
       )
     }
 
@@ -102,33 +122,166 @@ const canNavigate = images.length > 1;
       </div>
     )
   }
+
+  {
+    hasImages && (
+      <div
+        class="product-gallery__lightbox"
+        data-gallery-lightbox
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${productTitle} image viewer`}
+        hidden
+      >
+        <button class="product-gallery__lightbox-close" type="button" data-lightbox-close aria-label="Close image viewer">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div class="product-gallery__lightbox-backdrop" data-lightbox-close tabindex="-1"></div>
+        <div class="product-gallery__lightbox-viewport" data-lightbox-viewport>
+          <div
+            class="product-gallery__lightbox-track"
+            data-lightbox-track
+            style={`width: ${images.length * 100}%;`}
+          >
+            {images.map((image, index) => (
+              <div
+                class="product-gallery__lightbox-slide"
+                data-lightbox-slide={index}
+                style={`width: ${100 / images.length}%;`}
+              >
+                <div class="product-gallery__lightbox-zoom" data-lightbox-zoom>
+                  {isRemoteMedia(image.src) ? (
+                    <OptimizedRemoteImage
+                      src={image.src}
+                      alt={image.alt}
+                      widths={PRODUCT_GALLERY_IMAGE.widths}
+                      sizes="100vw"
+                      width={PRODUCT_GALLERY_IMAGE.width}
+                      height={PRODUCT_GALLERY_IMAGE.height}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      width={900}
+                      height={900}
+                      sizes="100vw"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 </div>
 
 <script is:inline>
   (() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
       const slides = [...gallery.querySelectorAll('[data-product-slide]')];
       const thumbs = [...gallery.querySelectorAll('[data-product-thumb]')];
       const thumbsRow = gallery.querySelector('.product-gallery__thumbs');
-      const stage = gallery.querySelector('.product-gallery__stage');
+      const stage = gallery.querySelector('[data-gallery-stage]');
+      const viewport = gallery.querySelector('[data-gallery-viewport]');
+      const track = gallery.querySelector('[data-gallery-track]');
       const prev = gallery.querySelector('[data-gallery-prev]');
       const next = gallery.querySelector('[data-gallery-next]');
+      const lightbox = gallery.querySelector('[data-gallery-lightbox]');
+      const lightboxTrack = gallery.querySelector('[data-lightbox-track]');
+      const lightboxViewport = gallery.querySelector('[data-lightbox-viewport]');
+      const lightboxSlides = [...gallery.querySelectorAll('[data-lightbox-slide]')];
+      const openButtons = [...gallery.querySelectorAll('[data-gallery-open]')];
 
-      if (slides.length < 2) {
+      if (!track || slides.length === 0) {
         return;
       }
 
+      const count = slides.length;
       let current = 0;
+      let dragOffset = 0;
+      let dragging = false;
       let touchStartX = 0;
       let touchStartY = 0;
+      let axis = null;
+      let suppressOpenClick = false;
+      let lightboxOpen = false;
+      let lightboxDragOffset = 0;
+      let lightboxDragging = false;
+      let lightboxAxis = null;
+      let lightboxMoved = false;
+      let pinchStartDistance = 0;
+      let pinchStartScale = 1;
+      let zoomScale = 1;
+      let zoomX = 0;
+      let zoomY = 0;
+      let lastTapAt = 0;
+      const preloaded = new Set();
 
-      const show = (index) => {
-        current = (index + slides.length) % slides.length;
+      const wrap = (index) => ((index % count) + count) % count;
 
-        slides.forEach((slide, slideIndex) => {
-          slide.classList.toggle('is-active', slideIndex === current);
-        });
+      const slideImg = (slide) => slide?.querySelector('img') || null;
 
+      const preloadIndex = (index) => {
+        if (count < 2) {
+          return;
+        }
+
+        const i = wrap(index);
+        if (preloaded.has(i)) {
+          return;
+        }
+
+        const img = slideImg(slides[i]) || slideImg(lightboxSlides[i]);
+        if (!img) {
+          return;
+        }
+
+        img.loading = 'eager';
+        const url = img.currentSrc || img.src;
+        if (!url) {
+          return;
+        }
+
+        const probe = new Image();
+        probe.decoding = 'async';
+        probe.src = url;
+        if (typeof probe.decode === 'function') {
+          probe.decode().catch(() => {});
+        }
+        if (typeof img.decode === 'function') {
+          img.decode().catch(() => {});
+        }
+        preloaded.add(i);
+      };
+
+      const preloadNeighbors = (index) => {
+        if (count < 2) {
+          return;
+        }
+        preloadIndex(index + 1);
+        preloadIndex(index - 1);
+      };
+
+      const setTrackTransform = (el, index, offsetPx, animate) => {
+        if (!el) {
+          return;
+        }
+        const percent = -(index * (100 / count));
+        const offset = offsetPx || 0;
+        el.style.transition = animate && !reduceMotion ? 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+        el.style.transform = `translate3d(calc(${percent}% + ${offset}px), 0, 0)`;
+      };
+
+      const syncThumbs = () => {
         thumbs.forEach((thumb, thumbIndex) => {
           const active = thumbIndex === current;
           thumb.classList.toggle('is-active', active);
@@ -140,12 +293,352 @@ const canNavigate = images.length > 1;
           const rowBox = thumbsRow.getBoundingClientRect();
           const thumbBox = activeThumb.getBoundingClientRect();
           const offset = thumbBox.left - rowBox.left - (rowBox.width - thumbBox.width) / 2;
-          thumbsRow.scrollBy({ left: offset, behavior: 'smooth' });
+          thumbsRow.scrollBy({ left: offset, behavior: reduceMotion ? 'auto' : 'smooth' });
         }
       };
 
-      prev?.addEventListener('click', () => show(current - 1));
-      next?.addEventListener('click', () => show(current + 1));
+      const applyZoom = (zoomEl) => {
+        if (!zoomEl) {
+          return;
+        }
+        zoomEl.style.transform = `translate3d(${zoomX}px, ${zoomY}px, 0) scale(${zoomScale})`;
+      };
+
+      const resetZoom = () => {
+        zoomScale = 1;
+        zoomX = 0;
+        zoomY = 0;
+        lightboxSlides.forEach((slide) => {
+          const zoomEl = slide.querySelector('[data-lightbox-zoom]');
+          if (zoomEl) {
+            zoomEl.style.transition = reduceMotion ? 'none' : 'transform 200ms ease';
+            applyZoom(zoomEl);
+          }
+        });
+      };
+
+      const activeLightboxZoom = () => lightboxSlides[current]?.querySelector('[data-lightbox-zoom]') || null;
+
+      const show = (index, options = {}) => {
+        const animate = options.animate !== false;
+        current = wrap(index);
+        dragOffset = 0;
+        lightboxDragOffset = 0;
+
+        slides.forEach((slide, slideIndex) => {
+          slide.classList.toggle('is-active', slideIndex === current);
+        });
+
+        setTrackTransform(track, current, 0, animate);
+        if (lightboxTrack) {
+          setTrackTransform(lightboxTrack, current, 0, animate);
+        }
+
+        syncThumbs();
+        preloadNeighbors(current);
+        resetZoom();
+      };
+
+      const openLightbox = () => {
+        if (!lightbox) {
+          return;
+        }
+        lightboxOpen = true;
+        lightbox.hidden = false;
+        lightbox.classList.add('is-open');
+        document.documentElement.classList.add('product-gallery-lock');
+        document.body.classList.add('product-gallery-lock');
+        preloadNeighbors(current);
+        const img = slideImg(lightboxSlides[current]);
+        if (img) {
+          img.loading = 'eager';
+        }
+        requestAnimationFrame(() => {
+          lightbox.classList.add('is-visible');
+        });
+      };
+
+      const closeLightbox = () => {
+        if (!lightbox || !lightboxOpen) {
+          return;
+        }
+        lightboxOpen = false;
+        lightbox.classList.remove('is-visible');
+        document.documentElement.classList.remove('product-gallery-lock');
+        document.body.classList.remove('product-gallery-lock');
+        resetZoom();
+        window.setTimeout(() => {
+          if (!lightboxOpen) {
+            lightbox.hidden = true;
+            lightbox.classList.remove('is-open');
+          }
+        }, reduceMotion ? 0 : 220);
+      };
+
+      const distance = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+      let activePointerId = null;
+
+      // Main gallery swipe (pointer events — touch/pen only so desktop clicks stay clean)
+      if (viewport && count > 1) {
+        viewport.addEventListener('pointerdown', (event) => {
+          if (lightboxOpen || event.pointerType === 'mouse' || activePointerId !== null) {
+            return;
+          }
+          activePointerId = event.pointerId;
+          dragging = true;
+          axis = null;
+          dragOffset = 0;
+          touchStartX = event.clientX;
+          touchStartY = event.clientY;
+          track.style.transition = 'none';
+          viewport.setPointerCapture(event.pointerId);
+        });
+
+        viewport.addEventListener(
+          'pointermove',
+          (event) => {
+            if (!dragging || lightboxOpen || event.pointerId !== activePointerId) {
+              return;
+            }
+            const dx = event.clientX - touchStartX;
+            const dy = event.clientY - touchStartY;
+
+            if (!axis) {
+              if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
+                return;
+              }
+              axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+            }
+
+            if (axis !== 'x') {
+              return;
+            }
+
+            event.preventDefault();
+            dragOffset = dx;
+            setTrackTransform(track, current, dragOffset, false);
+          },
+          { passive: false },
+        );
+
+        const endMainPointer = (event) => {
+          if (!dragging || event.pointerId !== activePointerId) {
+            return;
+          }
+          dragging = false;
+          activePointerId = null;
+          const dx = event.clientX - touchStartX;
+          const dy = event.clientY - touchStartY;
+          const wasHorizontal = axis === 'x';
+          axis = null;
+
+          if (viewport.hasPointerCapture?.(event.pointerId)) {
+            viewport.releasePointerCapture(event.pointerId);
+          }
+
+          if (!wasHorizontal || Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) {
+            setTrackTransform(track, current, 0, true);
+            dragOffset = 0;
+            return;
+          }
+
+          suppressOpenClick = true;
+          show(current + (dx < 0 ? 1 : -1));
+        };
+
+        viewport.addEventListener('pointerup', endMainPointer);
+        viewport.addEventListener('pointercancel', endMainPointer);
+      }
+
+      // Fullscreen: pointer swipe/pan + touch pinch + double-tap zoom
+      if (lightboxViewport && count >= 1) {
+        let lightboxPointerId = null;
+
+        lightboxViewport.addEventListener('pointerdown', (event) => {
+          if (!lightboxOpen || event.isPrimary === false) {
+            return;
+          }
+          if (pinchStartDistance > 0) {
+            return;
+          }
+          lightboxPointerId = event.pointerId;
+          lightboxDragging = true;
+          lightboxMoved = false;
+          lightboxAxis = null;
+          lightboxDragOffset = 0;
+          touchStartX = event.clientX;
+          touchStartY = event.clientY;
+          if (lightboxTrack) {
+            lightboxTrack.style.transition = 'none';
+          }
+          lightboxViewport.setPointerCapture(event.pointerId);
+        });
+
+        lightboxViewport.addEventListener(
+          'pointermove',
+          (event) => {
+            if (!lightboxOpen || !lightboxDragging || event.pointerId !== lightboxPointerId) {
+              return;
+            }
+            if (pinchStartDistance > 0) {
+              return;
+            }
+
+            const dx = event.clientX - touchStartX;
+            const dy = event.clientY - touchStartY;
+
+            if (zoomScale > 1.05) {
+              event.preventDefault();
+              lightboxMoved = true;
+              zoomX += dx;
+              zoomY += dy;
+              touchStartX = event.clientX;
+              touchStartY = event.clientY;
+              const zoomEl = activeLightboxZoom();
+              if (zoomEl) {
+                zoomEl.style.transition = 'none';
+                applyZoom(zoomEl);
+              }
+              return;
+            }
+
+            if (count < 2) {
+              return;
+            }
+
+            if (!lightboxAxis) {
+              if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
+                return;
+              }
+              lightboxAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+            }
+
+            if (lightboxAxis !== 'x') {
+              return;
+            }
+
+            event.preventDefault();
+            lightboxMoved = true;
+            lightboxDragOffset = dx;
+            setTrackTransform(lightboxTrack, current, lightboxDragOffset, false);
+          },
+          { passive: false },
+        );
+
+        const endLightboxPointer = (event) => {
+          if (!lightboxOpen || event.pointerId !== lightboxPointerId) {
+            return;
+          }
+
+          if (lightboxViewport.hasPointerCapture?.(event.pointerId)) {
+            lightboxViewport.releasePointerCapture(event.pointerId);
+          }
+
+          const dx = event.clientX - touchStartX;
+          const dy = event.clientY - touchStartY;
+          const wasDragging = lightboxDragging;
+          const wasHorizontal = lightboxAxis === 'x';
+          lightboxDragging = false;
+          lightboxPointerId = null;
+          lightboxAxis = null;
+
+          if (pinchStartDistance > 0) {
+            return;
+          }
+
+          if (wasDragging && zoomScale <= 1.05 && count > 1 && wasHorizontal && Math.abs(dx) >= 40 && Math.abs(dx) >= Math.abs(dy)) {
+            show(current + (dx < 0 ? 1 : -1));
+            return;
+          }
+
+          if (wasDragging && (lightboxMoved || zoomScale > 1.05)) {
+            setTrackTransform(lightboxTrack, current, 0, true);
+            lightboxDragOffset = 0;
+            return;
+          }
+
+          if (!lightboxMoved) {
+            const now = Date.now();
+            if (now - lastTapAt < 280) {
+              if (zoomScale > 1.05) {
+                resetZoom();
+              } else {
+                zoomScale = 2.2;
+                zoomX = 0;
+                zoomY = 0;
+                const zoomEl = activeLightboxZoom();
+                if (zoomEl) {
+                  zoomEl.style.transition = reduceMotion ? 'none' : 'transform 200ms ease';
+                  applyZoom(zoomEl);
+                }
+              }
+              lastTapAt = 0;
+              return;
+            }
+            lastTapAt = now;
+          }
+        };
+
+        lightboxViewport.addEventListener('pointerup', endLightboxPointer);
+        lightboxViewport.addEventListener('pointercancel', endLightboxPointer);
+
+        // Pinch zoom needs multi-touch
+        lightboxViewport.addEventListener(
+          'touchstart',
+          (event) => {
+            if (!lightboxOpen || event.touches.length !== 2) {
+              return;
+            }
+            lightboxDragging = false;
+            lightboxPointerId = null;
+            pinchStartDistance = distance(event.touches[0], event.touches[1]);
+            pinchStartScale = zoomScale;
+          },
+          { passive: true },
+        );
+
+        lightboxViewport.addEventListener(
+          'touchmove',
+          (event) => {
+            if (!lightboxOpen || event.touches.length !== 2 || pinchStartDistance <= 0) {
+              return;
+            }
+            event.preventDefault();
+            lightboxMoved = true;
+            zoomScale = Math.min(4, Math.max(1, pinchStartScale * (distance(event.touches[0], event.touches[1]) / pinchStartDistance)));
+            if (zoomScale === 1) {
+              zoomX = 0;
+              zoomY = 0;
+            }
+            const zoomEl = activeLightboxZoom();
+            if (zoomEl) {
+              zoomEl.style.transition = 'none';
+              applyZoom(zoomEl);
+            }
+          },
+          { passive: false },
+        );
+
+        lightboxViewport.addEventListener(
+          'touchend',
+          (event) => {
+            if (event.touches.length < 2) {
+              pinchStartDistance = 0;
+            }
+          },
+          { passive: true },
+        );
+      }
+
+      prev?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        show(current - 1);
+      });
+      next?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        show(current + 1);
+      });
 
       thumbs.forEach((thumb) => {
         thumb.addEventListener('click', () => {
@@ -153,34 +646,63 @@ const canNavigate = images.length > 1;
         });
       });
 
-      stage?.addEventListener(
-        'touchstart',
-        (event) => {
-          const touch = event.changedTouches[0];
-          touchStartX = touch.clientX;
-          touchStartY = touch.clientY;
-        },
-        { passive: true },
-      );
-
-      stage?.addEventListener(
-        'touchend',
-        (event) => {
-          const touch = event.changedTouches[0];
-          const deltaX = touch.clientX - touchStartX;
-          const deltaY = touch.clientY - touchStartY;
-
-          if (Math.abs(deltaX) < 40 || Math.abs(deltaX) < Math.abs(deltaY)) {
+      openButtons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+          if (suppressOpenClick) {
+            event.preventDefault();
+            suppressOpenClick = false;
             return;
           }
+          const index = Number(button.getAttribute('data-gallery-index'));
+          if (Number.isFinite(index)) {
+            show(index, { animate: false });
+          }
+          openLightbox();
+        });
+      });
 
-          show(current + (deltaX < 0 ? 1 : -1));
-        },
-        { passive: true },
-      );
+      gallery.querySelectorAll('[data-lightbox-close]').forEach((node) => {
+        node.addEventListener('click', () => closeLightbox());
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (!lightboxOpen) {
+          return;
+        }
+        if (event.key === 'Escape') {
+          closeLightbox();
+        } else if (event.key === 'ArrowRight' && count > 1) {
+          show(current + 1);
+        } else if (event.key === 'ArrowLeft' && count > 1) {
+          show(current - 1);
+        }
+      });
+
+      // Initial layout + adjacent preload after LCP image is ready
+      setTrackTransform(track, 0, 0, false);
+      if (lightboxTrack) {
+        setTrackTransform(lightboxTrack, 0, 0, false);
+      }
+
+      const firstImg = slideImg(slides[0]);
+      const startPreload = () => preloadNeighbors(0);
+      if (firstImg) {
+        if (firstImg.complete) {
+          startPreload();
+        } else {
+          firstImg.addEventListener('load', startPreload, { once: true });
+        }
+      }
     });
   })();
 </script>
+
+<style is:global>
+  html.product-gallery-lock,
+  body.product-gallery-lock {
+    overflow: hidden;
+  }
+</style>
 
 <style>
   .product-gallery {
@@ -192,18 +714,48 @@ const canNavigate = images.length > 1;
     position: relative;
   }
 
-  .product-gallery__frame {
-    display: none;
-    aspect-ratio: 1 / 1;
-    width: 100%;
+  .product-gallery__viewport {
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
+    touch-action: pan-y;
+    background: var(--product-media-bg);
   }
 
-  .product-gallery__frame.is-active,
-  .product-gallery__frame--thumb {
+  .product-gallery__track {
     display: flex;
+    will-change: transform;
+  }
+
+  .product-gallery__slide {
+    position: relative;
+    flex: 0 0 auto;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+
+  .product-gallery__open {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+  }
+
+  .product-gallery__open :global(picture),
+  .product-gallery__open :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .product-gallery__frame--empty {
+    display: flex;
+    aspect-ratio: 1 / 1;
+    width: 100%;
   }
 
   .product-gallery__empty {
@@ -214,8 +766,8 @@ const canNavigate = images.length > 1;
   .product-gallery__arrow {
     position: absolute;
     top: 50%;
-    z-index: 1;
-    display: flex;
+    z-index: 2;
+    display: none;
     align-items: center;
     justify-content: center;
     width: 2.5rem;
@@ -243,6 +795,12 @@ const canNavigate = images.length > 1;
     right: 0.75rem;
   }
 
+  @media (min-width: 48em) {
+    .product-gallery__arrow {
+      display: flex;
+    }
+  }
+
   .product-gallery__thumbs {
     display: flex;
     gap: 0.65rem;
@@ -263,6 +821,15 @@ const canNavigate = images.length > 1;
     scroll-snap-align: start;
   }
 
+  .product-gallery__frame--thumb {
+    display: flex;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
   .product-gallery__thumb.is-active .product-gallery__frame--thumb {
     border-color: var(--color-accent);
   }
@@ -270,6 +837,109 @@ const canNavigate = images.length > 1;
   @media (min-width: 48em) {
     .product-gallery__thumb {
       flex-basis: 5.25rem;
+    }
+  }
+
+  .product-gallery__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.22s ease, visibility 0.22s ease;
+  }
+
+  .product-gallery__lightbox.is-open {
+    visibility: visible;
+  }
+
+  .product-gallery__lightbox.is-visible {
+    opacity: 1;
+  }
+
+  .product-gallery__lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgb(8 8 8 / 94%);
+    cursor: pointer;
+  }
+
+  .product-gallery__lightbox-close {
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 12%);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .product-gallery__lightbox-close svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .product-gallery__lightbox-viewport {
+    position: relative;
+    z-index: 2;
+    width: min(100vw, 56rem);
+    height: min(100vh, 100dvh);
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .product-gallery__lightbox-track {
+    display: flex;
+    height: 100%;
+    will-change: transform;
+  }
+
+  .product-gallery__lightbox-slide {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .product-gallery__lightbox-zoom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  .product-gallery__lightbox-zoom :global(picture),
+  .product-gallery__lightbox-zoom :global(img) {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-gallery__lightbox,
+    .product-gallery__track,
+    .product-gallery__lightbox-track,
+    .product-gallery__lightbox-zoom {
+      transition: none !important;
     }
   }
 </style>
