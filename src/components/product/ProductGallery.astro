@@ -52,7 +52,7 @@ const hasImages = images.length > 0;
                       sizes={PRODUCT_GALLERY_IMAGE.sizes}
                       width={PRODUCT_GALLERY_IMAGE.width}
                       height={PRODUCT_GALLERY_IMAGE.height}
-                      loading={index === 0 ? 'eager' : 'lazy'}
+                      loading={index === 0 || index === 1 ? 'eager' : 'lazy'}
                       fetchpriority={index === 0 ? 'high' : undefined}
                     />
                   ) : (
@@ -62,7 +62,7 @@ const hasImages = images.length > 0;
                       width={900}
                       height={900}
                       sizes="(min-width: 64em) 42vw, 100vw"
-                      loading={index === 0 ? 'eager' : 'lazy'}
+                      loading={index === 0 || index === 1 ? 'eager' : 'lazy'}
                     />
                   )}
                 </button>
@@ -112,6 +112,7 @@ const hasImages = images.length > 0;
                   width={PRODUCT_GALLERY_THUMB.width}
                   height={PRODUCT_GALLERY_THUMB.height}
                   loading="lazy"
+                  fetchpriority="low"
                 />
               ) : (
                 <Image src={image.src} alt="" width={160} height={160} sizes="72px" loading="lazy" />
@@ -230,32 +231,32 @@ const hasImages = images.length > 0;
 
       const slideImg = (slide) => slide?.querySelector('img') || null;
 
-      const preloadIndex = (index) => {
-        if (count < 2) {
+      const probeUrl = (url) => {
+        if (!url || url.includes('/object/public/')) {
           return;
         }
-
-        const i = wrap(index);
-        if (preloaded.has(i)) {
-          return;
-        }
-
-        const img = slideImg(slides[i]) || slideImg(lightboxSlides[i]);
-        if (!img) {
-          return;
-        }
-
-        img.loading = 'eager';
-        const url = img.currentSrc || img.src;
-        if (!url) {
-          return;
-        }
-
         const probe = new Image();
         probe.decoding = 'async';
         probe.src = url;
         if (typeof probe.decode === 'function') {
           probe.decode().catch(() => {});
+        }
+      };
+
+      const warmSlide = (index) => {
+        if (count < 1) {
+          return;
+        }
+        const i = wrap(index);
+        const img = slideImg(slides[i]);
+        if (!img) {
+          return;
+        }
+
+        img.loading = 'eager';
+        const url = img.currentSrc || img.getAttribute('src') || '';
+        if (!img.complete) {
+          probeUrl(url);
         }
         if (typeof img.decode === 'function') {
           img.decode().catch(() => {});
@@ -263,12 +264,14 @@ const hasImages = images.length > 0;
         preloaded.add(i);
       };
 
-      const preloadNeighbors = (index) => {
+      const syncAdjacentLoading = (active) => {
         if (count < 2) {
+          warmSlide(active);
           return;
         }
-        preloadIndex(index + 1);
-        preloadIndex(index - 1);
+
+        const near = new Set([wrap(active), wrap(active + 1), wrap(active - 1)]);
+        near.forEach((i) => warmSlide(i));
       };
 
       const setTrackTransform = (el, index, offsetPx, animate) => {
@@ -335,7 +338,7 @@ const hasImages = images.length > 0;
         }
 
         syncThumbs();
-        preloadNeighbors(current);
+        syncAdjacentLoading(current);
         resetZoom();
       };
 
@@ -348,11 +351,13 @@ const hasImages = images.length > 0;
         lightbox.classList.add('is-open');
         document.documentElement.classList.add('product-gallery-lock');
         document.body.classList.add('product-gallery-lock');
-        preloadNeighbors(current);
-        const img = slideImg(lightboxSlides[current]);
-        if (img) {
-          img.loading = 'eager';
+        // Only warm the current lightbox image + main-gallery neighbors (not the whole set)
+        const lightboxImg = slideImg(lightboxSlides[current]);
+        if (lightboxImg) {
+          lightboxImg.loading = 'eager';
+          probeUrl(lightboxImg.currentSrc || lightboxImg.getAttribute('src') || '');
         }
+        syncAdjacentLoading(current);
         requestAnimationFrame(() => {
           lightbox.classList.add('is-visible');
         });
@@ -678,21 +683,12 @@ const hasImages = images.length > 0;
         }
       });
 
-      // Initial layout + adjacent preload after LCP image is ready
+      // Initial layout + warm slide 0 and adjacent slide 1 immediately (do not wait for LCP load)
       setTrackTransform(track, 0, 0, false);
       if (lightboxTrack) {
         setTrackTransform(lightboxTrack, 0, 0, false);
       }
-
-      const firstImg = slideImg(slides[0]);
-      const startPreload = () => preloadNeighbors(0);
-      if (firstImg) {
-        if (firstImg.complete) {
-          startPreload();
-        } else {
-          firstImg.addEventListener('load', startPreload, { once: true });
-        }
-      }
+      syncAdjacentLoading(0);
     });
   })();
 </script>
