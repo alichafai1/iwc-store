@@ -1,6 +1,7 @@
 ---
 import Footer from '../components/layout/Footer.astro';
 import Header from '../components/layout/Header.astro';
+import CartDrawer from '../components/cart/CartDrawer.astro';
 import JsonLd from '../components/seo/JsonLd.astro';
 import SeoHead from '../components/seo/SeoHead.astro';
 import { defaultJsonLd } from '../lib/seo';
@@ -28,5 +29,6 @@ const { jsonLd = defaultJsonLd(), ...seo } = Astro.props;
       <slot />
     </main>
     <Footer />
+    <CartDrawer />
   </body>
 </html>

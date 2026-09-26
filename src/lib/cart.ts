@@ -131,8 +131,20 @@ export function clearCart() {
   writeCart([]);
 }
 
+export function cartQuantityCount(items: CartLine[]) {
+  return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
 export function cartSubtotal(items: CartLine[]) {
   return Math.round(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
+}
+
+/** Ask the shared cart UI to open the drawer (same localStorage cart). */
+export function openCartDrawer() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent('iwc:cart-open'));
 }
 
 export function cartCompareAtTotal(items: CartLine[]) {

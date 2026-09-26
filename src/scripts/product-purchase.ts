@@ -1,4 +1,4 @@
-import { formatMoney, persistCartLine, type CartLine } from '../lib/cart';
+import { formatMoney, openCartDrawer, persistCartLine, type CartLine } from '../lib/cart';
 import { DEFAULT_QUALITY } from '../lib/qualities';
 
 const ADD_SUCCESS_MS = 1250;
@@ -153,6 +153,7 @@ async function addBoxOffer(root: Element, button: HTMLButtonElement) {
 
     setBoxButtonState(button, 'success');
     setStatus(root, 'Original box added to cart');
+    openCartDrawer();
     await wait(prefersReducedMotion() ? 400 : ADD_SUCCESS_MS);
   } catch {
     setBoxButtonState(button, 'error');
@@ -236,6 +237,7 @@ async function runCartAction(root: Element, action: 'add' | 'buy') {
 
     setActionButtons(root, 'add', 'success');
     setStatus(root, 'Added to cart');
+    openCartDrawer();
     await wait(prefersReducedMotion() ? 400 : ADD_SUCCESS_MS);
   } catch {
     setActionButtons(root, action, 'error');

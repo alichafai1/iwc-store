@@ -376,8 +376,12 @@
   justify-content: flex-end;
 }
 
-.checkout__choice-footer ul {
-  justify-content: center;
+/* Keep mobile payment icons/badges left-aligned under the option label (not centered). */
+.checkout__choice-footer ul,
+.checkout__choice-footer .payment-marks {
+  justify-content: flex-start;
+  width: auto;
+  max-width: 100%;
 }
 
 .checkout__choice--alt {
@@ -393,6 +397,12 @@
 .checkout__choice--alt .checkout__choice-footer {
   margin: 0 1rem 1rem 2.85rem;
   padding: 0;
+}
+
+/* Match crypto/badge indent: sit under the label, after the radio + gap. */
+.checkout__choice--card .checkout__choice-footer {
+  margin-top: 0.75rem;
+  margin-left: calc(18px + 0.875rem);
 }
 
 .checkout__choice--alt.is-checked .checkout__choice-footer {

@@ -94,9 +94,10 @@ const logoAlt = 'IWC-Replica.com';
             </button>
           </li>
           <li>
-            <a class="icon-btn" href="/checkout/" aria-label="Cart">
+            <button class="icon-btn site-header__cart" type="button" data-cart-open aria-label="Cart">
               <Icon name="cart" />
-            </a>
+              <span class="site-header__cart-count" data-cart-count hidden aria-hidden="true">0</span>
+            </button>
           </li>
         </ul>
       </nav>
@@ -291,6 +292,33 @@ const logoAlt = 'IWC-Replica.com';
     display: flex;
     align-items: center;
     list-style: none;
+  }
+
+  .site-header__cart {
+    position: relative;
+  }
+
+  .site-header__cart-count {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .site-header__cart-count[hidden] {
+    display: none;
   }
 
   .site-header__desktop-only {

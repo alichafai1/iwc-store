@@ -1,0 +1,487 @@
+---
+---
+
+<div class="cart-drawer" data-cart-drawer hidden>
+  <button class="cart-drawer__backdrop" type="button" data-cart-close aria-label="Close cart"></button>
+
+  <aside
+    class="cart-drawer__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cart-drawer-title"
+    tabindex="-1"
+    data-cart-panel
+  >
+    <header class="cart-drawer__header">
+      <h2 id="cart-drawer-title" class="cart-drawer__title">
+        Review Your Cart (<span data-cart-drawer-qty>0</span>)
+      </h2>
+      <button class="cart-drawer__close icon-btn" type="button" data-cart-close aria-label="Close cart">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div class="cart-drawer__body">
+      <p class="cart-drawer__empty" data-cart-empty hidden>Your cart is empty.</p>
+
+      <ul class="cart-drawer__items" data-cart-items></ul>
+
+      <article class="cart-drawer__upsell" data-cart-box-upsell hidden>
+        <div class="cart-drawer__upsell-media">
+          <img data-cart-box-image alt="" width="96" height="96" loading="lazy" decoding="async" />
+        </div>
+        <div class="cart-drawer__upsell-body">
+          <p class="cart-drawer__upsell-title">Add Original Box</p>
+          <p class="cart-drawer__upsell-price" data-cart-box-price></p>
+          <div class="cart-drawer__upsell-actions">
+            <button
+              class="cart-drawer__upsell-add"
+              type="button"
+              data-cart-add-box
+              data-idle-label="Add Box"
+            >
+              Add Box
+            </button>
+            <a class="cart-drawer__upsell-view" data-cart-box-view href="/products/iwc-box-and-papers-wbox-4/">
+              View Boxes
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <template data-cart-item-template>
+        <li class="cart-drawer__item" data-cart-item>
+          <a class="cart-drawer__thumb" data-item-link href="/">
+            <img data-item-image alt="" width="72" height="72" loading="lazy" decoding="async" />
+          </a>
+          <div class="cart-drawer__item-main">
+            <a class="cart-drawer__item-title" data-item-title data-item-link href="/"></a>
+            <p class="cart-drawer__item-quality" data-item-quality></p>
+            <p class="cart-drawer__item-price">
+              <span data-item-price></span>
+              <s data-item-compare hidden></s>
+            </p>
+            <div class="cart-drawer__item-row">
+              <div class="cart-drawer__stepper" data-item-stepper>
+                <button type="button" data-qty-delta="-1" aria-label="Decrease quantity">−</button>
+                <span data-item-qty>1</span>
+                <button type="button" data-qty-delta="1" aria-label="Increase quantity">+</button>
+              </div>
+              <button class="cart-drawer__remove" type="button" data-item-remove>Remove</button>
+            </div>
+          </div>
+        </li>
+      </template>
+    </div>
+
+    <footer class="cart-drawer__footer">
+      <div class="cart-drawer__coupon">
+        <label class="visually-hidden" for="cart-drawer-coupon">Coupon Code</label>
+        <input
+          id="cart-drawer-coupon"
+          class="cart-drawer__coupon-input"
+          type="text"
+          name="coupon"
+          placeholder="Coupon Code"
+          data-cart-coupon-input
+          autocomplete="off"
+        />
+        <button class="cart-drawer__coupon-apply" type="button" data-cart-coupon-apply disabled>Apply</button>
+      </div>
+      <p class="cart-drawer__coupon-error" data-cart-coupon-error hidden></p>
+
+      <div class="cart-drawer__subtotal">
+        <span>Subtotal</span>
+        <strong data-cart-subtotal>$0.00</strong>
+      </div>
+
+      <a class="cart-drawer__checkout btn" href="/checkout/" data-cart-checkout>Checkout</a>
+    </footer>
+  </aside>
+</div>
+
+<script>
+  import '../../scripts/cart-ui';
+</script>
+
+<style>
+  .cart-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+  }
+
+  .cart-drawer[hidden] {
+    display: none;
+  }
+
+  .cart-drawer__backdrop {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(17 17 17 / 0.4);
+    cursor: pointer;
+  }
+
+  .cart-drawer__panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(26rem, 100vw);
+    height: 100%;
+    background: var(--color-bg);
+    box-shadow: -12px 0 32px rgb(17 17 17 / 0.12);
+    outline: none;
+    transform: translateX(100%);
+  }
+
+  .cart-drawer.is-open .cart-drawer__panel {
+    transform: none;
+  }
+
+  .cart-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 1.1rem 1.15rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cart-drawer__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 2.4vw, 1.35rem);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+  }
+
+  .cart-drawer__close {
+    flex-shrink: 0;
+  }
+
+  .cart-drawer__close svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .cart-drawer__body {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 1rem 1.15rem 1.25rem;
+  }
+
+  .cart-drawer__empty {
+    margin: 1.5rem 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+  }
+
+  .cart-drawer__items {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cart-drawer__item {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.85rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cart-drawer__thumb {
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border: 1px solid var(--color-border);
+    background: var(--color-muted);
+  }
+
+  .cart-drawer__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cart-drawer__item-main {
+    min-width: 0;
+  }
+
+  .cart-drawer__item-title {
+    display: block;
+    color: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1.35;
+    text-decoration: none;
+  }
+
+  .cart-drawer__item-title:hover,
+  .cart-drawer__item-title:focus-visible {
+    color: var(--color-accent-dark);
+  }
+
+  .cart-drawer__item-quality {
+    margin: 0.2rem 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  .cart-drawer__item-price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem;
+    margin: 0.35rem 0 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .cart-drawer__item-price s {
+    color: var(--color-text-muted);
+  }
+
+  .cart-drawer__item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.65rem;
+  }
+
+  .cart-drawer__stepper {
+    display: inline-grid;
+    grid-template-columns: 2rem 2.25rem 2rem;
+    align-items: center;
+    min-height: 2.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .cart-drawer__stepper button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 2.25rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .cart-drawer__stepper span {
+    text-align: center;
+    font-size: var(--font-size-sm);
+  }
+
+  .cart-drawer__remove {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+  }
+
+  .cart-drawer__remove:hover,
+  .cart-drawer__remove:focus-visible {
+    color: var(--color-text);
+  }
+
+  .cart-drawer__upsell {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.85rem;
+    margin-top: 1.25rem;
+    padding: 0.85rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-muted);
+  }
+
+  .cart-drawer__upsell[hidden] {
+    display: none;
+  }
+
+  .cart-drawer__upsell-media {
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: var(--color-bg);
+  }
+
+  .cart-drawer__upsell-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cart-drawer__upsell-title {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  .cart-drawer__upsell-price {
+    margin: 0.25rem 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .cart-drawer__upsell-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.65rem;
+  }
+
+  .cart-drawer__upsell-add,
+  .cart-drawer__upsell-view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .cart-drawer__upsell-add {
+    border: 0;
+    background: var(--color-text);
+    color: var(--color-bg);
+    cursor: pointer;
+  }
+
+  .cart-drawer__upsell-view {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .cart-drawer__upsell-add:hover:not(:disabled),
+  .cart-drawer__upsell-view:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+  }
+
+  .cart-drawer__upsell-add:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  .cart-drawer__footer {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem 1.15rem 1.25rem;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .cart-drawer__coupon {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+  }
+
+  .cart-drawer__coupon-input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    font: inherit;
+  }
+
+  .cart-drawer__coupon-apply {
+    min-height: 2.75rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-muted);
+    color: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .cart-drawer__coupon-apply:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .cart-drawer__coupon-error {
+    margin: 0;
+    color: #a33;
+    font-size: var(--font-size-xs);
+  }
+
+  .cart-drawer__subtotal {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: var(--font-size-sm);
+  }
+
+  .cart-drawer__subtotal strong {
+    font-size: 1.05rem;
+  }
+
+  .cart-drawer__checkout {
+    width: 100%;
+    text-decoration: none;
+  }
+
+  .cart-drawer__checkout.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cart-drawer__backdrop {
+      transition: opacity 0.22s ease;
+    }
+
+    .cart-drawer__panel {
+      transition: transform 0.28s ease;
+    }
+
+    .cart-drawer:not(.is-open) .cart-drawer__backdrop {
+      opacity: 0;
+    }
+
+    .cart-drawer.is-open .cart-drawer__backdrop {
+      opacity: 1;
+    }
+  }
+</style>
