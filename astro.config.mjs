@@ -14,6 +14,20 @@ export default defineConfig({
     mode: 'standalone',
   }),
   trailingSlash: 'always',
+  redirects: {
+    '/guides/how-to-spot-fake-iwc/': {
+      status: 301,
+      destination: '/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc',
+    },
+    '/guides/best-iwc-replica-sellers/': {
+      status: 301,
+      destination: '/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely',
+    },
+    '/guides/iwc-serial-number-check/': {
+      status: 301,
+      destination: '/guides/iwc-replica-watches-guide/#iwc-serial-number-check',
+    },
+  },
   server: {
     port: 4330,
     host: true,
