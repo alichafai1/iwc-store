@@ -52,7 +52,8 @@ const hasImages = images.length > 0;
                       sizes={PRODUCT_GALLERY_IMAGE.sizes}
                       width={PRODUCT_GALLERY_IMAGE.width}
                       height={PRODUCT_GALLERY_IMAGE.height}
-                      loading={index === 0 || index === 1 ? 'eager' : 'lazy'}
+                      formats={['webp', 'avif', 'origin']}
+                      loading={index === 0 ? 'eager' : 'lazy'}
                       fetchpriority={index === 0 ? 'high' : undefined}
                     />
                   ) : (
@@ -61,8 +62,8 @@ const hasImages = images.length > 0;
                       alt={image.alt}
                       width={900}
                       height={900}
-                      sizes="(min-width: 64em) 42vw, 100vw"
-                      loading={index === 0 || index === 1 ? 'eager' : 'lazy'}
+                      sizes={PRODUCT_GALLERY_IMAGE.sizes}
+                      loading={index === 0 ? 'eager' : 'lazy'}
                     />
                   )}
                 </button>
@@ -161,6 +162,7 @@ const hasImages = images.length > 0;
                       sizes="100vw"
                       width={PRODUCT_GALLERY_IMAGE.width}
                       height={PRODUCT_GALLERY_IMAGE.height}
+                      formats={['webp', 'avif', 'origin']}
                       loading="lazy"
                     />
                   ) : (
@@ -683,12 +685,27 @@ const hasImages = images.length > 0;
         }
       });
 
-      // Initial layout + warm slide 0 and adjacent slide 1 immediately (do not wait for LCP load)
+      // Initial layout only — do not warm adjacent/last slides before LCP image 0 finishes
       setTrackTransform(track, 0, 0, false);
       if (lightboxTrack) {
         setTrackTransform(lightboxTrack, 0, 0, false);
       }
-      syncAdjacentLoading(0);
+
+      const warmNextAfterLcp = () => {
+        if (count >= 2) {
+          warmSlide(1);
+        }
+      };
+
+      const firstImg = slideImg(slides[0]);
+      if (firstImg) {
+        if (firstImg.complete) {
+          warmNextAfterLcp();
+        } else {
+          firstImg.addEventListener('load', warmNextAfterLcp, { once: true });
+          firstImg.addEventListener('error', warmNextAfterLcp, { once: true });
+        }
+      }
     });
   })();
 </script>

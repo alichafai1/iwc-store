@@ -525,6 +525,155 @@ export async function getPublishedProductsForCollection(
   return limit === undefined ? productsForCards : productsForCards.slice(0, limit);
 }
 
+/**
+ * Lightweight related-product cards for PDP SSR (max `limit` items).
+ * Avoids loading full galleries, specs, features, FAQs, or collection-wide reviews.
+ */
+export async function getRelatedProductCards(
+  collectionSlug: string,
+  excludeSlug: string,
+  limit = 4,
+): Promise<Product[]> {
+  const take = Math.max(1, Math.min(Math.trunc(limit) || 4, 12));
+
+  const { data: collection, error: collectionError } = await supabase
+    .from('collections')
+    .select('id, name, slug')
+    .eq('slug', collectionSlug)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (collectionError) {
+    console.error('Failed to load related collection:', collectionError.message);
+    return [];
+  }
+
+  if (!collection) {
+    return [];
+  }
+
+  const { data: joins, error: joinError } = await supabase
+    .from('product_collections')
+    .select('product_id, position')
+    .eq('collection_id', collection.id)
+    .order('position');
+
+  if (joinError) {
+    console.error('Failed to load related collection joins:', joinError.message);
+    return [];
+  }
+
+  const orderedIds = [...new Set((joins ?? []).map((row) => row.product_id))];
+  if (orderedIds.length === 0) {
+    return [];
+  }
+
+  // Oversample a little so missing images / excluded slug still fill 4 slots.
+  const candidateCap = Math.min(orderedIds.length, Math.max(take * 3, take + 8));
+  const seedIds = orderedIds.slice(0, candidateCap);
+
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('id, slug, title, sku, status, primary_collection_id, collections:primary_collection_id(name, slug)')
+    .in('id', seedIds)
+    .eq('status', 'published');
+
+  if (error) {
+    console.error('Failed to load related products:', error.message);
+    return [];
+  }
+
+  const rows = (products ?? []).filter((row) => row.slug !== excludeSlug) as Array<
+    Pick<ProductRow, 'id' | 'slug' | 'title' | 'sku' | 'status' | 'primary_collection_id'> & {
+      collections: CollectionName | null;
+    }
+  >;
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const ids = rows.map((row) => row.id);
+  // Card fields only: one thumbnail path, prices, and rating aggregates (no review bodies).
+  const [imagesResult, qualitiesResult, ratingResult] = await Promise.all([
+    supabase
+      .from('product_images')
+      .select('product_id, storage_path, alt_text, position, is_primary')
+      .in('product_id', ids)
+      .order('position'),
+    supabase.from('product_qualities').select('product_id, quality, price, compare_at_price').in('product_id', ids),
+    supabase
+      .from('product_reviews')
+      .select('product_id, rating')
+      .in('product_id', ids)
+      .eq('status', 'published'),
+  ]);
+
+  if (imagesResult.error || qualitiesResult.error || ratingResult.error) {
+    console.error(
+      'Failed to load related product card details:',
+      imagesResult.error?.message || qualitiesResult.error?.message || ratingResult.error?.message,
+    );
+    return [];
+  }
+
+  // Keep only the first/primary image per product — never full galleries.
+  const thumbByProduct = new Map<string, ImageRow>();
+  for (const image of sortProductImages((imagesResult.data ?? []) as ImageRow[])) {
+    if (!thumbByProduct.has(image.product_id)) {
+      thumbByProduct.set(image.product_id, image);
+    }
+  }
+  const qualitiesByProduct = groupBy(qualitiesResult.data as QualityRow[], (row) => row.product_id);
+  const ratingsByProduct = groupBy(ratingResult.data ?? [], (row) => row.product_id);
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const orderIndex = new Map(seedIds.map((id, index) => [id, index]));
+
+  const cards: Product[] = [];
+
+  for (const id of [...byId.keys()].sort(
+    (a, b) => (orderIndex.get(a) ?? 0) - (orderIndex.get(b) ?? 0),
+  )) {
+    const row = byId.get(id);
+    if (!row) {
+      continue;
+    }
+
+    const primaryImage = thumbByProduct.get(id);
+    if (!primaryImage || !isStorefrontProduct(row, [primaryImage], [collection.id])) {
+      continue;
+    }
+
+    const imageUrl = publicStorageUrl(PRODUCT_IMAGE_BUCKET, primaryImage.storage_path);
+    if (!imageUrl) {
+      continue;
+    }
+
+    const pricing = startingPrice(qualitiesByProduct.get(id));
+    const ratingRows = ratingsByProduct.get(id) ?? [];
+
+    cards.push({
+      slug: row.slug,
+      title: row.title,
+      collection: row.collections?.name || collection.name,
+      collectionSlug: row.collections?.slug || collection.slug,
+      price: pricing.price,
+      compareAtPrice: pricing.compareAtPrice,
+      rating: averageRating(ratingRows.map((review) => review.rating)),
+      reviewCount: ratingRows.length,
+      image: imageUrl,
+      imageAlt: primaryImage.alt_text || row.title,
+      sku: row.sku ?? undefined,
+    });
+
+    if (cards.length >= take) {
+      break;
+    }
+  }
+
+  return cards;
+}
+
 export const PRESENTATION_BOX_SLUG = 'iwc-box-and-papers-wbox-4';
 
 export type PresentationBoxOffer = {
@@ -602,6 +751,7 @@ export async function getPublishedPresentationBoxOffer(): Promise<PresentationBo
 export async function getPublishedProductPage(slug: string): Promise<{
   page: ProductPageData;
   relatedProducts: Product[];
+  boxOffer: PresentationBoxOffer | null;
 } | null> {
   const { data: product, error } = await supabase
     .from('products')
@@ -620,6 +770,9 @@ export async function getPublishedProductPage(slug: string): Promise<{
   }
 
   const row = product as CatalogProductRow;
+  const collectionSlug = row.collections?.slug ?? null;
+  const loadBoxOffer = row.slug !== PRESENTATION_BOX_SLUG;
+
   const [
     imagesResult,
     qualitiesResult,
@@ -628,6 +781,8 @@ export async function getPublishedProductPage(slug: string): Promise<{
     reviewsResult,
     faqsResult,
     joinsResult,
+    relatedProducts,
+    boxOffer,
   ] = await Promise.all([
     supabase.from('product_images').select('*').eq('product_id', row.id).order('position'),
     supabase.from('product_qualities').select('*').eq('product_id', row.id),
@@ -641,6 +796,8 @@ export async function getPublishedProductPage(slug: string): Promise<{
       .order('position'),
     supabase.from('product_faqs').select('*').eq('product_id', row.id).order('position'),
     supabase.from('product_collections').select('collection_id').eq('product_id', row.id),
+    collectionSlug ? getRelatedProductCards(collectionSlug, row.slug, 4) : Promise.resolve([] as Product[]),
+    loadBoxOffer ? getPublishedPresentationBoxOffer() : Promise.resolve(null),
   ]);
 
   const childError =
@@ -679,14 +836,7 @@ export async function getPublishedProductPage(slug: string): Promise<{
     faqsResult.data ?? undefined,
   );
 
-  const collectionSlug = catalogProduct.collectionSlug;
-  const relatedProducts = collectionSlug
-    ? (await getPublishedProductsForCollection(collectionSlug))
-        .filter((item) => item.slug !== row.slug && Boolean(item.image))
-        .slice(0, 4)
-    : [];
-
-  return { page, relatedProducts };
+  return { page, relatedProducts, boxOffer };
 }
 
 export interface PublishedStoreCollection {

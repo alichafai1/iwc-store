@@ -11,19 +11,21 @@ import SectionHeader from '../ui/SectionHeader.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { breadcrumbJsonLd, defaultJsonLd, faqPageJsonLd, productJsonLd } from '../../lib/seo';
 import { DEFAULT_QUALITY } from '../../lib/qualities';
-import { mediaUrl } from '../../lib/media';
+import { isRemoteMedia, mediaUrl } from '../../lib/media';
+import { buildGalleryLcpPreload } from '../../lib/storage-image';
 import ProductGallery from './ProductGallery.astro';
 import ProductPurchase from './ProductPurchase.astro';
 import ProductReviews from './ProductReviews.astro';
 import ProductUsefulLinks from './ProductUsefulLinks.astro';
-import { getPublishedPresentationBoxOffer, PRESENTATION_BOX_SLUG } from '../../lib/catalog';
+import { PRESENTATION_BOX_SLUG, type PresentationBoxOffer } from '../../lib/catalog';
 
 interface Props {
   page: ProductPageData;
   relatedProducts: Product[];
+  boxOffer?: PresentationBoxOffer | null;
 }
 
-const { page, relatedProducts } = Astro.props;
+const { page, relatedProducts, boxOffer = null } = Astro.props;
 const { product, path, metaTitle, metaDescription, images, qualities, specs, about, features, reviews, faqs } = page;
 const defaultQuality = qualities.find((item) => item.label === DEFAULT_QUALITY) ?? qualities[0];
 const currentPrice = defaultQuality?.price ?? product.price;
@@ -34,8 +36,11 @@ const reviewCountLabel = isCatalog ? `${reviews.length} reviews` : `${reviews.le
 const ratingLabel = isCatalog
   ? `Rating ${product.rating} out of 5`
   : `Placeholder rating ${product.rating} out of 5`;
-const boxOffer =
-  product.slug === PRESENTATION_BOX_SLUG ? null : await getPublishedPresentationBoxOffer();
+const resolvedBoxOffer = product.slug === PRESENTATION_BOX_SLUG ? null : boxOffer;
+
+const firstImageSrc = mediaUrl(images[0]?.src);
+const lcpPreload =
+  firstImageSrc && isRemoteMedia(firstImageSrc) ? buildGalleryLcpPreload(firstImageSrc) : null;
 ---
 
 <BaseLayout
@@ -43,7 +48,20 @@ const boxOffer =
   description={metaDescription}
   canonicalPath={path}
   ogType="product"
-  ogImage={mediaUrl(images[0]?.src)}
+  ogImage={firstImageSrc}
+  imagePreloads={
+    lcpPreload
+      ? [
+          {
+            href: lcpPreload.href,
+            imagesrcset: lcpPreload.imagesrcset,
+            imagesizes: lcpPreload.imagesizes,
+            type: lcpPreload.type,
+            fetchpriority: 'high',
+          },
+        ]
+      : undefined
+  }
   jsonLd={[
     defaultJsonLd(),
     productJsonLd({
@@ -101,7 +119,7 @@ const boxOffer =
             slug={product.slug}
             imageSrc={mediaUrl(images[0]?.src)}
             imageAlt={images[0]?.alt || product.title}
-            boxOffer={boxOffer}
+            boxOffer={resolvedBoxOffer}
           />
         </div>
 

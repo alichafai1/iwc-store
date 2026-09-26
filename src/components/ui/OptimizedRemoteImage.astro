@@ -19,6 +19,8 @@ interface Props {
   transform?: boolean;
   quality?: number;
   resize?: 'cover' | 'contain' | 'fill';
+  /** Order of `<source>` types. First supported format wins (affects LCP bytes). */
+  formats?: readonly StorageImageFormat[];
 }
 
 const {
@@ -34,11 +36,13 @@ const {
   transform = true,
   quality,
   resize = 'cover',
+  formats = ['avif', 'webp', 'origin'] as const,
 } = Astro.props;
 
 const optimize = transform && isSupabaseStorageUrl(src);
 const heightRatio = height > 0 && width > 0 ? height / width : 1;
 const responsiveWidths = widths && widths.length > 0 ? widths : ([width] as const);
+const formatList = formats.length > 0 ? formats : (['avif', 'webp', 'origin'] as const);
 
 function buildSrcSet(format?: StorageImageFormat) {
   if (!optimize) {
@@ -67,13 +71,24 @@ const jpegSrcSet = buildSrcSet('origin');
 const webpSrcSet = buildSrcSet('webp');
 const avifSrcSet = buildSrcSet('avif');
 const decoding = fetchpriority === 'high' ? 'sync' : 'async';
+
+const sources = formatList.flatMap((format) => {
+  if (format === 'avif' && avifSrcSet) {
+    return [{ type: 'image/avif' as const, srcset: avifSrcSet }];
+  }
+  if (format === 'webp' && webpSrcSet) {
+    return [{ type: 'image/webp' as const, srcset: webpSrcSet }];
+  }
+  return [];
+});
 ---
 
 {
   optimize ? (
     <picture class="optimized-remote-image">
-      {avifSrcSet ? <source type="image/avif" srcset={avifSrcSet} sizes={sizes} /> : null}
-      {webpSrcSet ? <source type="image/webp" srcset={webpSrcSet} sizes={sizes} /> : null}
+      {sources.map((source) => (
+        <source type={source.type} srcset={source.srcset} sizes={sizes} />
+      ))}
       <img
         class={className}
         src={jpegSrc}

@@ -15,6 +15,12 @@ const catalog = await getPublishedProductPage(slug);
 if (!catalog) {
   return new Response(null, { status: 404, statusText: 'Not Found' });
 }
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 ---
 
-<ProductTemplate page={catalog.page} relatedProducts={catalog.relatedProducts} />
+<ProductTemplate
+  page={catalog.page}
+  relatedProducts={catalog.relatedProducts}
+  boxOffer={catalog.boxOffer}
+/>

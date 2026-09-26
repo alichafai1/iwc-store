@@ -12,10 +12,11 @@ export const PRODUCT_CARD_IMAGE = {
 } as const;
 
 export const PRODUCT_GALLERY_IMAGE = {
-  widths: [480, 720, 960, 1200],
+  widths: [480, 640, 720, 800, 960, 1200],
   width: 900,
   height: 900,
-  sizes: '(min-width: 64em) 42vw, 100vw',
+  // Understate mobile slot (~72vw vs full bleed) so 3x phones prefer 800–960w over 1200w.
+  sizes: '(min-width: 64em) 42vw, (min-width: 48em) 50vw, 72vw',
 } as const;
 
 export const PRODUCT_GALLERY_THUMB = {
@@ -204,4 +205,48 @@ export function storageImageSrcSet(
   });
 
   return entries.length > 0 ? entries.join(', ') : undefined;
+}
+
+/** Preload hint matching OptimizedRemoteImage gallery `<picture>` WebP srcset/sizes. */
+export interface GalleryLcpPreload {
+  href: string;
+  imagesrcset: string;
+  imagesizes: string;
+  type: 'image/webp';
+}
+
+/**
+ * LCP preload for product gallery — WebP matches the first `<source>` in
+ * OptimizedRemoteImage when `formats` prefers webp (often smaller than AVIF for photos).
+ */
+export function buildGalleryLcpPreload(source: string): GalleryLcpPreload | null {
+  if (!isSupabaseStorageUrl(source)) {
+    return null;
+  }
+
+  const heightRatio = PRODUCT_GALLERY_IMAGE.height / PRODUCT_GALLERY_IMAGE.width;
+  const imagesrcset = storageImageSrcSet(source, PRODUCT_GALLERY_IMAGE.widths, {
+    heightRatio,
+    format: 'webp',
+    resize: 'cover',
+  });
+  if (!imagesrcset) {
+    return null;
+  }
+
+  // Fallback href for clients without imagesrcset-on-preload (≈ common mobile pick).
+  const href =
+    transformedStorageUrl(source, {
+      width: 960,
+      height: 960,
+      format: 'webp',
+      resize: 'cover',
+    }) ?? source;
+
+  return {
+    href,
+    imagesrcset,
+    imagesizes: PRODUCT_GALLERY_IMAGE.sizes,
+    type: 'image/webp',
+  };
 }

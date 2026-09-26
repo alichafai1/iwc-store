@@ -18,6 +18,16 @@ export default defineConfig({
     port: 4330,
     host: true,
   },
+  build: {
+    // Keep small CSS inlined; larger sheets stay cacheable hashed files.
+    inlineStylesheets: 'auto',
+  },
+  vite: {
+    build: {
+      cssCodeSplit: true,
+      assetsInlineLimit: 4096,
+    },
+  },
   integrations: [
     mdx(),
     sitemap({
