@@ -46,16 +46,32 @@ export function qcVideoDescription(video: { productName: string; reference: stri
   return `Quality-check video of the ${video.productName}${reference}, showing finishing, details, and overall presentation.`;
 }
 
+const LOCAL_QC_MEDIA_PREFIX = '/qc-videos-media/';
+
+/**
+ * Resolve a QC media path to a browser URL.
+ *
+ * Catalog entries historically used site-relative paths under `/qc-videos-media/`,
+ * but that folder is gitignored and is not deployed. Map those keys (and bare
+ * storage paths) to the public `qc-videos` Supabase bucket instead.
+ */
 function qcMediaUrl(path: string | null | undefined): string | null {
   if (!path) {
     return null;
   }
 
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
 
-  return publicStorageUrl(QC_VIDEO_BUCKET, path);
+  let storagePath = path;
+  if (path.startsWith(LOCAL_QC_MEDIA_PREFIX)) {
+    storagePath = path.slice(LOCAL_QC_MEDIA_PREFIX.length);
+  } else if (path.startsWith('/')) {
+    return path;
+  }
+
+  return publicStorageUrl(QC_VIDEO_BUCKET, storagePath);
 }
 
 export async function getQcVideosForPage(): Promise<QcVideoCardData[]> {
