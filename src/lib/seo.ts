@@ -300,7 +300,12 @@ export function videoObjectJsonLd(input: {
   return node;
 }
 
-export const sitemapExcludedPaths = ['/cart/', '/checkout/', '/robots.txt'] as const;
+export const sitemapExcludedPaths = [
+  '/cart/',
+  '/checkout/',
+  '/thank-you/',
+  '/robots.txt',
+] as const;
 
 export function sitemapCollectionPages(): string[] {
   return [
