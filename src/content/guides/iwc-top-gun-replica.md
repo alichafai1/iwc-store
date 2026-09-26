@@ -39,7 +39,7 @@ relatedArticles:
   - "iwc-replica-watches-guide"
   - "iwc-big-pilot-replica"
   - "iwc-superclone-guide"
-  - "how-to-spot-fake-iwc"
+  - "iwc-knockoff-vs-replica"
 pillar: "iwc-replica-watches-guide"
 isPillar: false
 ---
@@ -163,7 +163,7 @@ The Top Gun crown is screw-down. Genuine crowns thread smoothly with a precise c
 
 A genuine Top Gun IW326901 weighs about 120-140g on the strap. A superclone weighs 130-180g. A cheap replica weighs under 120g.
 
-> For the full 15-point check, see our [How to Spot a Fake IWC guide](/guides/how-to-spot-fake-iwc/).
+> For the full 15-point check, see our [How to Spot a Fake IWC guide](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc).
 
 ## Authentic vs Replica: Real Price Comparison
 
@@ -187,7 +187,7 @@ Trusted Top Gun replica sellers share these traits:
 
 Before you buy, always ask for a photo of the case under natural light. This is the best way to verify the ceramic finish.
 
-> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/).
+> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely).
 
 ## Top Gun vs Big Pilot: Which Should You Buy?
 
@@ -223,6 +223,6 @@ The IWC Top Gun is a modern icon of military-inspired watch design, and the repl
 
 For most buyers, a superclone at $600-$850 delivers the closest experience to the genuine — real ceramic, Swiss movement, and 5-6 ATM water resistance.
 
-Before you buy, read our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/) and learn [how to spot a fake IWC](/guides/how-to-spot-fake-iwc/). For the full context, start with our [Complete IWC Replica Guide](/guides/iwc-replica-watches-guide/).
+Before you buy, read our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely) and learn [how to spot a fake IWC](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc). For the full context, start with our [Complete IWC Replica Guide](/guides/iwc-replica-watches-guide/).
 
 If the Top Gun is not quite right, compare it to the [IWC Big Pilot Replica](/guides/iwc-big-pilot-replica/) or browse all [IWC Top Gun Replicas](/collections/top-gun/).

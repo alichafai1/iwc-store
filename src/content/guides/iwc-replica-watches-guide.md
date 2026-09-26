@@ -43,8 +43,8 @@ faq:
 relatedArticles:
   - "iwc-superclone-guide"
   - "iwc-knockoff-vs-replica"
-  - "how-to-spot-fake-iwc"
-  - "best-iwc-replica-sellers"
+  - "iwc-big-pilot-replica"
+  - "iwc-top-gun-replica"
 isPillar: true
 ---
 
@@ -244,7 +244,7 @@ If you own a genuine IWC and want to verify a replica, or you are buying a repli
 5. **Case finish** — Genuine has sharp edges and consistent brushing. Cheap replicas have soft edges.
 6. **Crown action** — Genuine crowns click smoothly. Cheap replicas feel gritty.
 
-> For a full 15-point check, see our [How to Spot a Fake IWC guide](/guides/how-to-spot-fake-iwc/).
+> For a full 15-point check, see our [How to Spot a Fake IWC guide](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc).
 
 ## Where to Buy IWC Replicas Safely
 
@@ -258,7 +258,7 @@ Trusted replica sellers share a few common traits:
 - **Refund policy** — Money-back if the watch is not as described
 - **Verifiable reviews** — Independent reviews on forums, not just on their own site
 
-> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/).
+> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely).
 
 ## Red Flags: Sellers to Avoid
 
@@ -283,7 +283,7 @@ To check a serial number:
 3. Contact IWC directly for verification on older models
 4. For replicas, the serial number will not match any genuine IWC record
 
-> For the full process, see our [IWC Serial Number Check guide](/guides/iwc-serial-number-check/).
+> For the full process, see our [IWC Serial Number Check guide](/guides/iwc-replica-watches-guide/#iwc-serial-number-check).
 
 ## Care and Maintenance
 
@@ -307,4 +307,4 @@ Start with the collection you want:
 - [IWC Top Gun Replica Collection](/collections/top-gun/)
 - [Best Selling IWC Replicas](/collections/best-sellers/)
 
-If you are ready to buy, review our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/) first. And before you order, learn [how to spot a fake IWC](/guides/how-to-spot-fake-iwc/) so you know what to look for when your watch arrives.
+If you are ready to buy, review our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely) first. And before you order, learn [how to spot a fake IWC](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc) so you know what to look for when your watch arrives.

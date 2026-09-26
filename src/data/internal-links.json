@@ -10,8 +10,8 @@
       { "href": "/collections/best-sellers/", "anchor": "Best Selling IWC Replicas" },
       { "href": "/guides/iwc-superclone-guide/", "anchor": "IWC Superclone Guide" },
       { "href": "/guides/iwc-knockoff-vs-replica/", "anchor": "Knockoff vs Replica vs Superclone" },
-      { "href": "/guides/how-to-spot-fake-iwc/", "anchor": "How to Spot a Fake IWC" },
-      { "href": "/guides/best-iwc-replica-sellers/", "anchor": "Best IWC Replica Sellers" }
+      { "href": "/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc", "anchor": "How to Spot a Fake IWC" },
+      { "href": "/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely", "anchor": "Where to Buy IWC Replicas Safely" }
     ]
   },
   "iwc-superclone-guide": {
@@ -20,7 +20,7 @@
     "links": [
       { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
       { "href": "/guides/iwc-knockoff-vs-replica/", "anchor": "Knockoff vs Replica vs Superclone" },
-      { "href": "/guides/best-iwc-replica-sellers/", "anchor": "Best IWC Replica Sellers" },
+      { "href": "/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely", "anchor": "Where to Buy IWC Replicas Safely" },
       { "href": "/collections/big-pilot/", "anchor": "IWC Big Pilot Replica Collection" },
       { "href": "/collections/portuguese/", "anchor": "IWC Portuguese Replica Collection" },
       { "href": "/collections/top-gun/", "anchor": "IWC Top Gun Replica Collection" },
@@ -37,7 +37,7 @@
       { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
       { "href": "/guides/iwc-superclone-guide/", "anchor": "IWC Superclone Guide" },
       { "href": "/guides/iwc-top-gun-replica/", "anchor": "IWC Top Gun Replica Review" },
-      { "href": "/guides/how-to-spot-fake-iwc/", "anchor": "How to Spot a Fake IWC" },
+      { "href": "/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc", "anchor": "How to Spot a Fake IWC" },
       { "href": "/collections/big-pilot/", "anchor": "IWC Big Pilot Replica Collection" },
       { "href": "/collections/pilots/", "anchor": "All IWC Pilots Replicas" },
       { "href": "/products/iwc-big-pilot-replica-iw500901/", "anchor": "IWC Big Pilot IW500901 Replica" },
@@ -53,7 +53,7 @@
       { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
       { "href": "/guides/iwc-big-pilot-replica/", "anchor": "IWC Big Pilot Replica Review" },
       { "href": "/guides/iwc-superclone-guide/", "anchor": "IWC Superclone Guide" },
-      { "href": "/guides/how-to-spot-fake-iwc/", "anchor": "How to Spot a Fake IWC" },
+      { "href": "/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc", "anchor": "How to Spot a Fake IWC" },
       { "href": "/collections/top-gun/", "anchor": "IWC Top Gun Replica Collection" },
       { "href": "/products/iwc-top-gun-replica-iw326901-ceramic-41mm/", "anchor": "IWC Top Gun IW326901 Ceramic" },
       { "href": "/products/iwc-replica-top-gun-iw389105-ceramic/", "anchor": "IWC Top Gun IW389105 Ceramic" },
@@ -105,48 +105,15 @@
       { "href": "/guides/iwc-superclone-guide/", "anchor": "IWC Superclone Guide" }
     ]
   },
-  "how-to-spot-fake-iwc": {
-    "type": "cluster",
-    "pillar": "iwc-replica-watches-guide",
-    "links": [
-      { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
-      { "href": "/guides/iwc-serial-number-check/", "anchor": "IWC Serial Number Check" },
-      { "href": "/guides/iwc-knockoff-vs-replica/", "anchor": "Knockoff vs Replica vs Superclone" },
-      { "href": "/qc-videos/", "anchor": "QC Videos" },
-      { "href": "/delivery-proofs/", "anchor": "Delivery Proofs" },
-      { "href": "/disclaimer/", "anchor": "Disclaimer" }
-    ]
-  },
-  "iwc-serial-number-check": {
-    "type": "cluster",
-    "pillar": "iwc-replica-watches-guide",
-    "links": [
-      { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
-      { "href": "/guides/how-to-spot-fake-iwc/", "anchor": "How to Spot a Fake IWC" },
-      { "href": "/about/", "anchor": "About IWC-Replica.to" }
-    ]
-  },
   "iwc-knockoff-vs-replica": {
     "type": "cluster",
     "pillar": "iwc-replica-watches-guide",
     "links": [
       { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
       { "href": "/guides/iwc-superclone-guide/", "anchor": "IWC Superclone Guide" },
-      { "href": "/guides/how-to-spot-fake-iwc/", "anchor": "How to Spot a Fake IWC" },
-      { "href": "/guides/best-iwc-replica-sellers/", "anchor": "Best IWC Replica Sellers" },
+      { "href": "/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc", "anchor": "How to Spot a Fake IWC" },
+      { "href": "/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely", "anchor": "Where to Buy IWC Replicas Safely" },
       { "href": "/collections/best-sellers/", "anchor": "Best Selling IWC Replicas" }
-    ]
-  },
-  "best-iwc-replica-sellers": {
-    "type": "cluster",
-    "pillar": "iwc-replica-watches-guide",
-    "links": [
-      { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
-      { "href": "/guides/iwc-superclone-guide/", "anchor": "IWC Superclone Guide" },
-      { "href": "/qc-videos/", "anchor": "QC Videos" },
-      { "href": "/delivery-proofs/", "anchor": "Delivery Proofs" },
-      { "href": "/collections/best-sellers/", "anchor": "Best Selling IWC Replicas" },
-      { "href": "/collections/new-arrivals/", "anchor": "New Arrivals" }
     ]
   },
   "iwc-watch-box-guide": {
@@ -155,7 +122,7 @@
     "links": [
       { "href": "/guides/iwc-replica-watches-guide/", "anchor": "Complete IWC Replica Guide" },
       { "href": "/products/iwc-box-and-papers-wbox-4/", "anchor": "IWC Box and Papers Set WBox-4" },
-      { "href": "/guides/how-to-spot-fake-iwc/", "anchor": "How to Spot a Fake IWC" }
+      { "href": "/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc", "anchor": "How to Spot a Fake IWC" }
     ]
   },
   "iwc-big-pilot-history": {

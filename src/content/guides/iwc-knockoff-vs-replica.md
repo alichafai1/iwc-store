@@ -38,8 +38,8 @@ faq:
 relatedArticles:
   - "iwc-replica-watches-guide"
   - "iwc-superclone-guide"
-  - "best-iwc-replica-sellers"
-  - "how-to-spot-fake-iwc"
+  - "iwc-big-pilot-replica"
+  - "iwc-top-gun-replica"
 pillar: "iwc-replica-watches-guide"
 isPillar: false
 ---
@@ -202,7 +202,7 @@ Weight is the fastest way to tell the tiers apart.
 - Dial printing is crisp with applied indices
 - Hand-finished case edges
 
-> For a full 15-point check, see our [How to Spot a Fake IWC guide](/guides/how-to-spot-fake-iwc/).
+> For a full 15-point check, see our [How to Spot a Fake IWC guide](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc).
 
 ## Where to Buy Each Tier
 
@@ -218,7 +218,7 @@ Mid-tier online sellers. Look for QC photos and a 6-month warranty.
 
 Specialized replica sellers with verifiable reviews. Always request QC photos, running video, and timegrapher reading.
 
-> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/).
+> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely).
 
 ## Conclusion
 
@@ -226,4 +226,4 @@ The difference between an IWC knockoff, replica, and superclone is not just pric
 
 For most buyers, a mid-range replica at $250-$400 is the sweet spot. For enthusiasts who want the best, a superclone at $500-$900 is worth the premium.
 
-Ready to buy? Start with our [Complete IWC Replica Guide](/guides/iwc-replica-watches-guide/) and our [IWC Superclone Guide](/guides/iwc-superclone-guide/). Before you order, read our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/) and learn [how to spot a fake IWC](/guides/how-to-spot-fake-iwc/).
+Ready to buy? Start with our [Complete IWC Replica Guide](/guides/iwc-replica-watches-guide/) and our [IWC Superclone Guide](/guides/iwc-superclone-guide/). Before you order, read our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely) and learn [how to spot a fake IWC](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc).

@@ -39,7 +39,7 @@ relatedArticles:
   - "iwc-replica-watches-guide"
   - "iwc-top-gun-replica"
   - "iwc-superclone-guide"
-  - "how-to-spot-fake-iwc"
+  - "iwc-knockoff-vs-replica"
 pillar: "iwc-replica-watches-guide"
 isPillar: false
 ---
@@ -141,7 +141,7 @@ The IW500901 and IW500906 have a power reserve indicator at 3 o'clock. On a genu
 
 Genuine Big Pilot serial numbers are engraved (not printed) on the case back. The engraving is deep and precise. Cheap replicas use shallow engraving or print.
 
-> For the full 15-point check, see our [How to Spot a Fake IWC guide](/guides/how-to-spot-fake-iwc/).
+> For the full 15-point check, see our [How to Spot a Fake IWC guide](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc).
 
 ## Authentic vs Replica: Real Price Comparison
 
@@ -166,7 +166,7 @@ Trusted Big Pilot replica sellers share these traits:
 
 Before you buy, always ask for a photo of the case back to verify the movement finish and serial number engraving.
 
-> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/).
+> For a vetted list, see our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely).
 
 ## Big Pilot vs Other IWC Models
 
@@ -191,6 +191,6 @@ The Big Pilot is a mechanical watch with a 7-day power reserve. To keep it runni
 
 The IWC Big Pilot is one of the most iconic pilot watches ever made, and the replica market offers three excellent references: IW500901, IW500906, and IW501002. For most buyers, a superclone at $700-$900 delivers the closest experience to the genuine — matching weight, movement quality, and 5-7 day power reserve.
 
-Before you buy, read our [Best IWC Replica Sellers guide](/guides/best-iwc-replica-sellers/) and learn [how to spot a fake IWC](/guides/how-to-spot-fake-iwc/). For the full context, start with our [Complete IWC Replica Guide](/guides/iwc-replica-watches-guide/).
+Before you buy, read our [Best IWC Replica Sellers guide](/guides/iwc-replica-watches-guide/#where-to-buy-iwc-replicas-safely) and learn [how to spot a fake IWC](/guides/iwc-replica-watches-guide/#how-to-spot-a-fake-iwc). For the full context, start with our [Complete IWC Replica Guide](/guides/iwc-replica-watches-guide/).
 
 If the Big Pilot is not quite right, compare it to the [IWC Top Gun Replica](/guides/iwc-top-gun-replica/) or browse all [IWC Big Pilot Replicas](/collections/big-pilot/).
