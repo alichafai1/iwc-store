@@ -21,6 +21,31 @@ const { jsonLd = defaultJsonLd(), ...seo } = Astro.props;
   <head>
     <SeoHead {...seo} />
     <JsonLd schema={jsonLd} />
+    {/* OptimizedRemoteImage fallback: `error` doesn't bubble, so this capture listener must exist before any <img> is parsed. */}
+    <script is:inline>
+      (() => {
+        const handled = new WeakSet();
+        document.addEventListener(
+          'error',
+          (event) => {
+            const img = event.target;
+            const picture = img instanceof HTMLImageElement ? img.parentElement : null;
+            if (!picture || !picture.classList.contains('optimized-remote-image') || handled.has(img)) {
+              return;
+            }
+            const fallback = img.getAttribute('src');
+            if (!fallback || img.src === fallback) {
+              return;
+            }
+            handled.add(img);
+            img.removeAttribute('srcset');
+            img.src = fallback;
+            picture.querySelectorAll('source').forEach((node) => node.remove());
+          },
+          true,
+        );
+      })();
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>

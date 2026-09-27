@@ -100,8 +100,6 @@ const sources = formatList.flatMap((format) => {
         loading={loading}
         decoding={decoding}
         fetchpriority={fetchpriority}
-        data-fallback={jpegSrc}
-        onerror="if (this.dataset.fallback && this.src !== this.dataset.fallback) { this.onerror = null; this.removeAttribute('srcset'); this.src = this.dataset.fallback; const picture = this.parentElement; if (picture && picture.tagName === 'PICTURE') { picture.querySelectorAll('source').forEach((node) => node.remove()); } }"
       />
     </picture>
   ) : (

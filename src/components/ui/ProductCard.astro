@@ -34,6 +34,7 @@ const ratingLabel =
             sizes={PRODUCT_CARD_IMAGE.sizes}
             width={PRODUCT_CARD_IMAGE.width}
             height={PRODUCT_CARD_IMAGE.height}
+            formats={['webp', 'origin']}
             loading="lazy"
           />
         ) : product.image ? (
@@ -58,13 +59,7 @@ const ratingLabel =
         )
       }
       <p class="product-card__reviews" aria-label={ratingLabel}>
-        <span class="product-card__stars" aria-hidden="true">
-          {[0, 1, 2, 3, 4].map(() => (
-            <svg class="product-card__star" viewBox="0 0 24 24" focusable="false">
-              <path d="M12 2.6l2.7 5.6 6.2.8-4.5 4.3 1.2 6.1L12 16.8 6.4 19.4l1.2-6.1-4.5-4.3 6.2-.8L12 2.6z" />
-            </svg>
-          ))}
-        </span>
+        <span class="product-card__stars" aria-hidden="true"></span>
         <span class="product-card__count">({product.reviewCount})</span>
       </p>
       <p class="product-card__price">
@@ -173,17 +168,24 @@ const ratingLabel =
     font-size: var(--font-size-xs);
   }
 
+  /* Five 0.85rem stars with 0.1rem gaps: one star + gap per 0.95rem mask tile. */
   .product-card__stars {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.1rem;
+    --product-card-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26.8235 24'%3E%3Cpath d='M12 2.6l2.7 5.6 6.2.8-4.5 4.3 1.2 6.1L12 16.8 6.4 19.4l1.2-6.1-4.5-4.3 6.2-.8L12 2.6z'/%3E%3C/svg%3E");
+    display: inline-block;
+    flex: none;
+    width: 4.65rem;
+    height: 0.85rem;
     color: var(--color-accent);
+    background-color: currentColor;
+    -webkit-mask: var(--product-card-star) 0 0 / 0.95rem 0.85rem repeat-x;
+    mask: var(--product-card-star) 0 0 / 0.95rem 0.85rem repeat-x;
   }
 
-  .product-card__star {
-    width: 0.85rem;
-    height: 0.85rem;
-    fill: currentColor;
+  @media (forced-colors: active) {
+    .product-card__stars {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
   }
 
   .product-card__count {
