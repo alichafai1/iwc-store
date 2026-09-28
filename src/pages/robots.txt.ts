@@ -12,7 +12,6 @@ Disallow: /checkout/
 Disallow: /admin/
 
 Sitemap: ${new URL('sitemap-index.xml', origin).href}
-Sitemap: ${new URL('sitemap-products.xml', origin).href}
 `;
 
   return new Response(robotsTxt, {

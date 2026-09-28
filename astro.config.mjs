@@ -6,6 +6,8 @@ import { defineConfig } from 'astro/config';
 import { isSitemapExcluded, sitemapCollectionPages } from './src/lib/seo.ts';
 import { siteConfig } from './src/lib/site.ts';
 
+const siteOrigin = siteConfig.url.endsWith('/') ? siteConfig.url : `${siteConfig.url}/`;
+
 // https://astro.build/config
 export default defineConfig({
   site: siteConfig.url,
@@ -47,6 +49,8 @@ export default defineConfig({
     sitemap({
       filter: (page) => !isSitemapExcluded(page),
       customPages: sitemapCollectionPages(),
+      // SSR product sitemap is generated at runtime; include it in the static index.
+      customSitemaps: [new URL('sitemap-products.xml', siteOrigin).href],
     }),
   ],
 });
