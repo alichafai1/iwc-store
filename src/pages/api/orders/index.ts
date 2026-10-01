@@ -121,6 +121,7 @@ function parseCustomer(value: unknown): CheckoutFormValues | null {
     emailOffers: record.emailOffers === true,
     paymentOptionId: asString(record.paymentOptionId),
     phone: asString(record.phone),
+    phoneCountry: asString(record.phoneCountry),
     shippingOptionId: asString(record.shippingOptionId) || 'free',
   };
 }

@@ -4,11 +4,14 @@ import freeShippingIcon from '../../assets/icons/free-shipping.png';
 import returnsIcon from '../../assets/icons/returns.png';
 import secureCheckoutIcon from '../../assets/icons/secure-checkout.png';
 import { checkoutPaymentOptions, checkoutShippingOptions } from '../../data/checkout';
+import { defaultCountryCode } from '../../data/countries';
 import { formatMoney } from '../../lib/cart';
+import { countryFlag, phoneCallingCode, phoneCountryOptions } from '../../lib/checkout/phone';
 import PaymentMarks from '../ui/PaymentMarks.astro';
 import CheckoutAddressFields from './CheckoutAddressFields.astro';
 
 const shipping = checkoutShippingOptions[0];
+const phoneCountries = phoneCountryOptions();
 ---
 
 <div class="checkout" data-checkout>
@@ -166,16 +169,33 @@ const shipping = checkoutShippingOptions[0];
               <CheckoutAddressFields prefix="shipping" />
               <div class="checkout__field">
                 <label for="shipping-phone">Phone</label>
-                <input
-                  class="checkout__control"
-                  id="shipping-phone"
-                  name="phone"
-                  type="tel"
-                  inputmode="tel"
-                  autocomplete="tel"
-                  placeholder="For delivery updates"
-                  data-checkout-input
-                />
+                <div class="checkout__phone">
+                  <div class="checkout__control checkout__phone-country">
+                    <span class="checkout__phone-flag" data-phone-flag aria-hidden="true">{countryFlag(defaultCountryCode)}</span>
+                    <span class="checkout__phone-code" data-phone-code aria-hidden="true">+{phoneCallingCode(defaultCountryCode)}</span>
+                    <svg class="checkout__phone-caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+                      <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <select id="shipping-phoneCountry" name="phoneCountry" aria-label="Phone country code" data-phone-country data-checkout-input>
+                      {phoneCountries.map((country) => (
+                        <option value={country.code} selected={country.code === defaultCountryCode}>
+                          {`${country.flag} ${country.name} (+${country.callingCode})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    class="checkout__control"
+                    id="shipping-phone"
+                    name="phone"
+                    type="tel"
+                    inputmode="tel"
+                    autocomplete="tel"
+                    placeholder="Phone number for delivery updates"
+                    data-phone-input
+                    data-checkout-input
+                  />
+                </div>
                 <p class="checkout__error" id="shipping-phone-error" hidden></p>
               </div>
             </div>

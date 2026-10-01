@@ -1,5 +1,6 @@
 import { checkoutPaymentOptions, checkoutShippingOptions } from '../data/checkout';
 import type { CheckoutAddress, CheckoutFormValues } from './checkout/validate';
+import { normalizeCheckoutPhone } from './checkout/phone';
 import { validateCheckoutForm } from './checkout/validate';
 import { CHECKOUT_CURRENCY, clampQuantity, type CartLine } from './cart';
 
@@ -182,7 +183,7 @@ export function buildPlacedOrder(
     id: crypto.randomUUID(),
     orderNumber: createOrderNumber(),
     customerEmail: customer.email.trim(),
-    customerPhone: customer.phone.trim(),
+    customerPhone: normalizeCheckoutPhone(customer.phone, customer.phoneCountry),
     customerFirstName: shipping.firstName,
     customerLastName: shipping.lastName,
     shipping,

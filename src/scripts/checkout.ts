@@ -12,6 +12,15 @@ import {
 } from '../lib/cart';
 import { checkoutPaymentOptions, checkoutShippingOptions } from '../data/checkout';
 import { defaultCountryCode } from '../data/countries';
+import {
+  countryFlag,
+  formatPhoneAsYouType,
+  isPhoneCountry,
+  normalizeCheckoutPhone,
+  parseCheckoutPhone,
+  phoneCallingCode,
+  phoneForCountry,
+} from '../lib/checkout/phone';
 import { validateCheckoutForm, type CheckoutAddress, type CheckoutFormValues } from '../lib/checkout/validate';
 import { cartLinesToOrderItems, isOfflinePaymentMethod } from '../lib/orders';
 import { CHECKOUT_THUMB_IMAGE, transformedStorageUrl } from '../lib/storage-image';
@@ -70,6 +79,8 @@ function readAddress(form: FormData, prefix: '' | 'billing.'): CheckoutAddress {
 function readFormValues(form: HTMLFormElement): CheckoutFormValues {
   const data = new FormData(form);
   const shipping = readAddress(data, '');
+  const phone = String(data.get('phone') ?? '');
+  const phoneCountry = String(data.get('phoneCountry') ?? '');
   return {
     ...shipping,
     billing: readAddress(data, 'billing.'),
@@ -77,9 +88,92 @@ function readFormValues(form: HTMLFormElement): CheckoutFormValues {
     email: String(data.get('email') ?? ''),
     emailOffers: data.get('emailOffers') === 'on',
     paymentOptionId: String(data.get('paymentOptionId') ?? ''),
-    phone: String(data.get('phone') ?? ''),
+    phone: normalizeCheckoutPhone(phone, phoneCountry) || phone,
+    phoneCountry,
     shippingOptionId: String(data.get('shippingOptionId') ?? ''),
   };
+}
+
+function browserRegion(): string {
+  for (const tag of navigator.languages?.length ? navigator.languages : [navigator.language]) {
+    try {
+      const region = new Intl.Locale(tag).region;
+      if (region && isPhoneCountry(region)) {
+        return region;
+      }
+    } catch {
+      // Ignore malformed locale tags.
+    }
+  }
+  return '';
+}
+
+function bindPhoneField(form: HTMLFormElement) {
+  const select = form.querySelector<HTMLSelectElement>('[data-phone-country]');
+  const input = form.querySelector<HTMLInputElement>('[data-phone-input]');
+  const flag = form.querySelector('[data-phone-flag]');
+  const code = form.querySelector('[data-phone-code]');
+  const shippingCountry = form.querySelector<HTMLSelectElement>('select[name="country"]');
+  if (!select || !input) {
+    return;
+  }
+
+  let chosenByCustomer = false;
+
+  const setCountry = (country: string) => {
+    if (!isPhoneCountry(country)) {
+      return;
+    }
+    select.value = country;
+    if (flag) {
+      flag.textContent = countryFlag(country);
+    }
+    if (code) {
+      code.textContent = `+${phoneCallingCode(country)}`;
+    }
+  };
+
+  const formatNumber = () => {
+    const parsed = parseCheckoutPhone(input.value, select.value);
+    if (!parsed) {
+      return;
+    }
+    if (parsed.country && parsed.country !== select.value) {
+      setCountry(parsed.country);
+    }
+    input.value = parsed.formatNational();
+  };
+
+  setCountry(browserRegion() || shippingCountry?.value || select.value);
+
+  select.addEventListener('change', () => {
+    chosenByCustomer = true;
+    setCountry(select.value);
+    input.value = phoneForCountry(input.value, select.value);
+    formatNumber();
+  });
+
+  shippingCountry?.addEventListener('change', () => {
+    if (!chosenByCustomer && !input.value.trim()) {
+      setCountry(shippingCountry.value);
+    }
+  });
+
+  input.addEventListener('input', (event) => {
+    const deleting = event instanceof InputEvent && event.inputType.startsWith('delete');
+    if (deleting || input.selectionStart !== input.value.length) {
+      return;
+    }
+    const formatted = formatPhoneAsYouType(input.value, select.value);
+    if (formatted.country && formatted.country !== select.value) {
+      setCountry(formatted.country);
+    }
+    if (formatted.text !== input.value) {
+      input.value = formatted.text;
+    }
+  });
+
+  input.addEventListener('blur', formatNumber);
 }
 
 function clearErrors(root: HTMLElement) {
@@ -278,6 +372,10 @@ function bindCheckout(root: HTMLElement) {
     main?.removeAttribute('hidden');
     renderItems(root, items);
     syncTotals(root, items, shippingCost, paymentDiscount);
+  }
+
+  if (form) {
+    bindPhoneField(form);
   }
 
   toggle?.addEventListener('click', () => {

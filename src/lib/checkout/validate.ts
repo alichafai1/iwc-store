@@ -1,3 +1,5 @@
+import { normalizeCheckoutPhone } from './phone';
+
 export type CheckoutAddress = {
   address: string;
   apartment: string;
@@ -16,13 +18,13 @@ export type CheckoutFormValues = CheckoutAddress & {
   emailOffers: boolean;
   paymentOptionId: string;
   phone: string;
+  phoneCountry: string;
   shippingOptionId: string;
 };
 
 export type CheckoutErrors = Record<string, string>;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
-const PHONE_PATTERN = /^[+()\d][\d\s\-().]{6,}$/;
 
 function requireAddress(address: CheckoutAddress, prefix: string, errors: CheckoutErrors) {
   if (!address.firstName.trim()) {
@@ -58,8 +60,8 @@ export function validateCheckoutForm(values: CheckoutFormValues): CheckoutErrors
 
   if (!values.phone.trim()) {
     errors.phone = 'Enter a phone number for delivery updates.';
-  } else if (!PHONE_PATTERN.test(values.phone.trim())) {
-    errors.phone = 'Enter a valid phone number.';
+  } else if (!normalizeCheckoutPhone(values.phone, values.phoneCountry)) {
+    errors.phone = 'Enter a valid phone number for the selected country code.';
   }
 
   if (!values.billingSameAsShipping) {

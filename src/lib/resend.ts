@@ -1,4 +1,5 @@
 import { formatMoney } from './cart';
+import { formatPhoneForDisplay } from './checkout/phone';
 import type { PlacedOrder } from './orders';
 
 function envValue(name: string): string {
@@ -50,7 +51,7 @@ export function buildOrderNotificationEmail(order: PlacedOrder): { subject: stri
     '',
     `Customer: ${customerName}`,
     `Email: ${order.customerEmail}`,
-    `Phone: ${order.customerPhone}`,
+    `Phone: ${formatPhoneForDisplay(order.customerPhone)}`,
     '',
     'Products:',
     productLines,
@@ -93,7 +94,7 @@ export function buildOrderNotificationEmail(order: PlacedOrder): { subject: stri
       <h1 style="font-size:20px;margin:0 0 16px;">New order ${escapeHtml(order.orderNumber)}</h1>
       <p><strong>Customer:</strong> ${escapeHtml(customerName)}<br />
       <strong>Email:</strong> ${escapeHtml(order.customerEmail)}<br />
-      <strong>Phone:</strong> ${escapeHtml(order.customerPhone)}</p>
+      <strong>Phone:</strong> ${escapeHtml(formatPhoneForDisplay(order.customerPhone))}</p>
       <table style="width:100%;border-collapse:collapse;margin:16px 0;">
         <thead>
           <tr>
