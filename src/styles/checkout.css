@@ -1,7 +1,7 @@
 .checkout {
-  --checkout-gold: #9a752e;
-  --checkout-gold-hover: #866432;
-  --checkout-gold-ring: #b08a3c;
+  --checkout-gold: #c0a070;
+  --checkout-gold-hover: #a3885f;
+  --checkout-gold-ring: #c0a070;
   --checkout-cream: #f8f2e8;
   --checkout-cream-border: #e2d3b4;
   --checkout-cream-text: #6f5520;
@@ -239,7 +239,7 @@
 .checkout__control:focus {
   border-color: var(--checkout-gold-ring);
   outline: none;
-  box-shadow: 0 0 0 2px rgb(176 138 60 / 25%);
+  box-shadow: 0 0 0 2px rgb(192 160 112 / 25%);
 }
 
 .checkout__control.is-invalid {
@@ -269,7 +269,7 @@
 
 .checkout__phone-country:focus-within {
   border-color: var(--checkout-gold-ring);
-  box-shadow: 0 0 0 2px rgb(176 138 60 / 25%);
+  box-shadow: 0 0 0 2px rgb(192 160 112 / 25%);
 }
 
 .checkout__phone-flag {
@@ -337,7 +337,7 @@
 }
 
 .checkout__choice:has(:focus-visible) {
-  box-shadow: 0 0 0 2px rgb(176 138 60 / 40%);
+  box-shadow: 0 0 0 2px rgb(192 160 112 / 40%);
 }
 
 .checkout__choice-row {
@@ -923,7 +923,7 @@
 .checkout__discount-input:focus {
   border-color: var(--checkout-gold-ring);
   outline: none;
-  box-shadow: 0 0 0 2px rgb(176 138 60 / 25%);
+  box-shadow: 0 0 0 2px rgb(192 160 112 / 25%);
 }
 
 .checkout__discount-apply {

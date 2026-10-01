@@ -1,0 +1,150 @@
+---
+import stamp from '../../assets/brand/stamp.png';
+
+interface Props {
+  variant?: 'header' | 'drawer' | 'footer';
+}
+
+const { variant = 'header' } = Astro.props;
+---
+
+<span class:list={['brand-logo', `brand-logo--${variant}`]}>
+  <img
+    class="brand-logo__stamp"
+    src={stamp.src}
+    width={stamp.width}
+    height={stamp.height}
+    alt=""
+    decoding="async"
+    loading={variant === 'header' ? 'eager' : 'lazy'}
+  />
+  <span class="brand-logo__lockup">
+    <span class="brand-logo__name">
+      <span class="brand-logo__mark">IWC</span><span class="brand-logo__domain">Replica.to</span>
+    </span>
+    <span class="brand-logo__tag">1:1 Clone Watches</span>
+  </span>
+</span>
+
+<style>
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    min-width: 0;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .brand-logo__stamp {
+    display: block;
+    width: auto;
+    height: 2.15rem;
+    flex: 0 0 auto;
+  }
+
+  .brand-logo__lockup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.18rem;
+    min-width: 0;
+  }
+
+  .brand-logo__name {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 0.9;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .brand-logo__mark {
+    color: #586c60;
+  }
+
+  .brand-logo__domain {
+    color: #c0a070;
+  }
+
+  .brand-logo__tag {
+    color: #586c60;
+    font-family: var(--font-sans);
+    font-size: 0.42rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .brand-logo--drawer .brand-logo__stamp {
+    height: 2.45rem;
+  }
+
+  .brand-logo--drawer .brand-logo__name {
+    font-size: 1.12rem;
+  }
+
+  .brand-logo--drawer .brand-logo__tag {
+    font-size: 0.48rem;
+  }
+
+  .brand-logo--footer {
+    gap: 0.5rem;
+  }
+
+  .brand-logo--footer .brand-logo__stamp {
+    height: 2.7rem;
+  }
+
+  .brand-logo--footer .brand-logo__name {
+    font-size: 1.28rem;
+  }
+
+  .brand-logo--footer .brand-logo__tag {
+    font-size: 0.5rem;
+  }
+
+  @media (max-width: 23.5em) {
+    .brand-logo--header {
+      gap: 0.28rem;
+    }
+
+    .brand-logo--header .brand-logo__stamp {
+      height: 1.85rem;
+    }
+
+    .brand-logo--header .brand-logo__name {
+      font-size: 0.78rem;
+    }
+
+    .brand-logo--header .brand-logo__tag {
+      font-size: 0.34rem;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  @media (min-width: 64em) {
+    .brand-logo--header {
+      gap: 0.55rem;
+    }
+
+    .brand-logo--header .brand-logo__stamp {
+      height: 2.85rem;
+    }
+
+    .brand-logo--header .brand-logo__name {
+      font-size: 1.42rem;
+    }
+
+    .brand-logo--header .brand-logo__tag {
+      font-size: 0.56rem;
+      letter-spacing: 0.18em;
+    }
+  }
+</style>

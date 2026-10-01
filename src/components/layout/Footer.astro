@@ -2,6 +2,7 @@
 import { footerNav } from '../../data/navigation';
 import { CONTACT_PATH } from '../../data/contact';
 import { siteConfig } from '../../lib/site';
+import SiteLogo from '../brand/SiteLogo.astro';
 import footerStylesHref from '../../styles/footer.css?url';
 
 const year = new Date().getFullYear();
@@ -47,7 +48,9 @@ const sections = [
   <div class="container site-footer__inner">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
-        <a class="site-footer__logo" href="/">{siteConfig.name}</a>
+        <a class="site-footer__logo" href="/" aria-label="IWCReplica.to home">
+          <SiteLogo variant="footer" />
+        </a>
         <p>A focused house of IWC collections, presented with clarity.</p>
       </div>
 

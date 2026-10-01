@@ -69,13 +69,9 @@
   }
 
   .site-footer__logo {
-    display: inline-block;
+    display: inline-flex;
     margin-bottom: var(--space-3);
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    letter-spacing: 0.16em;
     text-decoration: none;
-    text-transform: uppercase;
   }
 
   .site-footer__brand p,

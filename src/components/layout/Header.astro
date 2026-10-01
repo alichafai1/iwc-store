@@ -1,11 +1,8 @@
 ---
-import { Image } from 'astro:assets';
-import logoMark from '../../assets/brand/logo-header.png';
 import { contactDetails } from '../../data/contact';
 import { headerCollectionLinks, headerNav } from '../../data/navigation';
+import SiteLogo from '../brand/SiteLogo.astro';
 import Icon from '../ui/Icon.astro';
-
-const logoAlt = 'IWC-Replica.com';
 ---
 
 <header class="site-header">
@@ -36,17 +33,8 @@ const logoAlt = 'IWC-Replica.com';
         <Icon name="menu" />
       </label>
 
-      <a class="site-header__logo" href="/">
-        <Image
-          src={logoMark}
-          alt={logoAlt}
-          width={978}
-          height={250}
-          format="png"
-          quality={100}
-          loading="eager"
-          decoding="async"
-        />
+      <a class="site-header__logo" href="/" aria-label="IWCReplica.to home">
+        <SiteLogo variant="header" />
       </a>
 
       <nav class="site-header__desktop" aria-label="Primary">
@@ -106,17 +94,8 @@ const logoAlt = 'IWC-Replica.com';
 
       <div class="site-header__drawer">
         <div class="site-header__drawer-top">
-          <a class="site-header__logo site-header__logo--drawer" href="/">
-            <Image
-              src={logoMark}
-              alt={logoAlt}
-              width={978}
-              height={250}
-              format="png"
-              quality={100}
-              loading="lazy"
-              decoding="async"
-            />
+          <a class="site-header__logo site-header__logo--drawer" href="/" aria-label="IWCReplica.to home">
+            <SiteLogo variant="drawer" />
           </a>
           <label class="icon-btn" for="nav-open" aria-hidden="true">
             <Icon name="close" />
@@ -222,7 +201,7 @@ const logoAlt = 'IWC-Replica.com';
 
   .site-header__whatsapp:hover,
   .site-header__whatsapp:focus-visible {
-    color: #d4b56e;
+    color: var(--color-accent-dark);
   }
 
   .site-header__whatsapp svg {
@@ -261,17 +240,9 @@ const logoAlt = 'IWC-Replica.com';
     display: flex;
     align-items: center;
     min-width: 0;
+    max-width: 100%;
     padding-block: 0.55rem;
     text-decoration: none;
-  }
-
-  .site-header__logo :global(img) {
-    display: block;
-    width: auto;
-    height: 2.95rem;
-    max-width: min(17.25rem, calc(100vw - 8.25rem));
-    object-fit: contain;
-    object-position: left center;
   }
 
   .site-header__logo--drawer {
@@ -279,8 +250,7 @@ const logoAlt = 'IWC-Replica.com';
     max-width: calc(100% - 3rem);
   }
 
-  .site-header__logo--drawer :global(img) {
-    height: 3.05rem;
+  .site-header__logo--drawer :global(.brand-logo) {
     max-width: 100%;
   }
 
@@ -462,11 +432,6 @@ const logoAlt = 'IWC-Replica.com';
     .site-header__backdrop,
     .site-header__drawer {
       display: none;
-    }
-
-    .site-header__logo :global(img) {
-      height: 3.4rem;
-      max-width: 18.5rem;
     }
 
     .site-header__desktop {
