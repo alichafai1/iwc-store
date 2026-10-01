@@ -132,9 +132,11 @@ export function buildOrderNotificationEmail(order: PlacedOrder): { subject: stri
   };
 }
 
+const ORDER_NOTIFY_TO = 'slavik80808@gmail.com';
+const RESEND_TIMEOUT_MS = 10_000;
+
 export async function sendOrderNotificationEmail(order: PlacedOrder): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = envValue('RESEND_API_KEY');
-  const to = envValue('ORDER_NOTIFY_TO') || 'contact@iwc-replica.to';
   const from = envValue('ORDER_NOTIFY_FROM') || 'Orders <orders@iwc-replica.to>';
 
   if (!apiKey) {
@@ -152,11 +154,13 @@ export async function sendOrderNotificationEmail(order: PlacedOrder): Promise<{ 
       },
       body: JSON.stringify({
         from,
-        to: [to],
+        to: [ORDER_NOTIFY_TO],
+        reply_to: order.customerEmail || undefined,
         subject: message.subject,
         html: message.html,
         text: message.text,
       }),
+      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -166,6 +170,9 @@ export async function sendOrderNotificationEmail(order: PlacedOrder): Promise<{ 
 
     return { ok: true };
   } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return { ok: false, error: `Resend did not respond within ${RESEND_TIMEOUT_MS / 1000}s.` };
+    }
     return {
       ok: false,
       error: error instanceof Error ? error.message : 'Could not reach Resend.',

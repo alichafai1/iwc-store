@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import { siteConfig } from './site';
 
 export const ADMIN_HOME_PATH = '/admin/';
 export const ADMIN_LOGIN_PATH = '/admin/login/';
@@ -39,6 +40,10 @@ export async function isCurrentUserAdmin(
 export function isSameOriginRequest(request: Request): boolean {
   const requestUrl = new URL(request.url);
   const allowedOrigins = new Set<string>(originAliases(requestUrl.origin));
+  // Behind TLS-terminating nginx, request.url is http://; the public https origin must be allowed explicitly.
+  for (const origin of originAliases(siteConfig.url)) {
+    allowedOrigins.add(origin);
+  }
   const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
   const forwardedProto = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
 
