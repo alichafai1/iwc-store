@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { formatMoney } from './cart';
 import { formatPhoneForDisplay } from './checkout/phone';
 import type { PlacedOrder } from './orders';
@@ -133,31 +134,64 @@ export function buildOrderNotificationEmail(order: PlacedOrder): { subject: stri
   };
 }
 
-const ORDER_NOTIFY_TO = 'slavik80808@gmail.com';
+const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+const RESEND_RECEIVING_ENDPOINT = 'https://api.resend.com/emails/receiving';
 const RESEND_TIMEOUT_MS = 10_000;
+const WEBHOOK_TOLERANCE_SECONDS = 300;
+const DEFAULT_RECEIVING_EMAIL = 'kanzachafai123@gmail.com';
+const ORDER_FROM = 'Orders <orders@iwc-replica.to>';
+const CONTACT_FROM = 'IWC Replica <contact@iwc-replica.to>';
 
-export async function sendOrderNotificationEmail(order: PlacedOrder): Promise<{ ok: true } | { ok: false; error: string }> {
+export type EmailResult = { ok: true } | { ok: false; error: string };
+
+type OutboundEmail = {
+  from: string;
+  to: string[];
+  replyTo?: string;
+  subject: string;
+  html: string;
+  text: string;
+};
+
+export function isSafeEmailAddress(value: string): boolean {
+  const email = value.trim();
+  if (email.length < 3 || email.length > 254 || /[\r\n]/.test(email)) {
+    return false;
+  }
+  return /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/.test(email);
+}
+
+/** Gmail inbox that receives IWC contact, order, and forwarded mail. */
+export function receivingEmail(): string {
+  const configured = envValue('IWC_RECEIVING_EMAIL') || DEFAULT_RECEIVING_EMAIL;
+  const address = configured.split(',')[0]?.trim() || DEFAULT_RECEIVING_EMAIL;
+  return isSafeEmailAddress(address) ? address : DEFAULT_RECEIVING_EMAIL;
+}
+
+function headerSafe(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ').trim();
+}
+
+export async function sendResendEmail(message: OutboundEmail): Promise<EmailResult> {
   const apiKey = envValue('RESEND_API_KEY');
-  const from = envValue('ORDER_NOTIFY_FROM') || 'Orders <orders@iwc-replica.to>';
-
   if (!apiKey) {
     return { ok: false, error: 'RESEND_API_KEY is not configured.' };
   }
 
-  const message = buildOrderNotificationEmail(order);
+  const replyTo = message.replyTo && isSafeEmailAddress(message.replyTo) ? message.replyTo.trim() : undefined;
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await fetch(RESEND_ENDPOINT, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from,
-        to: [ORDER_NOTIFY_TO],
-        reply_to: order.customerEmail || undefined,
-        subject: message.subject,
+        from: message.from,
+        to: message.to,
+        reply_to: replyTo,
+        subject: headerSafe(message.subject).slice(0, 200),
         html: message.html,
         text: message.text,
       }),
@@ -165,18 +199,223 @@ export async function sendOrderNotificationEmail(order: PlacedOrder): Promise<{ 
     });
 
     if (!response.ok) {
-      const body = await response.text();
-      return { ok: false, error: `Resend error (${response.status}): ${body.slice(0, 300)}` };
+      return { ok: false, error: `Resend responded ${response.status}.` };
     }
 
     return { ok: true };
   } catch (error) {
-    if (error instanceof Error && error.name === 'TimeoutError') {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
       return { ok: false, error: `Resend did not respond within ${RESEND_TIMEOUT_MS / 1000}s.` };
     }
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : 'Could not reach Resend.',
-    };
+    return { ok: false, error: 'Could not reach Resend.' };
   }
+}
+
+export async function sendOrderNotificationEmail(order: PlacedOrder): Promise<EmailResult> {
+  const message = buildOrderNotificationEmail(order);
+  return sendResendEmail({
+    from: envValue('ORDER_NOTIFY_FROM') || ORDER_FROM,
+    to: [receivingEmail()],
+    replyTo: order.customerEmail,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+}
+
+export type ContactMessage = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+
+export function buildContactNotificationEmail(input: ContactMessage): { subject: string; html: string; text: string } {
+  const text = [
+    'New contact form message',
+    '',
+    `Name: ${input.name}`,
+    `Email: ${input.email}`,
+    `Subject: ${input.subject}`,
+    '',
+    input.message,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#111;">
+      <h1 style="font-size:20px;margin:0 0 16px;">New contact form message</h1>
+      <p><strong>Name:</strong> ${escapeHtml(input.name)}<br />
+      <strong>Email:</strong> ${escapeHtml(input.email)}<br />
+      <strong>Subject:</strong> ${escapeHtml(input.subject)}</p>
+      <p style="white-space:pre-wrap;">${escapeHtml(input.message)}</p>
+    </div>`;
+
+  return {
+    subject: `New contact message — ${headerSafe(input.subject)}`.slice(0, 200),
+    html,
+    text,
+  };
+}
+
+export async function sendContactNotificationEmail(input: ContactMessage): Promise<EmailResult> {
+  const message = buildContactNotificationEmail(input);
+  return sendResendEmail({
+    from: CONTACT_FROM,
+    to: [receivingEmail()],
+    replyTo: input.email,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+}
+
+export type InboundNotice = {
+  senderName: string;
+  senderEmail: string;
+  recipient: string;
+  subject: string;
+  text: string;
+  receivedAt: string;
+  attachments: string[];
+};
+
+export function buildInboundNotificationEmail(input: InboundNotice): { subject: string; html: string; text: string } {
+  const originalSubject = headerSafe(input.subject) || '(no subject)';
+  const attachmentLines = input.attachments.length > 0 ? input.attachments : ['None'];
+  const plainBody = input.text.trim() || '(no plain-text body)';
+  const fromLine = input.senderName ? `${input.senderName} <${input.senderEmail}>` : input.senderEmail;
+  const text = [
+    'New email to contact@iwc-replica.to',
+    '',
+    `From: ${fromLine}`,
+    `To: ${input.recipient}`,
+    `Subject: ${originalSubject}`,
+    `Received: ${input.receivedAt}`,
+    `Attachments: ${attachmentLines.join(', ')}`,
+    '',
+    plainBody,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#111;">
+      <h1 style="font-size:20px;margin:0 0 16px;">New email to contact@iwc-replica.to</h1>
+      <p><strong>From:</strong> ${escapeHtml(fromLine)}<br />
+      <strong>To:</strong> ${escapeHtml(input.recipient)}<br />
+      <strong>Subject:</strong> ${escapeHtml(originalSubject)}<br />
+      <strong>Received:</strong> ${escapeHtml(input.receivedAt)}<br />
+      <strong>Attachments:</strong> ${escapeHtml(attachmentLines.join(', '))}</p>
+      <p style="white-space:pre-wrap;">${escapeHtml(plainBody)}</p>
+    </div>`;
+
+  return {
+    subject: `New email to contact@iwc-replica.to: ${originalSubject}`.slice(0, 200),
+    html,
+    text,
+  };
+}
+
+export async function sendInboundNotificationEmail(input: InboundNotice): Promise<EmailResult> {
+  const message = buildInboundNotificationEmail(input);
+  return sendResendEmail({
+    from: CONTACT_FROM,
+    to: [receivingEmail()],
+    replyTo: input.senderEmail,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+}
+
+type ReceivedEmail = {
+  text: string;
+  html: string;
+  fromHeader: string;
+};
+
+export async function fetchReceivedEmail(emailId: string): Promise<ReceivedEmail | null> {
+  const apiKey = envValue('RESEND_API_KEY');
+  if (!apiKey || !/^[A-Za-z0-9_-]+$/.test(emailId)) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${RESEND_RECEIVING_ENDPOINT}/${emailId}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const payload = (await response.json()) as { data?: Record<string, unknown> } & Record<string, unknown>;
+    const email = (payload.data ?? payload) as Record<string, unknown>;
+    return {
+      text: typeof email.text === 'string' ? email.text : '',
+      html: typeof email.html === 'string' ? email.html : '',
+      fromHeader: headerValue(email.headers, 'from'),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function headerValue(headers: unknown, name: string): string {
+  if (Array.isArray(headers)) {
+    const match = headers.find((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return false;
+      }
+      const record = entry as { name?: string };
+      return record.name?.toLowerCase() === name;
+    }) as { value?: string } | undefined;
+    return match?.value ?? '';
+  }
+
+  if (headers && typeof headers === 'object') {
+    const record = headers as Record<string, unknown>;
+    const value = record[name] ?? record[name.toLowerCase()];
+    return typeof value === 'string' ? value : '';
+  }
+
+  return '';
+}
+
+function decodeWebhookSecret(secret: string): Buffer | null {
+  const encoded = secret.startsWith('whsec_') ? secret.slice('whsec_'.length) : secret;
+  try {
+    const bytes = Buffer.from(encoded, 'base64');
+    return bytes.length > 0 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Svix signature used by Resend webhooks. Rejects missing or stale signatures. */
+export function verifyResendWebhook(rawBody: string, headers: Headers): EmailResult {
+  const secret = envValue('IWC_RESEND_WEBHOOK_SECRET');
+  if (!secret) {
+    return { ok: false, error: 'IWC_RESEND_WEBHOOK_SECRET is not configured.' };
+  }
+
+  const id = headers.get('svix-id') ?? '';
+  const timestamp = headers.get('svix-timestamp') ?? '';
+  const signature = headers.get('svix-signature') ?? '';
+  const key = decodeWebhookSecret(secret);
+  if (!id || !timestamp || !signature || !key || /[\r\n]/.test(id)) {
+    return { ok: false, error: 'Missing webhook signature.' };
+  }
+
+  const unix = Number(timestamp);
+  if (!Number.isFinite(unix) || Math.abs(Date.now() / 1000 - unix) > WEBHOOK_TOLERANCE_SECONDS) {
+    return { ok: false, error: 'Webhook timestamp is outside the allowed window.' };
+  }
+
+  const expected = createHmac('sha256', key).update(`${id}.${timestamp}.${rawBody}`).digest('base64');
+  const expectedBytes = Buffer.from(expected);
+  const candidates = signature.split(' ').map((part) => part.split(',')[1] ?? '').filter(Boolean);
+  const match = candidates.some((candidate) => {
+    const actual = Buffer.from(candidate);
+    return actual.length === expectedBytes.length && timingSafeEqual(actual, expectedBytes);
+  });
+
+  return match ? { ok: true } : { ok: false, error: 'Webhook signature did not match.' };
 }
