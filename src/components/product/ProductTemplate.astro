@@ -54,9 +54,6 @@ const lcpPreload =
       ? [
           {
             href: lcpPreload.href,
-            imagesrcset: lcpPreload.imagesrcset,
-            imagesizes: lcpPreload.imagesizes,
-            type: lcpPreload.type,
             fetchpriority: 'high',
           },
         ]
@@ -69,11 +66,13 @@ const lcpPreload =
       description: metaDescription,
       path,
       images: images.map((image) => mediaUrl(image.src)).filter((src): src is string => Boolean(src)),
-      price: product.price,
+      price: currentPrice,
       currency: page.currency,
-      sku: page.sku,
+      sku: page.sku ?? product.sku,
       availability: page.availability,
       brand: page.brand,
+      ratingValue: product.rating,
+      reviewCount: product.reviewCount,
     }),
     breadcrumbJsonLd([
       { name: 'Home', path: '/' },

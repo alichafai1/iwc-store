@@ -93,6 +93,8 @@ export function productJsonLd(input: {
   sku?: string;
   availability?: string;
   brand?: string;
+  ratingValue?: number;
+  reviewCount?: number;
 }): JsonLdNode {
   const node: JsonLdNode = {
     '@context': 'https://schema.org',
@@ -115,6 +117,19 @@ export function productJsonLd(input: {
 
   if (input.sku) {
     node.sku = input.sku;
+  }
+
+  if (
+    typeof input.ratingValue === 'number' &&
+    input.ratingValue > 0 &&
+    typeof input.reviewCount === 'number' &&
+    input.reviewCount > 0
+  ) {
+    node.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: input.ratingValue,
+      reviewCount: input.reviewCount,
+    };
   }
 
   if (input.price !== undefined) {

@@ -10,6 +10,7 @@ import {
   storeCollections,
 } from '../data/collections';
 import { collectionImages, getCollectionImage } from '../data/collection-media';
+import { extractProductReference, sanitizeProductFaqs } from './product-faq-sanitize';
 import type { CollectionPageData } from '../types/collection';
 import type { Product, ProductImage, ProductPageData, ProductQuality } from '../types/product';
 import type { Tables } from '../types/database';
@@ -155,6 +156,47 @@ function catalogGalleryImages(images: ImageRow[] | undefined, fallbackAlt: strin
     .filter((image): image is { src: string; alt: string } => Boolean(image));
 }
 
+function normalizeProductMetaTitle(metaTitle: string | null | undefined, title: string): string {
+  const raw = (metaTitle || title || '').replace(/\s+/g, ' ').trim();
+  if (!raw) {
+    return title;
+  }
+
+  // Generic prefix buries the product name in the SERP title.
+  const withoutGenericPrefix = raw
+    .replace(/^replica\s+iwc\s+watches\s*[|:-]\s*/i, '')
+    .trim();
+
+  const candidate = withoutGenericPrefix || title;
+  if (/^iwc\b/.test(candidate) && candidate[0] === 'i') {
+    return `IWC${candidate.slice(3)}`;
+  }
+
+  return candidate;
+}
+
+function catalogAboutParagraphs(description: string | null | undefined, shortDescription: string | null | undefined): string[] {
+  const paragraphs = splitParagraphs(description);
+  const short = shortDescription?.replace(/\s+/g, ' ').trim();
+  if (!short) {
+    return paragraphs;
+  }
+
+  const alreadyPresent = paragraphs.some(
+    (paragraph) => paragraph.includes(short) || short.includes(paragraph.slice(0, 80)),
+  );
+  if (alreadyPresent) {
+    return paragraphs;
+  }
+
+  // Thin long-form copy: surface the short description without inventing new claims.
+  if (paragraphs.join(' ').length < 500) {
+    return [short, ...paragraphs];
+  }
+
+  return paragraphs;
+}
+
 function catalogProductPage(
   row: CatalogProductRow,
   product: Product,
@@ -165,20 +207,24 @@ function catalogProductPage(
   reviews: ReviewRow[] | undefined,
   faqs: FaqRow[] | undefined,
 ): ProductPageData {
-  const aboutParagraphs = splitParagraphs(row.description);
+  const aboutParagraphs = catalogAboutParagraphs(row.description, row.short_description);
+  const mappedSpecs = sortByPosition(specs).map((spec) => ({
+    label: spec.label,
+    value: spec.value,
+  }));
+  const derivedSku =
+    row.sku?.trim() ||
+    extractProductReference({ slug: row.slug, title: row.title, sku: row.sku });
 
   return {
     source: 'catalog',
     product,
     path: `/products/${row.slug}/`,
-    metaTitle: row.meta_title || row.title,
+    metaTitle: normalizeProductMetaTitle(row.meta_title, row.title),
     metaDescription: row.meta_description || row.short_description || aboutParagraphs[0] || row.title,
     images: catalogGalleryImages(images, row.title),
     qualities: qualityChoices(qualities),
-    specs: sortByPosition(specs).map((spec) => ({
-      label: spec.label,
-      value: spec.value,
-    })),
+    specs: mappedSpecs,
     about: {
       heading: row.about_heading?.trim() || 'About Product',
       paragraphs: aboutParagraphs,
@@ -191,12 +237,22 @@ function catalogProductPage(
       rating: review.rating,
       body: review.review_text,
     })),
-    faqs: sortByPosition(faqs).map((faq) => ({
-      question: faq.question,
-      answer: faq.answer,
-    })),
+    faqs: sanitizeProductFaqs(
+      sortByPosition(faqs).map((faq) => ({
+        question: faq.question,
+        answer: faq.answer,
+      })),
+      {
+        slug: row.slug,
+        title: row.title,
+        shortDescription: row.short_description,
+        sku: derivedSku,
+        specs: mappedSpecs,
+      },
+    ),
     currency: 'USD',
-    sku: row.sku ?? undefined,
+    sku: derivedSku,
+    brand: 'IWC Replica',
     availability: 'https://schema.org/InStock',
   };
 }
