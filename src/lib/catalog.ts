@@ -10,7 +10,6 @@ import {
   storeCollections,
 } from '../data/collections';
 import { collectionImages, getCollectionImage } from '../data/collection-media';
-import { sanitizeProductFaqs } from './product-faq-sanitize';
 import type { CollectionPageData } from '../types/collection';
 import type { Product, ProductImage, ProductPageData, ProductQuality } from '../types/product';
 import type { Tables } from '../types/database';
@@ -192,22 +191,10 @@ function catalogProductPage(
       rating: review.rating,
       body: review.review_text,
     })),
-    faqs: sanitizeProductFaqs(
-      sortByPosition(faqs).map((faq) => ({
-        question: faq.question,
-        answer: faq.answer,
-      })),
-      {
-        slug: row.slug,
-        title: row.title,
-        shortDescription: row.short_description,
-        sku: row.sku,
-        specs: sortByPosition(specs).map((spec) => ({
-          label: spec.label,
-          value: spec.value,
-        })),
-      },
-    ),
+    faqs: sortByPosition(faqs).map((faq) => ({
+      question: faq.question,
+      answer: faq.answer,
+    })),
     currency: 'USD',
     sku: row.sku ?? undefined,
     availability: 'https://schema.org/InStock',
