@@ -68,11 +68,13 @@ const lcpPreload =
       images: images.map((image) => mediaUrl(image.src)).filter((src): src is string => Boolean(src)),
       price: currentPrice,
       currency: page.currency,
-      sku: page.sku ?? product.sku,
+      // Catalog SKU only when stored on the product row; never invent identifiers.
+      sku: isCatalog ? page.sku ?? product.sku : undefined,
       availability: page.availability,
       brand: page.brand,
-      ratingValue: product.rating,
-      reviewCount: product.reviewCount,
+      // AggregateRating only from real catalog reviews (never placeholder pages).
+      ratingValue: isCatalog && product.reviewCount > 0 ? product.rating : undefined,
+      reviewCount: isCatalog && product.reviewCount > 0 ? product.reviewCount : undefined,
     }),
     breadcrumbJsonLd([
       { name: 'Home', path: '/' },

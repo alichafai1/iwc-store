@@ -212,9 +212,13 @@ function catalogProductPage(
     label: spec.label,
     value: spec.value,
   }));
-  const derivedSku =
-    row.sku?.trim() ||
-    extractProductReference({ slug: row.slug, title: row.title, sku: row.sku });
+  // Only emit schema SKU when the catalog stores a real SKU — never invent from title/slug.
+  const genuineSku = row.sku?.trim() || undefined;
+  const faqReference = extractProductReference({
+    slug: row.slug,
+    title: row.title,
+    sku: genuineSku,
+  });
 
   return {
     source: 'catalog',
@@ -246,12 +250,12 @@ function catalogProductPage(
         slug: row.slug,
         title: row.title,
         shortDescription: row.short_description,
-        sku: derivedSku,
+        sku: faqReference,
         specs: mappedSpecs,
       },
     ),
     currency: 'USD',
-    sku: derivedSku,
+    sku: genuineSku,
     brand: 'IWC Replica',
     availability: 'https://schema.org/InStock',
   };
