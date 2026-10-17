@@ -10,6 +10,7 @@ import {
   storeCollections,
 } from '../data/collections';
 import { collectionImages, getCollectionImage } from '../data/collection-media';
+import { sanitizeProductFaqs } from './product-faq-sanitize';
 import type { CollectionPageData } from '../types/collection';
 import type { Product, ProductImage, ProductPageData, ProductQuality } from '../types/product';
 import type { Tables } from '../types/database';
@@ -191,10 +192,22 @@ function catalogProductPage(
       rating: review.rating,
       body: review.review_text,
     })),
-    faqs: sortByPosition(faqs).map((faq) => ({
-      question: faq.question,
-      answer: faq.answer,
-    })),
+    faqs: sanitizeProductFaqs(
+      sortByPosition(faqs).map((faq) => ({
+        question: faq.question,
+        answer: faq.answer,
+      })),
+      {
+        slug: row.slug,
+        title: row.title,
+        shortDescription: row.short_description,
+        sku: row.sku,
+        specs: sortByPosition(specs).map((spec) => ({
+          label: spec.label,
+          value: spec.value,
+        })),
+      },
+    ),
     currency: 'USD',
     sku: row.sku ?? undefined,
     availability: 'https://schema.org/InStock',
@@ -233,10 +246,28 @@ function productSlugFromPath(href: string): string | null {
   return match?.[1] ?? null;
 }
 
-export async function getStorefrontProductSlugs(slugs?: string[]): Promise<string[]> {
+type StorefrontProductRow = Pick<
+  ProductRow,
+  'id' | 'slug' | 'primary_collection_id' | 'updated_at' | 'published_at' | 'created_at'
+>;
+
+export type StorefrontSitemapEntry = {
+  slug: string;
+  lastmod: string;
+};
+
+function toSitemapLastmod(value: string | null | undefined): string {
+  const parsed = value ? new Date(value) : new Date();
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+async function loadStorefrontProductRows(slugs?: string[]): Promise<StorefrontProductRow[]> {
   let query = supabase
     .from('products')
-    .select('id, slug, primary_collection_id')
+    .select('id, slug, primary_collection_id, updated_at, published_at, created_at')
     .eq('status', 'published');
 
   if (slugs) {
@@ -253,7 +284,7 @@ export async function getStorefrontProductSlugs(slugs?: string[]): Promise<strin
     return [];
   }
 
-  const rows = products ?? [];
+  const rows = (products ?? []) as StorefrontProductRow[];
   if (rows.length === 0) {
     return [];
   }
@@ -281,9 +312,22 @@ export async function getStorefrontProductSlugs(slugs?: string[]): Promise<strin
   );
   const joinIds = new Set((joinsResult.data ?? []).map((join) => join.product_id));
 
-  return rows
-    .filter((row) => imageIds.has(row.id) && (row.primary_collection_id || joinIds.has(row.id)))
-    .map((row) => row.slug);
+  return rows.filter(
+    (row) => imageIds.has(row.id) && (row.primary_collection_id || joinIds.has(row.id)),
+  );
+}
+
+export async function getStorefrontProductSlugs(slugs?: string[]): Promise<string[]> {
+  const rows = await loadStorefrontProductRows(slugs);
+  return rows.map((row) => row.slug);
+}
+
+export async function getStorefrontProductSitemapEntries(): Promise<StorefrontSitemapEntry[]> {
+  const rows = await loadStorefrontProductRows();
+  return rows.map((row) => ({
+    slug: row.slug,
+    lastmod: toSitemapLastmod(row.updated_at ?? row.published_at ?? row.created_at),
+  }));
 }
 
 export async function getPublishedCatalogPages(): Promise<

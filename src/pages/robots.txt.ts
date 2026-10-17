@@ -17,6 +17,7 @@ Sitemap: ${new URL('sitemap-index.xml', origin).href}
   return new Response(robotsTxt, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
     },
   });
 };
