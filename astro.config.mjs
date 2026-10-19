@@ -7,6 +7,7 @@ import { isSitemapExcluded, sitemapCollectionPages } from './src/lib/seo.ts';
 import { siteConfig } from './src/lib/site.ts';
 
 const siteOrigin = siteConfig.url.endsWith('/') ? siteConfig.url : `${siteConfig.url}/`;
+const siteHostname = new URL(siteConfig.url).hostname.replace(/^www\./, '');
 
 // https://astro.build/config
 export default defineConfig({
@@ -33,6 +34,11 @@ export default defineConfig({
   server: {
     port: 4330,
     host: true,
+  },
+  security: {
+    // nginx terminates TLS and proxies over http; without this, Astro's origin check
+    // compares https:// browser origins against http:// and rejects every form POST.
+    allowedDomains: [{ hostname: siteHostname }, { hostname: `www.${siteHostname}` }],
   },
   build: {
     // Keep small CSS inlined; larger sheets stay cacheable hashed files.
